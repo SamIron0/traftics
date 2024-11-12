@@ -3,8 +3,10 @@
   "private": true,
   "scripts": {
     "dev": "pnpm -r dev",
-    "build": "pnpm build:types && pnpm -r build",
+    "build": "pnpm build:types && pnpm build:tracker && pnpm build:web",
     "build:types": "pnpm --filter @session-recorder/types build",
+    "build:tracker": "pnpm --filter @session-recorder/tracker build",
+    "build:web": "pnpm --filter web build",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "clean": "pnpm -r exec rm -rf dist node_modules",
