@@ -1,0 +1,21 @@
+{
+  "name": "@session-recorder/collector",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node-dev src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src/**/*.ts"
+  },
+  "dependencies": {
+    "@session-recorder/types": "workspace:*",
+    "aws-sdk": "^2.1692.0",
+    "express": "^4.21.1",
+    "redis": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "ts-node-dev": "^2.0.0"
+  }
+}
