@@ -57,9 +57,15 @@ importers:
       '@types/jsonwebtoken':
         specifier: ^9.0.0
         version: 9.0.7
+      eslint:
+        specifier: ^8.0.0
+        version: 8.57.1
       ts-node-dev:
         specifier: ^2.0.0
         version: 2.0.0(@types/node@20.17.6)(typescript@5.6.3)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.6.3
 
   apps/collector:
     dependencies:
@@ -79,9 +85,15 @@ importers:
       '@types/express':
         specifier: ^4.17.21
         version: 4.17.21
+      eslint:
+        specifier: ^8.0.0
+        version: 8.57.1
       ts-node-dev:
         specifier: ^2.0.0
         version: 2.0.0(@types/node@20.17.6)(typescript@5.6.3)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.6.3
 
   apps/dashboard:
     dependencies:
@@ -125,9 +137,15 @@ importers:
       autoprefixer:
         specifier: ^10.0.0
         version: 10.4.20(postcss@8.4.49)
+      eslint:
+        specifier: ^8.0.0
+        version: 8.57.1
       postcss:
         specifier: ^8.0.0
         version: 8.4.49
+      typescript:
+        specifier: ^5.0.0
+        version: 5.6.3
       vite:
         specifier: ^4.0.0
         version: 4.5.5(@types/node@20.17.6)
@@ -141,6 +159,9 @@ importers:
       '@types/jest':
         specifier: ^29.0.0
         version: 29.5.14
+      eslint:
+        specifier: ^8.0.0
+        version: 8.57.1
       jest:
         specifier: ^29.0.0
         version: 29.7.0(@types/node@20.17.6)
@@ -150,6 +171,9 @@ importers:
       ts-loader:
         specifier: ^9.0.0
         version: 9.5.1(typescript@5.6.3)(webpack@5.96.1)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.6.3
       webpack:
         specifier: ^5.0.0
         version: 5.96.1(webpack-cli@5.1.4)
@@ -159,6 +183,9 @@ importers:
 
   packages/types:
     devDependencies:
+      eslint:
+        specifier: ^8.0.0
+        version: 8.57.1
       typescript:
         specifier: ^5.0.0
         version: 5.6.3

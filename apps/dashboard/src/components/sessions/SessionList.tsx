@@ -1,7 +1,8 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Session } from '../../../../../packages/types/src/session';
-import { PageViewEvent } from '../../../../../packages/types/src/events';
+import { Session } from '@session-recorder/types';
+import { PageViewEvent } from '@session-recorder/types';
+import { RecordedEvent } from '@session-recorder/types';
 
 interface Props {
   sessions: Session[];
@@ -51,12 +52,12 @@ export function SessionList({ sessions, selectedSessionId, onSelectSession }: Pr
           </div>
           
           <div className="mt-2 flex gap-2">
-            {session.events.reduce((tags, event) => {
+            {session.events.reduce((tags: string[], event: RecordedEvent) => {
               if (!tags.includes(event.type)) {
                 tags.push(event.type);
               }
               return tags;
-            }, [] as string[]).map(type => (
+            }, [] as string[]).map((type: string) => (
               <span
                 key={type}
                 className="px-2 py-1 rounded-full bg-gray-100 text-gray-600 text-xs"

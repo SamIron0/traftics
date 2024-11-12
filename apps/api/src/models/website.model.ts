@@ -1,19 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { AuthRequest } from "../middleware/auth";
+import { Website } from '@session-recorder/types';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
 );
-
-export interface Website {
-  id: string;
-  name: string;
-  domain: string;
-  org_id: string;
-  created_at: Date;
-  updated_at: Date;
-}
 
 export class WebsiteModel {
   static async create(
