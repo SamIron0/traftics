@@ -3,8 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "pnpm -r dev",
-    "build": "pnpm --filter \"@session-recorder/types\" build && pnpm -r --filter \"!@session-recorder/types\" build",
-    "prebuild": "pnpm clean",
+    "build": "pnpm build:types && pnpm -r build",
+    "build:types": "pnpm --filter @session-recorder/types build",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "clean": "pnpm -r exec rm -rf dist node_modules",
