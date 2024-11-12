@@ -5,8 +5,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
-    "noEmit": false,
-    "isolatedModules": false
+    "noEmit": false
   },
   "references": [
     { "path": "../../packages/types" }

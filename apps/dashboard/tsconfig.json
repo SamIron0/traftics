@@ -1,16 +1,16 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "module": "CommonJS",
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
-    "noEmit": false,
-    "isolatedModules": false
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
   },
   "references": [
     { "path": "../../packages/types" }
   ],
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "exclude": ["node_modules", "dist"]
 }
