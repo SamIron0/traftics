@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { WebsiteService } from '../services/website.service';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 
-const router = Router();
+const router: Router = Router();
 
 router.use(authMiddleware);
 

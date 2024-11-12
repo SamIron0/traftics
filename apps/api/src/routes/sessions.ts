@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { SessionService } from '../services/session.service';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 
-const router = Router();
+const router: Router = Router();
 
 router.use(authMiddleware);
 

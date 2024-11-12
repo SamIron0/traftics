@@ -1,16 +1,20 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "module": "ESNext",
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "composite": true,
-    "declaration": true,
-    "noEmit": false
-  },
-  "references": [
-    { "path": "../types" }
-  ],
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
-}
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+      "module": "ESNext",
+      "outDir": "./dist",
+      "rootDir": ".",
+      "composite": true,
+      "noEmit": false,
+      "isolatedModules": false,
+      "paths": {
+        "@session-recorder/*": ["../../packages/*/src"]
+      }
+    },
+    "references": [
+      { "path": "../../packages/types" }
+    ],
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  }
+  

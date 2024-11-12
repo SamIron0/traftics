@@ -1,5 +1,6 @@
-import { WebsiteModel, Website } from '../models/website.model';
+import { WebsiteModel } from '../models/website.model';
 import { AuthRequest } from '../middleware/auth';
+import { Website } from '@session-recorder/types';
 
 export class WebsiteService {
   static async createWebsite(req: AuthRequest, data: Partial<Website>): Promise<Website> {
