@@ -1,0 +1,8 @@
+node_modules
+src
+tests
+.git
+.gitignore
+README.md
+jest.config.js
+tsconfig.json 

@@ -1,39 +1,10 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { RecordedEvent } from '@session-recorder/types';
 
-interface Props {
-  sessionId: string;
-}
 
-export function SessionPlayer({ sessionId }: Props) {
+export function SessionPlayer() {
   const [currentTime, setCurrentTime] = React.useState(0);
   const [isPlaying, setIsPlaying] = React.useState(false);
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
-
-  const { data: session } = useQuery(['session', sessionId], async () => {
-    const response = await fetch(`/api/sessions/${sessionId}`);
-    return response.json();
-  });
-
-  React.useEffect(() => {
-    if (!isPlaying || !session) return;
-
-    const interval = setInterval(() => {
-      const events = session.events.filter(
-        (event: RecordedEvent) => 
-          event.timestamp <= session.startedAt + currentTime
-      );
-
-      if (iframeRef.current?.contentWindow) {
-        iframeRef.current.contentWindow.postMessage({ events }, '*');
-      }
-
-      setCurrentTime(time => time + 100);
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [isPlaying, session, currentTime]);
 
   return (
     <div className="h-full flex flex-col">
@@ -41,7 +12,7 @@ export function SessionPlayer({ sessionId }: Props) {
         <iframe
           ref={iframeRef}
           className="w-full h-full"
-          src={session?.url}
+          src={""}
           sandbox="allow-same-origin"
         />
       </div>
@@ -55,7 +26,7 @@ export function SessionPlayer({ sessionId }: Props) {
         <input
           type="range"
           min={0}
-          max={session?.duration || 0}
+          max={0}
           value={currentTime}
           onChange={e => setCurrentTime(Number(e.target.value))}
           className="ml-4 w-96"

@@ -1,4 +1,0 @@
-{
-  "buildCommand": "cd ../.. && pnpm install && pnpm build:types && pnpm --filter web build",
-  "installCommand": "cd ../.. && pnpm install"
-} 

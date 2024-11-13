@@ -1,9 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
-import { Website } from '@session-recorder/types';
+import { Website } from "@/types";
 
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 export class WebsiteModel {

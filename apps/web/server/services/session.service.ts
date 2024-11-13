@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { SessionModel, SessionRecord } from '../models/session.model';
-import { RecordedEvent } from '../../../../packages/types/src/events';
+import { RecordedEvent } from '@/types';
 
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
 );
 

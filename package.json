@@ -10,7 +10,10 @@
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "clean": "pnpm -r exec rm -rf dist node_modules",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "deploy": "bash infrastructure/scripts/deploy.sh all",
+    "deploy:tracker": "bash infrastructure/scripts/deploy.sh tracker",
+    "deploy:app": "bash infrastructure/scripts/deploy.sh app"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -24,5 +27,8 @@
   "engines": {
     "node": ">=18",
     "pnpm": ">=8.15.4"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.46.1"
   }
 }

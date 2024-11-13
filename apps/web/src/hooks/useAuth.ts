@@ -1,6 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
+'use client';
+
+import { createClient, User } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,8 +10,8 @@ const supabase = createClient(
 );
 
 export function useAuth() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -19,7 +21,7 @@ export function useAuth() {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    navigate('/login');
+    router.push('/login');
   };
   
   return {

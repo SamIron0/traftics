@@ -19,10 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@session-recorder/*": ["../../packages/*/src"]
+      "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "../../infrastructure/web/types.ts"],
   "exclude": ["node_modules"]
 }

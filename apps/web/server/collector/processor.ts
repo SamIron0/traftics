@@ -1,4 +1,4 @@
-import { RecordedEvent } from '@session-recorder/types';
+import { RecordedEvent } from '@/types';
 
 export async function processEvents(events: RecordedEvent[]): Promise<RecordedEvent[]> {
   // Add processing logic here (e.g., sanitization, compression)

@@ -9,18 +9,34 @@ module.exports = {
       name: 'SessionRecorder',
       type: 'umd',
       export: 'default'
-    }
+    },
+    globalObject: 'this'
   },
   resolve: {
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.js'],
+    alias: {
+      '@session-recorder': path.resolve(__dirname, '../../packages')
+    }
   },
   module: {
     rules: [
       {
         test: /\.ts$/,
-        use: 'ts-loader',
+        use: [
+          {
+            loader: 'ts-loader',
+            options: {
+              configFile: path.resolve(__dirname, './tsconfig.json'),
+              transpileOnly: true
+            }
+          }
+        ],
         exclude: /node_modules/
       }
     ]
-  }
+  },
+  optimization: {
+    minimize: true
+  },
+  mode: 'production'
 };

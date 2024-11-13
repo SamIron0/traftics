@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { processEvents } from '../../../../server/collector/processor'
 import { addToQueue } from '../../../../server/collector/queue'
-import { Session } from '@session-recorder/types'
+import { Session } from '@/types'
 
 export async function POST(request: Request) {
   try {

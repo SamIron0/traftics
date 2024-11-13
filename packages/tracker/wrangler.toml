@@ -1,0 +1,11 @@
+name = "session-recorder-tracker"
+main = "dist/tracker.js"
+compatibility_date = "2024-01-01"
+
+[build]
+command = "pnpm build"
+watch_dir = "src"
+
+[site]
+bucket = "./dist"
+entry-point = "dist/tracker.js" 

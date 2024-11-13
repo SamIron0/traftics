@@ -1,5 +1,5 @@
 import { WebsiteModel } from '../models/website.model';
-import { Website } from '@session-recorder/types';
+import { Website } from '@/types';
 
 export class WebsiteService {
   static async createWebsite(req: any, data: Partial<Website>): Promise<Website> {

@@ -1,8 +1,6 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Session } from '@session-recorder/types';
-import { PageViewEvent } from '@session-recorder/types';
-import { RecordedEvent } from '@session-recorder/types';
+import { Session, PageViewEvent, RecordedEvent } from '@/types';
 
 interface Props {
   sessions: Session[];
