@@ -6,9 +6,10 @@ set -e
 # Load environment variables
 source .env
 
-# Deploy tracker to Cloudflare Pages
 deploy_tracker() {
   echo "Deploying tracker to Cloudflare Pages..."
+  # Build dependencies first
+  pnpm --filter @session-recorder/types build
   cd packages/tracker
   pnpm build
   wrangler pages deploy dist --project-name session-recorder-tracker
@@ -16,7 +17,7 @@ deploy_tracker() {
 }
 
 # Deploy web app to Vercel
-deploy_app() {
+deploy_web() {
   echo "Deploying web app to Vercel..."
   cd apps/web
   vercel deploy --prod
@@ -28,15 +29,15 @@ case "$1" in
   "tracker")
     deploy_tracker
     ;;
-  "app")
-    deploy_app
+  "web")
+    deploy_web
     ;;
   "all")
     deploy_tracker
-    deploy_app
+    deploy_web
     ;;
   *)
-    echo "Usage: ./deploy.sh [tracker|app|all]"
+    echo "Usage: ./deploy.sh [tracker|web|all]"
     exit 1
     ;;
 esac 

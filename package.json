@@ -13,7 +13,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "deploy": "bash infrastructure/scripts/deploy.sh all",
     "deploy:tracker": "bash infrastructure/scripts/deploy.sh tracker",
-    "deploy:app": "bash infrastructure/scripts/deploy.sh app"
+    "deploy:web": "bash infrastructure/scripts/deploy.sh web"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
