@@ -44,6 +44,17 @@ export async function POST() {
       );
     }
 
+    // Mark setup as completed
+    const { error: setupError } = await supabase
+      .from("user_profiles")
+      .update({ setup_completed: true })
+      .eq("user_id", user.id);
+
+    if (setupError) {
+      console.error("Setup completion error:", setupError);
+      // Continue anyway since the website was created successfully
+    }
+
     // Generate and return the tracking script
     const script = generateTrackingScript(websiteId);
     return NextResponse.json({

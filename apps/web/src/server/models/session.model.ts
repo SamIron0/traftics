@@ -1,11 +1,10 @@
 import { createClient } from "@/utils/supabase/server";
-import { Tables, TablesInsert } from "../../supabase/types";
-
-const supabase = await createClient();
+import { Tables, TablesInsert } from "../../../supabase/types";
+import { ServiceRequest } from "@/types/api";
 
 export class SessionModel {
-
-  static async findAll(req: any, siteId?: string): Promise<Tables<'sessions'>[]> {
+  static async findAll(req: ServiceRequest, siteId?: string): Promise<Tables<'sessions'>[]> {
+    const supabase = await createClient();
     let query = supabase
       .from('sessions')
       .select(`
@@ -28,7 +27,8 @@ export class SessionModel {
     return data;
   }
 
-  static async findOne(req: any, id: string): Promise<Tables<'sessions'> | null> {
+  static async findOne(req: ServiceRequest, id: string): Promise<Tables<'sessions'> | null> {
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from('sessions')
       .select(`
@@ -47,6 +47,7 @@ export class SessionModel {
   }
 
   static async create(data: TablesInsert<'sessions'>): Promise<Tables<'sessions'>> {
+    const supabase = await createClient();
     const { data: session, error } = await supabase
       .from("sessions")
       .insert(data)

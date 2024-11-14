@@ -12,7 +12,7 @@ const publicRoutes = [
 
 // Define onboarding routes
 const onboardingRoutes = ["/onboarding"];
-
+const setupRoutes = ["/project-setup"];
 const authRoutes = ["/login", "/signup"];
 
 export async function updateSession(request: NextRequest) {
@@ -29,7 +29,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({
@@ -98,6 +98,25 @@ export async function updateSession(request: NextRequest) {
       url.pathname = "/dashboards";
       return NextResponse.redirect(url);
     }
+  }
+
+  // Handle setup flow
+  const isSetupRoute = setupRoutes.some((route) => pathname.startsWith(route));
+  if (!isSetupRoute) {
+    return supabaseResponse;
+  }
+
+  // Get setup completion status
+  const { data: setupStatus } = await supabase
+    .from("user_profiles")
+    .select("setup_completed")
+    .eq("user_id", user.id)
+    .single();
+
+  if (setupStatus?.setup_completed) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboards";
+    return NextResponse.redirect(url);
   }
 
   return supabaseResponse;

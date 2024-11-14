@@ -1,9 +1,5 @@
-import { Session } from "@/types";
 
-const QUEUE_KEY = "session-queue";
-const BUCKET_NAME = "sessions";
-
-export async function addToQueue(session: Session): Promise<void> {
+export async function addToQueue(): Promise<void> {
   try {
     await processQueue();
   } catch (error) {

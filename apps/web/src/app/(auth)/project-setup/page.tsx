@@ -4,56 +4,17 @@ import { Button } from "@/components/ui/button";
 import { ClipboardCopy } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
-import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 export default function ProjectSetupPage() {
   const [trackingScript, setTrackingScript] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  const supabase = createClient();
-  const { user, loading } = useAuthStatus();
 
   useEffect(() => {
-    if (!loading) {
-      checkSetupStatus();
-    }
+    generateScript();
   });
-
-  const checkSetupStatus = async () => {
-    try {
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      // Check if user has already completed setup
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("setup_completed")
-        .eq("user_id", user.id)
-        .single();
-
-      if (profile?.setup_completed) {
-        router.push("/dashboards");
-        return;
-      }
-
-      // If not completed, generate script
-      generateScript();
-    } catch (error) {
-      console.error("Error checking setup status:", error);
-      setError("Failed to check setup status");
-    }
-  };
 
   const generateScript = async () => {
     try {
-      if (!user) {
-        router.push("/login");
-        return;
-      }
       const response = await fetch("/api/tracking-code/generate", {
         method: "POST",
       });
@@ -62,12 +23,6 @@ export default function ProjectSetupPage() {
 
       const data = await response.json();
       setTrackingScript(data.script);
-
-      // Mark setup as completed
-      await supabase
-        .from("user_profiles")
-        .update({ setup_completed: true })
-        .eq("user_id", user.id);
     } catch (error) {
       console.error("Error:", error);
       setError("Failed to generate tracking code");
@@ -77,14 +32,6 @@ export default function ProjectSetupPage() {
   const handleCopyScript = () => {
     navigator.clipboard.writeText(trackingScript);
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -129,8 +76,8 @@ export default function ProjectSetupPage() {
 
           <p className="text-muted-foreground">
             After implementing the tracking code, visit your website to test the
-            implementation. You'll be redirected to the dashboard once we detect
-            the tracking code is working.
+            implementation. You&apos;ll be redirected to the dashboard once we
+            detect the tracking code is working.
           </p>
         </div>
       </div>

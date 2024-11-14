@@ -1,14 +1,14 @@
 import { createClient } from "@/utils/supabase/server";
-import { Tables } from "../../supabase/types";
-import { TablesInsert } from "../../supabase/types";
-
-const supabase = await createClient();
+import { Tables } from "../../../supabase/types";
+import { TablesInsert } from "../../../supabase/types";
+import { ServiceRequest } from "@/types/api";
 
 export class WebsiteModel {
   static async create(
-    req: any,
+    req: ServiceRequest,
     data: TablesInsert<"websites">
   ): Promise<Tables<"websites">> {
+    const supabase = await createClient();
     const { name, domain } = data;
     const { data: website, error } = await supabase
       .from("websites")
@@ -24,7 +24,8 @@ export class WebsiteModel {
     return website;
   }
 
-  static async findAll(req: any): Promise<Tables<"websites">[]> {
+  static async findAll(req: ServiceRequest): Promise<Tables<"websites">[]> {
+    const supabase = await createClient();
     const { data: websites, error } = await supabase
       .from("websites")
       .select("*")
@@ -36,9 +37,10 @@ export class WebsiteModel {
   }
 
   static async findOne(
-    req: any,
+    req: ServiceRequest,
     id: string
   ): Promise<Tables<"websites"> | null> {
+    const supabase = await createClient();
     const { data: website, error } = await supabase
       .from("websites")
       .select("*")
@@ -51,10 +53,11 @@ export class WebsiteModel {
   }
 
   static async update(
-    req: any,
+    req: ServiceRequest,
     id: string,
     data: Partial<Tables<"websites">>
   ): Promise<Tables<"websites"> | null> {
+    const supabase = await createClient();
     const { name, domain } = data;
     const { data: website, error } = await supabase
       .from("websites")
@@ -72,7 +75,8 @@ export class WebsiteModel {
     return website;
   }
 
-  static async delete(req: any, id: string): Promise<boolean> {
+  static async delete(req: ServiceRequest, id: string): Promise<boolean> {
+    const supabase = await createClient();
     const { error } = await supabase
       .from("websites")
       .delete()
