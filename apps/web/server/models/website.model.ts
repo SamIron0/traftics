@@ -1,16 +1,14 @@
-import { createClient } from "@supabase/supabase-js";
-import { Website } from "@/types";
+import { createClient } from "@/utils/supabase/server";
+import { Tables } from "../../supabase/types";
+import { TablesInsert } from "../../supabase/types";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = await createClient();
 
 export class WebsiteModel {
   static async create(
     req: any,
-    data: Partial<Website>
-  ): Promise<Website> {
+    data: TablesInsert<"websites">
+  ): Promise<Tables<"websites">> {
     const { name, domain } = data;
     const { data: website, error } = await supabase
       .from("websites")
@@ -26,7 +24,7 @@ export class WebsiteModel {
     return website;
   }
 
-  static async findAll(req: any): Promise<Website[]> {
+  static async findAll(req: any): Promise<Tables<"websites">[]> {
     const { data: websites, error } = await supabase
       .from("websites")
       .select("*")
@@ -37,7 +35,10 @@ export class WebsiteModel {
     return websites;
   }
 
-  static async findOne(req: any, id: string): Promise<Website | null> {
+  static async findOne(
+    req: any,
+    id: string
+  ): Promise<Tables<"websites"> | null> {
     const { data: website, error } = await supabase
       .from("websites")
       .select("*")
@@ -52,8 +53,8 @@ export class WebsiteModel {
   static async update(
     req: any,
     id: string,
-    data: Partial<Website>
-  ): Promise<Website | null> {
+    data: Partial<Tables<"websites">>
+  ): Promise<Tables<"websites"> | null> {
     const { name, domain } = data;
     const { data: website, error } = await supabase
       .from("websites")

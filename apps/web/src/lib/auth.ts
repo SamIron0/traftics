@@ -1,6 +1,7 @@
-import { supabase } from './supabase'
+import { createClient } from "@/utils/supabase/client";
 
 export async function getAuthUser() {
-  const session = await supabase.auth.getSession()
-  return session.data.session?.user
+  const supabase = createClient();
+  const session = await supabase.auth.getSession();
+  return session.data.session?.user;
 }

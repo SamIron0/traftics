@@ -1,6 +1,14 @@
-import React from "react"
+"use client";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
+  const { loading, user } = useAuthStatus();
+  const router = useRouter();
+ if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-semibold mb-4">Dashboard</h1>
@@ -19,5 +27,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
-  )
-} 
+  );
+}

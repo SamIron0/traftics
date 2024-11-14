@@ -12,7 +12,8 @@ deploy_tracker() {
   pnpm --filter @session-recorder/types build
   cd packages/tracker
   pnpm build
-  wrangler pages deploy dist --project-name session-recorder-tracker
+  wrangler pages deploy dist --project-name session-recorder-tracker --branch main
+  echo "Deployed to https://efb088fa.session-recorder-tracker.pages.dev"
   cd ../..
 }
 

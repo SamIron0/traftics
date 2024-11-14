@@ -1,23 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@/utils/supabase/server";
+import { Tables, TablesInsert } from "../../supabase/types";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
-
-export interface SessionRecord {
-  id: string;
-  site_id: string;
-  started_at: Date;
-  duration: number;
-  user_agent: string;
-  screen_width: number;
-  screen_height: number;
-  created_at: Date;
-}
+const supabase = await createClient();
 
 export class SessionModel {
-  static async findAll(req: any, siteId?: string): Promise<SessionRecord[]> {
+
+  static async findAll(req: any, siteId?: string): Promise<Tables<'sessions'>[]> {
     let query = supabase
       .from('sessions')
       .select(`
@@ -40,7 +28,7 @@ export class SessionModel {
     return data;
   }
 
-  static async findOne(req: any, id: string): Promise<SessionRecord | null> {
+  static async findOne(req: any, id: string): Promise<Tables<'sessions'> | null> {
     const { data, error } = await supabase
       .from('sessions')
       .select(`
@@ -58,10 +46,10 @@ export class SessionModel {
     return data;
   }
 
-  static async create(data: Partial<SessionRecord>): Promise<SessionRecord> {
+  static async create(data: TablesInsert<'sessions'>): Promise<Tables<'sessions'>> {
     const { data: session, error } = await supabase
-      .from('sessions')
-      .insert([data])
+      .from("sessions")
+      .insert(data)
       .select()
       .single();
 

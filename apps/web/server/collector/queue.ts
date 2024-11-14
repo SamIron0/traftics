@@ -1,13 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
-import { Session } from '@/types';
+import { createClient } from "@/utils/supabase/server";
+import { Session } from "@/types";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-const QUEUE_KEY = 'session-queue';
-const BUCKET_NAME = 'sessions';
+const QUEUE_KEY = "session-queue";
+const BUCKET_NAME = "sessions";
 
 export async function addToQueue(session: Session): Promise<void> {
   try {

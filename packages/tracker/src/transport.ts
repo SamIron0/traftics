@@ -2,7 +2,8 @@ import { Session } from '@session-recorder/types';
 
 export async function sendEvents(collectorUrl: string, data: Partial<Session>): Promise<void> {
   try {
-    const response = await fetch(`${collectorUrl}/collect`, {
+    const baseUrl = collectorUrl || 'https://efb088fa.session-recorder-tracker.pages.dev';
+    const response = await fetch(`${baseUrl}/collect`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

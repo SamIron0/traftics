@@ -1,13 +1,20 @@
-"use client"
+"use client";
 
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation";
 import {
   BarChart3,
+  CreditCard,
+  Bell,
+  ChevronsUpDown,
   Gauge,
+  LogOut,
   LayoutDashboard,
+  Rocket,
   Settings,
   ThermometerSun,
-} from "lucide-react"
+  Sparkles,
+  BadgeCheck,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,13 +22,38 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarHeader,
+  SidebarMenu,
   SidebarMenuButton,
+  SidebarMenuItem,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+import { SidebarPanel } from "./SidebarPanel";
+import { Button } from "./ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 export function AppSidebar() {
-  const router = useRouter()
-  const pathname = usePathname()
+  const router = useRouter();
+  const pathname = usePathname();
+  const { signOut } = useAuthStatus();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.push("/login");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   const navigation = [
     {
@@ -30,7 +62,7 @@ export function AppSidebar() {
         {
           label: "Dashboard",
           icon: LayoutDashboard,
-          path: "/dashboard",
+          path: "/dashboards",
         },
         {
           label: "Sessions",
@@ -54,46 +86,129 @@ export function AppSidebar() {
         },
       ],
     },
-  ]
+  ];
+  const data = {
+    user: {
+      name: "John Doe",
+      email: "john.doe@example.com",
+      avatar: "https://github.com/shadcn.png",
+    },
+  };
 
   return (
-    <Sidebar>
-      <SidebarHeader>
-        <SidebarTrigger />
-      </SidebarHeader>
-      
-      <SidebarContent>
-        {navigation.map((group) => (
-          <SidebarGroup key={group.group}>
-            <SidebarGroupLabel>{group.group}</SidebarGroupLabel>
-            
-            {group.items.map((item) => (
-              <SidebarMenuButton
-                key={item.path}
-                tooltip={item.label}
-                isActive={pathname === item.path}
-                onClick={() => router.push(item.path)}
-              >
-                <item.icon />
-                {item.label}
-              </SidebarMenuButton>
-            ))}
-          </SidebarGroup>
-        ))}
-      </SidebarContent>
+    <div className="flex flex-row">
+      <Sidebar className="bg-black">
+        <SidebarHeader></SidebarHeader>
 
-      <SidebarFooter>
-        <SidebarMenuButton 
-          variant="default" 
-          size="sm" 
-          tooltip="Status"
-          onClick={() => router.push("/status")}
-        >
-          <Gauge className="text-green-500" />
-          System Status
-        </SidebarMenuButton>
-      </SidebarFooter>
-    </Sidebar>
-  )
+        <SidebarContent>
+          {navigation.map((group) => (
+            <SidebarGroup key={group.group} className="space-y-2">
+              <SidebarGroupLabel>{group.group}</SidebarGroupLabel>
+
+              {group.items.map((item) => (
+                <SidebarMenuButton
+                  key={item.path}
+                  tooltip={item.label}
+                  isActive={pathname === item.path}
+                  onClick={() => router.push(item.path)}
+                >
+                  <item.icon />
+                  {item.label}
+                </SidebarMenuButton>
+              ))}
+            </SidebarGroup>
+          ))}
+        </SidebarContent>
+
+        <SidebarFooter>
+          <Button variant="secondary" className="flex items-center gap-2">
+            <Rocket className="h-4 w-4" />
+            Upgrade plan
+          </Button>
+
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    size="lg"
+                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  >
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarImage
+                        src={data.user.avatar}
+                        alt={data.user.name}
+                      />
+                      <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold">
+                        {data.user.name}
+                      </span>
+                      <span className="truncate text-xs">
+                        {data.user.email}
+                      </span>
+                    </div>
+                    <ChevronsUpDown className="ml-auto size-4" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                  side="bottom"
+                  align="end"
+                  sideOffset={4}
+                >
+                  <DropdownMenuLabel className="p-0 font-normal">
+                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                      <Avatar className="h-8 w-8 rounded-lg">
+                        <AvatarImage
+                          src={data.user.avatar}
+                          alt={data.user.name}
+                        />
+                        <AvatarFallback className="rounded-lg">
+                          CN
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-semibold">
+                          {data.user.name}
+                        </span>
+                        <span className="truncate text-xs">
+                          {data.user.email}
+                        </span>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem>
+                      <Sparkles />
+                      Upgrade to Pro
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem>
+                      <BadgeCheck />
+                      Account
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <CreditCard />
+                      Billing
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarPanel currentPath={pathname} />
+    </div>
+  );
 }
-  
