@@ -1,12 +1,15 @@
-import { Session } from '@session-recorder/types';
+import { Session } from "@session-recorder/types";
 
-export async function sendEvents(collectorUrl: string, data: Partial<Session>): Promise<void> {
+export async function sendEvents(
+  collectorUrl: string,
+  data: Partial<Session>
+): Promise<void> {
   try {
-    const baseUrl = collectorUrl || 'https://efb088fa.session-recorder-tracker.pages.dev';
-    const response = await fetch(`${baseUrl}/collect`, {
-      method: 'POST',
+    const baseUrl = collectorUrl || process.env.API_URL;
+    const response = await fetch(`${baseUrl}`, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
@@ -15,6 +18,6 @@ export async function sendEvents(collectorUrl: string, data: Partial<Session>): 
       throw new Error(`HTTP error! status: ${response.status}`);
     }
   } catch (error) {
-    console.error('Failed to send events:', error);
+    console.error("Failed to send events:", error);
   }
 }

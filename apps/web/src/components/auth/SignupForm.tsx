@@ -4,9 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Github } from "lucide-react";
 import Link from "next/link";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { createClient } from "@/utils/supabase/client";
 export function SignupForm() {
   const [email, setEmail] = useState("");
@@ -16,18 +15,11 @@ export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const { user } = useAuthStatus();
-  const supabase = createClient();
-  useEffect(() => {
-    if (user) {
-      router.push("/dashboards");
-    }
-  }, [user, router]);
-
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    const supabase = createClient();
 
     try {
       const { error } = await supabase.auth.signUp({
@@ -51,6 +43,7 @@ export function SignupForm() {
 
   const handleGithubSignup = async () => {
     try {
+      const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "github",
         options: {

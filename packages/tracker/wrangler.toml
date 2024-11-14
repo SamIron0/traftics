@@ -8,4 +8,8 @@ watch_dir = "src"
 
 [site]
 bucket = "./dist"
-entry-point = "dist/tracker.js" 
+entry-point = "dist/tracker.js"
+
+[vars]
+ENVIRONMENT = "production"
+API_URL = "https://gaha.vercel.app"

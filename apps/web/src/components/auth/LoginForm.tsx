@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Github } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -15,19 +14,12 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { user } = useAuthStatus();
-
-  const supabase = createClient();
-  useEffect(() => {
-    if (user) {
-      router.push("/dashboards");
-    }
-  }, [user, router]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    const supabase = createClient();
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -48,6 +40,7 @@ export function LoginForm() {
 
   const handleGithubLogin = async () => {
     try {
+      const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "github",
         options: {
@@ -122,7 +115,7 @@ export function LoginForm() {
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/signup" className="text-primary hover:underline">
             Sign up
           </Link>

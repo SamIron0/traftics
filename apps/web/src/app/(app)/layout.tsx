@@ -4,8 +4,7 @@ import "../globals.css";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Navbar } from "@/components/Navbar";
-import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
+
 const geistSans = localFont({
   src: "../fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -27,25 +26,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login");
-  }
-
-  // Check onboarding status
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("is_onboarded")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!profile?.is_onboarded) {
-    redirect("/onboarding");
-  }
-
+  
   return (
     <html lang="en">
       <body

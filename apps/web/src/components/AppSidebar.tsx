@@ -4,9 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   BarChart3,
   CreditCard,
-  Bell,
   ChevronsUpDown,
-  Gauge,
   LogOut,
   LayoutDashboard,
   Rocket,
@@ -25,7 +23,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { SidebarPanel } from "./SidebarPanel";
 import { Button } from "./ui/button";

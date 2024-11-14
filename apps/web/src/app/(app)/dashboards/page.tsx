@@ -1,11 +1,9 @@
 "use client";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
-import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
-  const { loading, user } = useAuthStatus();
-  const router = useRouter();
- if (loading) {
+  const { loading } = useAuthStatus();
+  if (loading) {
     return <div>Loading...</div>;
   }
 

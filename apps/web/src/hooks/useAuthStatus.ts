@@ -63,7 +63,7 @@ export function useAuthStatus(): AuthStatus {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  });
 
   const signOut = async () => {
     await supabase.auth.signOut();

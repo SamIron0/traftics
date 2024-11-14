@@ -87,6 +87,7 @@ export type Database = {
           is_onboarded: boolean | null
           org_id: string | null
           role: Database["public"]["Enums"]["user_role"]
+          setup_completed: boolean | null
           street: string
           updated_at: string | null
           user_id: string | null
@@ -101,6 +102,7 @@ export type Database = {
           is_onboarded?: boolean | null
           org_id?: string | null
           role: Database["public"]["Enums"]["user_role"]
+          setup_completed?: boolean | null
           street: string
           updated_at?: string | null
           user_id?: string | null
@@ -115,6 +117,7 @@ export type Database = {
           is_onboarded?: boolean | null
           org_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          setup_completed?: boolean | null
           street?: string
           updated_at?: string | null
           user_id?: string | null
@@ -133,27 +136,33 @@ export type Database = {
       websites: {
         Row: {
           created_at: string | null
-          domain: string
+          domain: string | null
           id: string
           name: string
           org_id: string
+          tracking_id: string
           updated_at: string | null
+          verified: boolean
         }
         Insert: {
           created_at?: string | null
-          domain: string
+          domain?: string | null
           id?: string
           name: string
           org_id: string
+          tracking_id?: string
           updated_at?: string | null
+          verified?: boolean
         }
         Update: {
           created_at?: string | null
-          domain?: string
+          domain?: string | null
           id?: string
           name?: string
           org_id?: string
+          tracking_id?: string
           updated_at?: string | null
+          verified?: boolean
         }
         Relationships: [
           {

@@ -8,11 +8,11 @@ export default function SignupConfirmPage() {
               Check your email
             </h1>
             <p className="text-sm text-muted-foreground">
-              We've sent you a confirmation link. Please check your email and click
+              We&apos;ve sent you a confirmation link. Please check your email and click
               the link to activate your account.
             </p>
             <p className="text-sm text-muted-foreground">
-              If you don't see the email, check your spam folder.
+              If you don&apos;t see the email, check your spam folder.
             </p>
           </div>
         </div>

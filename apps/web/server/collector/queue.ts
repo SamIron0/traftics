@@ -1,4 +1,3 @@
-import { createClient } from "@/utils/supabase/server";
 import { Session } from "@/types";
 
 const QUEUE_KEY = "session-queue";

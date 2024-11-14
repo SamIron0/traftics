@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
@@ -36,7 +38,7 @@ export function ForgotPasswordForm() {
       <div className="space-y-4 text-center">
         <h2 className="text-lg font-semibold">Check your email</h2>
         <p className="text-sm text-muted-foreground">
-          We've sent you a password reset link. Please check your email.
+          We&apos;ve sent you a password reset link. Please check your email.
         </p>
         <Link href="/login" className="text-primary hover:underline">
           Back to login

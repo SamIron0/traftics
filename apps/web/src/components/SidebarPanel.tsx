@@ -3,10 +3,8 @@ import {
   Activity,
   BarChart3,
   CheckCircle2,
-  Gauge,
   LayoutDashboard,
   PlusIcon,
-  Settings,
   ThermometerSun,
 } from "lucide-react";
 import { SidebarTrigger } from "./ui/sidebar";
@@ -164,8 +162,6 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
 
   const content = getContent();
   if (!content) return null;
-
-  const Icon = content.icon;
 
   return (
     <div className="flex flex-col  h-screen space-y-6 p-3 w-[280px] border-r">
