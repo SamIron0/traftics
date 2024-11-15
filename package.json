@@ -7,11 +7,12 @@
     "build:types": "pnpm --filter @session-recorder/types build",
     "build:tracker": "pnpm --filter @session-recorder/tracker build",
     "build:web": "pnpm --filter web build",
+    "install:all": "pnpm install && pnpm install --filter @session-recorder/types && pnpm install --filter @session-recorder/tracker && pnpm install --filter web",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "clean": "pnpm -r exec rm -rf dist node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "deploy": "bash infrastructure/scripts/deploy.sh all",
+    "deploy:all": "bash infrastructure/scripts/deploy.sh all",
     "deploy:tracker": "bash infrastructure/scripts/deploy.sh tracker",
     "deploy:web": "bash infrastructure/scripts/deploy.sh web"
   },

@@ -1,5 +1,5 @@
-name = "session-recorder-tracker"
-main = "dist/tracker.js"
+name = "session-recorder"
+main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
 [build]
@@ -13,3 +13,5 @@ entry-point = "dist/tracker.js"
 [vars]
 ENVIRONMENT = "production"
 API_URL = "https://gaha.vercel.app"
+
+pages_build_output_dir = "dist"

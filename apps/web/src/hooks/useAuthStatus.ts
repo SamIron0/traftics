@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 
 interface AuthStatus {
   user: User | null;
-  isOnboarded: boolean | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -17,7 +16,6 @@ export function useAuthStatus(): AuthStatus {
   const supabase = createClient();
   const [status, setStatus] = useState<AuthStatus>({
     user: null,
-    isOnboarded: null,
     loading: true,
     signOut: async () => {},
   });
@@ -31,22 +29,14 @@ export function useAuthStatus(): AuthStatus {
       if (!user) {
         setStatus({
           user: null,
-          isOnboarded: null,
           loading: false,
           signOut: async () => {},
         });
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("is_onboarded")
-        .eq("user_id", user.id)
-        .single();
-
       setStatus({
         user,
-        isOnboarded: profile?.is_onboarded ?? false,
         loading: false,
         signOut: async () => {},
       });
@@ -63,7 +53,7 @@ export function useAuthStatus(): AuthStatus {
     return () => {
       subscription.unsubscribe();
     };
-  });
+  }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();

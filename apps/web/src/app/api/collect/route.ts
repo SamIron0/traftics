@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server'
-// import { processEvents } from '../../../../server/collector/processor'
-// import { addToQueue } from '../../../../server/collector/queue'
-// import { Session } from '@/types'
-// import { createClient } from '@/utils/supabase/server'
+import { processEvents } from '@/server/collector/processor'
+import { addToQueue } from '@/server/collector/queue'
+import { Session } from '@/types'
+import { createClient } from '@/utils/supabase/server'
 
-export async function POST() {
-  console.log('collecting')
-  return NextResponse.json({ success: true })
-  /*
+function corsResponse(response: NextResponse) {
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  return response;
+}
+
+export async function POST(request: Request) {
   try {
     const session: Session = await request.json()
     
@@ -55,13 +59,12 @@ export async function POST() {
       events: processedEvents
     })
 
-    return NextResponse.json({ success: true })
+    return corsResponse(NextResponse.json({ success: true }))
   } catch (error) {
     console.error('Error processing session:', error)
-    return NextResponse.json(
+    return corsResponse(NextResponse.json(
       { error: 'Internal server error' }, 
       { status: 500 }
-    )
+    ))
   }
-  */
 }

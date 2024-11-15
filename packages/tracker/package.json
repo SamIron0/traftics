@@ -10,7 +10,7 @@
     "dev": "webpack --mode development --watch",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist node_modules",
     "deploy": "wrangler publish",
     "preview": "wrangler dev",
     "predeploy": "pnpm build"

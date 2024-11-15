@@ -1,9 +1,11 @@
 import { SessionRecorder } from './recorder';
 
-export function initializeTracker(config: { siteId: string; collectorUrl: string }) {
-  const recorder = new SessionRecorder(config);
+if (typeof window !== 'undefined' && window._r?.websiteId) {
+  const recorder = new SessionRecorder({
+    siteId: window._r.websiteId,
+    collectorUrl: 'https://gaha.vercel.app/api/collect'
+  });
   recorder.start();
-  return recorder;
 }
 
-export type { SessionRecorder };
+export { SessionRecorder };

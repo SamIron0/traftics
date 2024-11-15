@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useParams } from "next/navigation";
 import {
   BarChart3,
   CreditCard,
@@ -41,7 +41,11 @@ import { useAuthStatus } from "@/hooks/useAuthStatus";
 export function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const params = useParams();
   const { signOut } = useAuthStatus();
+
+  const orgId = params?.orgId as string;
+  const projectId = params?.projectId as string;
 
   const handleLogout = async () => {
     try {
@@ -59,17 +63,17 @@ export function AppSidebar() {
         {
           label: "Dashboard",
           icon: LayoutDashboard,
-          path: "/dashboards",
+          path: `/org/${orgId}/project/${projectId}/dashboards/`,
         },
         {
           label: "Sessions",
           icon: BarChart3,
-          path: "/sessions",
+          path: `/org/${orgId}/project/${projectId}/sessions`,
         },
         {
           label: "Heatmaps",
           icon: ThermometerSun,
-          path: "/heatmaps",
+          path: `/org/${orgId}/project/${projectId}/heatmaps`,
         },
       ],
     },
@@ -79,7 +83,7 @@ export function AppSidebar() {
         {
           label: "Options",
           icon: Settings,
-          path: "/settings",
+          path: `/org/${orgId}/settings`,
         },
       ],
     },
@@ -106,7 +110,7 @@ export function AppSidebar() {
                 <SidebarMenuButton
                   key={item.path}
                   tooltip={item.label}
-                  isActive={pathname === item.path}
+                  isActive={pathname.includes(item.path)}
                   onClick={() => router.push(item.path)}
                 >
                   <item.icon />

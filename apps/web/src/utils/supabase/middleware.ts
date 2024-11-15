@@ -1,20 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Define public routes that don't require authentication
-const publicRoutes = [
-  "/login",
-  "/signup",
-  "/forgot-password",
-  "/auth/callback",
-  "/api/collect", // Keep analytics endpoint public
-];
-
-// Define onboarding routes
+const publicRoutes = ["/forgot-password", "/auth/callback", "/api/collect"];
 const onboardingRoutes = ["/onboarding"];
 const setupRoutes = ["/project-setup"];
 const authRoutes = ["/login", "/signup"];
 
+async function getDefaultDashboard(supabase: any, projectId: string) {
+  const { data: defaultDashboard } = await supabase
+    .from("dashboards")
+    .select("id")
+    .eq("website_id", projectId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .single();
+  return defaultDashboard?.id;
+}
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -43,46 +44,50 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Get current pathname
   const pathname = request.nextUrl.pathname;
-  // If user exists and trying to access login/signup pages, redirect to dashboard
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
-
-  // Get user and profile data
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user && isAuthRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboards";
-    return NextResponse.redirect(url);
-  }
-  // Check if the route is public
   const isPublicRoute = publicRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+  const isOnboardingRoute = onboardingRoutes.some((route) =>
     pathname.startsWith(route)
   );
   if (isPublicRoute) {
     return supabaseResponse;
   }
+  const isSetupRoute = setupRoutes.some((route) => pathname.startsWith(route));
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // If no user and trying to access protected route, redirect to login
   if (!user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    if (!isAuthRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    } else {
+      return supabaseResponse;
+    }
   }
-
-  // If user exists, check onboarding status
   const { data: profile } = await supabase
     .from("user_profiles")
-    .select("is_onboarded")
+    .select("is_onboarded, org_id, active_project_id")
     .eq("user_id", user.id)
     .single();
 
-  // Handle onboarding flow
-  const isOnboardingRoute = onboardingRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
+  // If user exists and trying to access auth routes, redirect to dashboard
+  if (isAuthRoute) {
+    const defaultDashboard = await getDefaultDashboard(
+      supabase,
+      profile?.active_project_id
+    );
+
+    const url = request.nextUrl.clone();
+    url.pathname = `/org/${profile?.org_id}/project/${profile?.active_project_id}/dashboards/${defaultDashboard}`;
+    return NextResponse.redirect(url);
+  }
 
   if (!profile?.is_onboarded) {
     // If not onboarded and not on onboarding routes, redirect to onboarding
@@ -95,13 +100,10 @@ export async function updateSession(request: NextRequest) {
     // If already onboarded but trying to access onboarding routes, redirect to dashboard
     if (isOnboardingRoute) {
       const url = request.nextUrl.clone();
-      url.pathname = "/dashboards";
+      url.pathname = `/org/${profile.org_id}/project/${profile.active_project_id}/dashboards`;
       return NextResponse.redirect(url);
     }
   }
-
-  // Handle setup flow
-  const isSetupRoute = setupRoutes.some((route) => pathname.startsWith(route));
   if (!isSetupRoute) {
     return supabaseResponse;
   }
@@ -115,7 +117,11 @@ export async function updateSession(request: NextRequest) {
 
   if (setupStatus?.setup_completed) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboards";
+    const defaultDashboard = await getDefaultDashboard(
+      supabase,
+      profile?.active_project_id
+    );
+    url.pathname = `/org/${profile?.org_id}/project/${profile?.active_project_id}/dashboards/${defaultDashboard}`;
     return NextResponse.redirect(url);
   }
 

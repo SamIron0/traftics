@@ -1,6 +1,9 @@
+import { Session } from "@/types";
 
-export async function addToQueue(): Promise<void> {
+
+export async function addToQueue(session: Session): Promise<void> {
   try {
+    console.log('Adding to queue:', session);
     await processQueue();
   } catch (error) {
     console.error('Error adding to queue:', error);

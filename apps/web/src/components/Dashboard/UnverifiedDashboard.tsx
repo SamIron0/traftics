@@ -3,12 +3,18 @@
 import { Button } from "@/components/ui/button";
 import { generateTrackingScript } from "@/utils/tracking";
 import { ClipboardCopy } from "lucide-react";
-import Link from "next/link";
 import { useState, useEffect } from "react";
 
-export default function ProjectSetupPage() {
+interface UnverifiedDashboardProps {
+  websiteVerified: boolean;
+}
+
+export default function UnverifiedDashboard({
+  websiteVerified,
+}: UnverifiedDashboardProps) {
   const [trackingScript, setTrackingScript] = useState("");
   const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     const fetchScript = async () => {
@@ -18,7 +24,7 @@ export default function ProjectSetupPage() {
       }
     };
     fetchScript();
-  }, []);
+  }, []); 
 
   const handleCopyScript = () => {
     navigator.clipboard.writeText(trackingScript);
@@ -34,15 +40,6 @@ export default function ProjectSetupPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="border-b px-6 py-4 flex justify-between items-center">
-        <div className="flex-1" />
-        <div className="flex gap-4">
-          <Button variant="ghost" asChild>
-            <Link href="/dashboards">Skip project setup</Link>
-          </Button>
-        </div>
-      </nav>
-
       <div className="max-w-3xl mx-auto p-6 space-y-8">
         <h1 className="text-3xl font-bold">Project setup</h1>
 

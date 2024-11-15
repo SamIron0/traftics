@@ -1,8 +1,8 @@
-import { RecordedEvent, Session } from '@session-recorder/types';
-import { sanitizeInputValue } from './utils/privacy';
-import { getElementId } from './utils/dom';
-import { sendEvents } from './transport';
-import { throttle } from './utils/throttle';
+import { RecordedEvent, Session } from "@session-recorder/types";
+import { sanitizeInputValue } from "./utils/privacy";
+import { getElementId } from "./utils/dom";
+import { sendEvents } from "./transport";
+import { throttle } from "./utils/throttle";
 
 export class SessionRecorder {
   private events: RecordedEvent[] = [];
@@ -11,16 +11,46 @@ export class SessionRecorder {
   private readonly collectorUrl: string;
   private startTime: number;
   private uploadInterval: ReturnType<typeof setInterval> | null = null;
+  private isVerified: boolean = false;
 
-  constructor({ siteId, collectorUrl }: { siteId: string; collectorUrl: string }) {
+  constructor({
+    siteId,
+    collectorUrl,
+  }: {
+    siteId: string;
+    collectorUrl: string;
+  }) {
     this.siteId = siteId;
     this.collectorUrl = collectorUrl;
     this.sessionId = crypto.randomUUID();
     this.startTime = Date.now();
-    
+
     // Bind methods
     this.handleMouseMove = throttle(this.handleMouseMove.bind(this), 50);
     this.handleScroll = throttle(this.handleScroll.bind(this), 100);
+
+    // Verify the tracker immediately
+    this.verifyTracker();
+  }
+
+  private async verifyTracker() {
+    try {
+      const response = await fetch(
+        `https://gaha.vercel.app/api/websites/verify`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ siteId: this.siteId }),
+        }
+      );
+
+      if (response.ok) {
+        this.isVerified = true;
+      } else {
+      }
+    } catch (error) {}
   }
 
   start() {
@@ -31,11 +61,11 @@ export class SessionRecorder {
   }
 
   stop() {
-    document.removeEventListener('mousemove', this.handleMouseMove);
-    document.removeEventListener('click', this.handleClick);
-    document.removeEventListener('scroll', this.handleScroll);
-    document.removeEventListener('input', this.handleInput);
-    
+    document.removeEventListener("mousemove", this.handleMouseMove);
+    document.removeEventListener("click", this.handleClick);
+    document.removeEventListener("scroll", this.handleScroll);
+    document.removeEventListener("input", this.handleInput);
+
     if (this.uploadInterval) {
       clearInterval(this.uploadInterval);
     }
@@ -43,34 +73,34 @@ export class SessionRecorder {
 
   private recordInitialState() {
     this.addEvent({
-      type: 'metadata',
+      type: "metadata",
       timestamp: Date.now(),
       userAgent: navigator.userAgent,
       screenResolution: {
         width: window.screen.width,
-        height: window.screen.height
+        height: window.screen.height,
       },
       viewport: {
         width: window.innerWidth,
-        height: window.innerHeight
-      }
+        height: window.innerHeight,
+      },
     });
   }
 
   private recordPageView() {
     this.addEvent({
-      type: 'pageview',
+      type: "pageview",
       url: window.location.href,
       title: document.title,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
   private attachEventListeners() {
-    document.addEventListener('mousemove', this.handleMouseMove.bind(this));
-    document.addEventListener('click', this.handleClick.bind(this));
-    document.addEventListener('scroll', this.handleScroll.bind(this));
-    document.addEventListener('input', this.handleInput.bind(this));
+    document.addEventListener("mousemove", this.handleMouseMove);
+    document.addEventListener("click", this.handleClick.bind(this));
+    document.addEventListener("scroll", this.handleScroll);
+    document.addEventListener("input", this.handleInput.bind(this));
   }
 
   private addEvent(event: RecordedEvent) {
@@ -80,14 +110,14 @@ export class SessionRecorder {
   private startEventUpload() {
     setInterval(() => {
       if (this.events.length === 0) return;
-      
+
       const eventsToSend = [...this.events];
       this.events = [];
-      
+
       sendEvents(this.collectorUrl, {
         id: this.sessionId,
         siteId: this.siteId,
-        events: eventsToSend
+        events: eventsToSend,
       });
     }, 5000);
   }
@@ -95,38 +125,38 @@ export class SessionRecorder {
   // Event handlers
   private handleMouseMove(e: MouseEvent) {
     this.addEvent({
-      type: 'mousemove',
+      type: "mousemove",
       x: e.clientX,
       y: e.clientY,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
   private handleClick(e: MouseEvent) {
     this.addEvent({
-      type: 'click',
+      type: "click",
       x: e.clientX,
       y: e.clientY,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
   private handleScroll() {
     this.addEvent({
-      type: 'scroll',
+      type: "scroll",
       x: window.scrollX,
       y: window.scrollY,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
   private handleInput(e: Event) {
     const target = e.target as HTMLInputElement;
     this.addEvent({
-      type: 'input',
+      type: "input",
       elementId: getElementId(target),
       value: sanitizeInputValue(target),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 }

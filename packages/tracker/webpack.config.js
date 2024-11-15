@@ -13,7 +13,7 @@ module.exports = {
     globalObject: 'this'
   },
   resolve: {
-    extensions: ['.ts', '.js'],
+    extensions: ['.ts', '.js', '.d.ts'],
     alias: {
       '@session-recorder': path.resolve(__dirname, '../../packages')
     }

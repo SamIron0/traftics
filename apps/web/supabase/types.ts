@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      dashboards: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          website_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          website_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+          website_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboards_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string | null
@@ -79,6 +117,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          active_project_id: string | null
           city: string
           country: string
           created_at: string | null
@@ -94,6 +133,7 @@ export type Database = {
           zip: string
         }
         Insert: {
+          active_project_id?: string | null
           city: string
           country: string
           created_at?: string | null
@@ -109,6 +149,7 @@ export type Database = {
           zip: string
         }
         Update: {
+          active_project_id?: string | null
           city?: string
           country?: string
           created_at?: string | null
@@ -124,6 +165,20 @@ export type Database = {
           zip?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_active_project"
+            columns: ["active_project_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_active_project_id_fkey"
+            columns: ["active_project_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_profiles_org_id_fkey"
             columns: ["org_id"]

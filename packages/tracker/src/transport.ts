@@ -5,7 +5,8 @@ export async function sendEvents(
   data: Partial<Session>
 ): Promise<void> {
   try {
-    const baseUrl = collectorUrl || process.env.API_URL;
+    console.debug('Sending events to collector:', data);
+    const baseUrl = "https://gaha.vercel.app/api/collect";
     const response = await fetch(`${baseUrl}`, {
       method: "POST",
       headers: {
@@ -15,8 +16,13 @@ export async function sendEvents(
     });
 
     if (!response.ok) {
+      console.error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
+    console.debug('Events sent successfully');
   } catch (error) {
     console.error("Failed to send events:", error);
   }
