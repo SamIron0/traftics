@@ -7,7 +7,7 @@ import {
   PlusIcon,
   ThermometerSun,
 } from "lucide-react";
-import { SidebarTrigger } from "./ui/sidebar";
+import { SidebarTrigger, useSidebar } from "./ui/sidebar";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -25,9 +25,11 @@ interface SidebarPanelProps {
 }
 
 export function SidebarPanel({ currentPath }: SidebarPanelProps) {
+  const { state } = useSidebar();
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [dashboardName, setDashboardName] = React.useState("");
   const router = useRouter();
+
   const handleCreateDashboard = () => {
     // Handle dashboard creation here
     console.log("Creating dashboard:", dashboardName);
@@ -35,9 +37,9 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
     setDashboardName("");
   };
 
-  const dashboardsPattern = /^\/org\/[^/]+\/project\/[^/]+\/dashboards$/;
-  const sessionsPattern = /^\/org\/[^/]+\/project\/[^/]+\/sessions$/;
-  const heatmapsPattern = /^\/org\/[^/]+\/project\/[^/]+\/heatmaps$/;
+  const dashboardsPattern = /^\/org\/[^/]+\/project\/[^/]+\/dashboards(?:\/[^/]+)?$/;
+  const sessionsPattern = /^\/org\/[^/]+\/project\/[^/]+\/sessions(?:\/[^/]+)?$/;
+  const heatmapsPattern = /^\/org\/[^/]+\/project\/[^/]+\/heatmaps(?:\/[^/]+)?$/;
 
   const getContent = () => {
     if (dashboardsPattern.test(currentPath)) {
@@ -168,14 +170,21 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
   if (!content) return null;
 
   return (
-    <div className="flex flex-col  h-screen space-y-6 p-3 w-[280px] border-r">
-      <div className="flex">
+    <div
+      className={cn(
+        "fixed top-0 bottom-0 flex flex-col min-h-0 w-[255px] border-r bg-background transition-all duration-200 ease-linear",
+        state === "expanded" ? "left-[280px]" : "left-[48px]"
+      )}
+    >
+      <div className="flex-none p-3">
         <h2 className="text-lg font-semibold flex gap-2">
           <SidebarTrigger />
-            {content.title}
+          {content.title}
         </h2>
       </div>
-      {content.content}
+      <div className="flex-1 overflow-y-auto p-3">
+        {content.content}
+      </div>
     </div>
   );
 }

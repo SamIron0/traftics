@@ -100,7 +100,7 @@ export async function updateSession(request: NextRequest) {
     // If already onboarded but trying to access onboarding routes, redirect to dashboard
     if (isOnboardingRoute) {
       const url = request.nextUrl.clone();
-      url.pathname = `/org/${profile.org_id}/project/${profile.active_project_id}/dashboards`;
+      url.pathname = `/org/${profile.org_id}/project/${profile.active_project_id}/dashboards/`;
       return NextResponse.redirect(url);
     }
   }

@@ -8,7 +8,10 @@ export const generateTrackingScript = async (id?: string) => {
     if (!response.ok) throw new Error("Failed to generate tracking code");
 
     const data = await response.json();
-    return data.script;
+    return {
+      script: data.script,
+      websiteId: data.websiteId,
+    };
   } catch (error) {
     console.error("Error:", error);
     return null;

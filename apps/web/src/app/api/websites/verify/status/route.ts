@@ -1,8 +1,15 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const websiteId = searchParams.get('websiteId');
+
+    if (!websiteId) {
+      return NextResponse.json({ error: "Missing website ID" }, { status: 400 });
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -26,16 +33,22 @@ export async function GET() {
       );
     }
 
-    // Get the most recently created website for this org
+    // Get the specific website's verification status
     const { data: website } = await supabase
       .from("websites")
       .select("verified")
+      .eq("id", websiteId)
       .eq("org_id", profile.org_id)
-      .order("created_at", { ascending: false })
-      .limit(1)
       .single();
 
-    return NextResponse.json({ verified: website?.verified ?? false });
+    if (!website) {
+      return NextResponse.json(
+        { error: "Website not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ verified: website.verified });
   } catch (error) {
     console.error("Error checking verification status:", error);
     return NextResponse.json(

@@ -14,7 +14,6 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -27,10 +26,23 @@ export function LoginForm() {
       });
 
       if (error) throw error;
-      console.log("email", email);
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user?.id) throw new Error("User not found");
+      // Get user profile to redirect to correct org/project
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("org_id, active_project_id")
+        .eq("user_id", user?.user?.id)
+        .single();
 
-      // Redirect to dashboard on success
-      router.push("/dashboards");
+      if (profile?.org_id && profile?.active_project_id) {
+        router.push(
+          `/org/${profile.org_id}/project/${profile.active_project_id}/dashboards`
+        );
+      } else {
+        // If no profile/project found, redirect to onboarding
+        router.push("/onboarding");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sign in");
     } finally {

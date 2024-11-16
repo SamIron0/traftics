@@ -88,6 +88,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       message: "Website created successfully",
       script,
+      websiteId,
     });
   } catch (error) {
     console.error("Error creating website:", error);

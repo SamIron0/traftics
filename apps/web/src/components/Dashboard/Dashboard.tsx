@@ -4,27 +4,33 @@ import { Button } from "@/components/ui/button";
 import { generateTrackingScript } from "@/utils/tracking";
 import { ClipboardCopy } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useVerificationStatus } from "@/hooks/useVerificationStatus";
 
 interface UnverifiedDashboardProps {
+  websiteId: string;
   websiteVerified: boolean;
 }
 
-export default function UnverifiedDashboard({
+export default function Dashboard({
+  websiteId,
   websiteVerified,
 }: UnverifiedDashboardProps) {
   const [trackingScript, setTrackingScript] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  if (!websiteVerified) {
+    useVerificationStatus(websiteId);
+  }
 
   useEffect(() => {
     const fetchScript = async () => {
       const script = await generateTrackingScript();
       if (script) {
-        setTrackingScript(script);
+        setTrackingScript(script.script);
       }
     };
     fetchScript();
-  }, []); 
+  }, [websiteId]);
 
   const handleCopyScript = () => {
     navigator.clipboard.writeText(trackingScript);
@@ -38,7 +44,7 @@ export default function UnverifiedDashboard({
     );
   }
 
-  return (
+  return !websiteVerified ? (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto p-6 space-y-8">
         <h1 className="text-3xl font-bold">Project setup</h1>
@@ -70,5 +76,7 @@ export default function UnverifiedDashboard({
         </div>
       </div>
     </div>
+  ) : (
+    <div>Dashboard</div>
   );
 }

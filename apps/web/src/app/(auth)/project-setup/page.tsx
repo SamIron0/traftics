@@ -5,32 +5,44 @@ import { generateTrackingScript } from "@/utils/tracking";
 import { ClipboardCopy } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useVerificationStatus } from "@/hooks/useVerificationStatus";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 export default function ProjectSetupPage() {
   const [trackingScript, setTrackingScript] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [websiteId, setWebsiteId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const isVerified = useVerificationStatus(websiteId);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchScript = async () => {
-      const script = await generateTrackingScript();
-      if (script) {
-        setTrackingScript(script);
+      const supabase = createClient();
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("org_id,active_project_id")
+        .single();
+
+      const result = await generateTrackingScript();
+      if (result) {
+        setTrackingScript(result.script);
+        setWebsiteId(result.websiteId);
+        if (!result.websiteId && profile?.org_id) {
+          router.push(
+            `/org/${profile.org_id}/project/${profile.active_project_id}/dashboards`
+          );
+        }
       }
     };
     fetchScript();
-  }, []);
+  }, [router]);
 
   const handleCopyScript = () => {
     navigator.clipboard.writeText(trackingScript);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-500">
-        {error}
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,15 +73,23 @@ export default function ProjectSetupPage() {
               onClick={handleCopyScript}
             >
               <ClipboardCopy className="h-4 w-4 mr-2" />
-              Copy script
+              {copied ? "Copied!" : "Copy script"}
             </Button>
           </div>
 
-          <p className="text-muted-foreground">
-            After implementing the tracking code, visit your website to test the
-            implementation. You&apos;ll be redirected to the dashboard once we
-            detect the tracking code is working.
-          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
+            <p>
+              After implementing the tracking code, visit your website to test
+              the implementation.{" "}
+              {isVerified ? (
+                <span className="font-medium">
+                  Verification successful! Redirecting to dashboard...
+                </span>
+              ) : (
+                "We'll automatically redirect you to the dashboard once we detect the tracking code is working."
+              )}
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -97,7 +97,7 @@ export function AppSidebar() {
   };
 
   return (
-    <div className="flex flex-row">
+    <div className="flex flex-row h-100vh ">
       <Sidebar className="bg-black">
         <SidebarHeader></SidebarHeader>
 
