@@ -3,14 +3,13 @@ import { notFound } from "next/navigation";
 
 interface ProjectLayoutProps {
   children: React.ReactNode;
-  params: {
-    orgId: string;
-    projectId: string;
-    dashboardId: string;
-  };
+  params: Promise<{ projectId: string; dashboardId: string; orgId: string }>;
 }
 
-export default async function ProjectLayout({ children, params }: ProjectLayoutProps) {
+export default async function ProjectLayout({
+  children,
+  params,
+}: ProjectLayoutProps) {
   const supabase = await createClient();
   const { data: user } = await supabase.auth.getUser();
   const { orgId, projectId, dashboardId } = await params;

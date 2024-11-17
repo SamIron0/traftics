@@ -30,6 +30,7 @@
     "pnpm": ">=8.15.4"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.46.1"
+    "@supabase/supabase-js": "^2.46.1",
+    "rrweb": "2.0.0-alpha.4"
   }
 }

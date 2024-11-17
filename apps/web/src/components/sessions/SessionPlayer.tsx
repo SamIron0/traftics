@@ -1,5 +1,6 @@
 import { RecordedEvent } from "@/types";
-import React, { useState, useEffect } from "react";
+import * as rrweb from 'rrweb';
+import React, { useState, useEffect, useRef } from "react";
 
 interface PlayerState {
   currentTime: number;
@@ -15,9 +16,11 @@ export function SessionPlayer({ sessionId }: { sessionId: string }) {
     events: [],
     isPlaying: false,
   });
+  
+  const playerRef = useRef<HTMLDivElement>(null);
+  const replayerRef = useRef<any>(null);
 
   useEffect(() => {
-    // Load session data
     const loadSession = async () => {
       const response = await fetch(`/api/sessions/${sessionId}`);
       const { session, events } = await response.json();
@@ -27,39 +30,49 @@ export function SessionPlayer({ sessionId }: { sessionId: string }) {
         events,
         duration: session.duration,
       }));
+
+      if (playerRef.current && events.length > 0) {
+        replayerRef.current = new rrweb.Replayer(events, {
+          root: playerRef.current,
+          skipInactive: true,
+        });
+      }
     };
 
     loadSession();
+
+    return () => {
+      if (replayerRef.current) {
+        replayerRef.current.destroy();
+      }
+    };
   }, [sessionId]);
 
-  // Implement playback logic
   useEffect(() => {
-    if (!state.isPlaying) return;
+    if (!replayerRef.current || !state.isPlaying) return;
 
-    const interval = setInterval(() => {
-      setState((prev) => {
-        const newTime = prev.currentTime + 100;
-        return {
-          ...prev,
-          currentTime: Math.min(newTime, prev.duration),
-          isPlaying: newTime < prev.duration,
-        };
-      });
-    }, 100);
+    replayerRef.current.play();
 
-    return () => clearInterval(interval);
+    return () => {
+      if (replayerRef.current) {
+        replayerRef.current.pause();
+      }
+    };
   }, [state.isPlaying]);
 
+  const handleTimeUpdate = (time: number) => {
+    setState(prev => ({
+      ...prev,
+      currentTime: time,
+    }));
+    if (replayerRef.current) {
+      replayerRef.current.goto(time);
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 relative">
-        <iframe
-          className="w-full h-full"
-          src={""}
-          sandbox="allow-same-origin"
-        />
-      </div>
+      <div className="flex-1 relative" ref={playerRef} />
       <div className="h-20 border-t p-4">
         <button
           onClick={() =>
@@ -74,12 +87,7 @@ export function SessionPlayer({ sessionId }: { sessionId: string }) {
           min={0}
           max={state.duration}
           value={state.currentTime}
-          onChange={(e) =>
-            setState((prev) => ({
-              ...prev,
-              currentTime: Number(e.target.value),
-            }))
-          }
+          onChange={(e) => handleTimeUpdate(Number(e.target.value))}
           className="ml-4 w-96"
         />
       </div>

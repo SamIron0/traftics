@@ -1,24 +1,17 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-
-export async function POST(request: Request) {
+import { generateScript } from "@/utils/script";
+export async function GET() {
   try {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    
-    const { id } = await request.json();
-    // if id, return tracking script for that id
-    if (id) {
-      return NextResponse.json({ script: generateScript(id) });
-    }
-
     // Get user's organization and setup status
     const { data: profile } = await supabase
       .from("user_profiles")
@@ -31,25 +24,6 @@ export async function POST(request: Request) {
         { error: "Organization not found" },
         { status: 404 }
       );
-    }
-
-    // If setup is already completed, return the most recent website's tracking script
-    if (profile.setup_completed) {
-      const { data: website } = await supabase
-        .from("websites")
-        .select("id")
-        .eq("org_id", profile.org_id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (website) {
-        const script = generateScript(website.id);
-        return NextResponse.json({
-          message: "Retrieved existing tracking script",
-          script,
-        });
-      }
     }
 
     // Create a new website record with auto-generated name
@@ -68,21 +42,11 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-
-    // Mark setup as completed and set active project
-    const { error: setupError } = await supabase
+    //update user profile
+    await supabase
       .from("user_profiles")
-      .update({ 
-        setup_completed: true,
-        active_project_id: websiteId 
-      })
+      .update({ setup_completed: true, active_project_id: websiteId })
       .eq("user_id", user.id);
-
-    if (setupError) {
-      console.error("Setup completion error:", setupError);
-      // Continue anyway since the website was created successfully
-    }
-
     // Generate and return the tracking script
     const script = generateScript(websiteId);
     return NextResponse.json({
@@ -97,18 +61,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
-
-function generateScript(websiteId: string) {
-  return `<script>
-(function(d, w) {
-  w._r = w._r || {
-    websiteId: "${websiteId}"
-  };
-  var s = d.createElement('script');
-  s.async = true;
-  s.src = 'https://493117db.session-recorder-tracker.pages.dev/tracker.js';
-  d.head.appendChild(s);
-})(document, window);
-</script>`;
 }

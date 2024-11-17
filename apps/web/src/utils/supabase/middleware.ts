@@ -1,12 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
-const publicRoutes = ["/forgot-password", "/auth/callback", "/api/collect"];
+const publicRoutes = [
+  "/forgot-password",
+  "/auth/callback",
+  "/api/collect",
+  "/api/tracking-code/generate",
+];
 const onboardingRoutes = ["/onboarding"];
 const setupRoutes = ["/project-setup"];
 const authRoutes = ["/login", "/signup"];
 
-async function getDefaultDashboard(supabase: any, projectId: string) {
+async function getDefaultDashboard(supabase: SupabaseClient, projectId: string) {
   const { data: defaultDashboard } = await supabase
     .from("dashboards")
     .select("id")

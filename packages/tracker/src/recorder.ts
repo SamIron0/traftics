@@ -1,8 +1,6 @@
+import * as rrweb from "rrweb";
 import { RecordedEvent, Session } from "@session-recorder/types";
-import { sanitizeInputValue } from "./utils/privacy";
-import { getElementId } from "./utils/dom";
 import { sendEvents } from "./transport";
-import { throttle } from "./utils/throttle";
 
 export class SessionRecorder {
   private events: RecordedEvent[] = [];
@@ -10,8 +8,8 @@ export class SessionRecorder {
   private readonly siteId: string;
   private readonly collectorUrl: string;
   private startTime: number;
-  private uploadInterval: ReturnType<typeof setInterval> | null = null;
-  private isVerified: boolean = false;
+  private stopFn: (() => void) | null = null;
+  private uploadInterval: number | null = null;
 
   constructor({
     siteId,
@@ -24,83 +22,35 @@ export class SessionRecorder {
     this.collectorUrl = collectorUrl;
     this.sessionId = crypto.randomUUID();
     this.startTime = Date.now();
-
-    // Bind methods
-    this.handleMouseMove = throttle(this.handleMouseMove.bind(this), 50);
-    this.handleScroll = throttle(this.handleScroll.bind(this), 100);
-
-    // Verify the tracker immediately
-    this.verifyTracker();
-  }
-
-  private async verifyTracker() {
-    try {
-      const response = await fetch(
-        `https://gaha.vercel.app/api/websites/verify`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ siteId: this.siteId }),
-        }
-      );
-
-      if (response.ok) {
-        this.isVerified = true;
-      } else {
-      }
-    } catch (error) {}
   }
 
   start() {
-    this.recordPageView();
-    this.attachEventListeners();
+    this.stopFn = rrweb.record({
+      emit: (event: any) => {
+        this.addEvent({
+          ...event,
+          timestamp: Date.now(),
+        });
+      },
+      sampling: {
+        mousemove: 50,
+        scroll: 150,
+      },
+      maskAllInputs: true,
+    }) as () => void;
+
     this.startEventUpload();
-    this.recordInitialState();
   }
 
   stop() {
-    document.removeEventListener("mousemove", this.handleMouseMove);
-    document.removeEventListener("click", this.handleClick);
-    document.removeEventListener("scroll", this.handleScroll);
-    document.removeEventListener("input", this.handleInput);
-
-    if (this.uploadInterval) {
-      clearInterval(this.uploadInterval);
+    if (this.stopFn) {
+      this.stopFn();
+      this.stopFn = null;
     }
-  }
-
-  private recordInitialState() {
-    this.addEvent({
-      type: "metadata",
-      timestamp: Date.now(),
-      userAgent: navigator.userAgent,
-      screenResolution: {
-        width: window.screen.width,
-        height: window.screen.height,
-      },
-      viewport: {
-        width: window.innerWidth,
-        height: window.innerHeight,
-      },
-    });
-  }
-
-  private recordPageView() {
-    this.addEvent({
-      type: "pageview",
-      url: window.location.href,
-      title: document.title,
-      timestamp: Date.now(),
-    });
-  }
-
-  private attachEventListeners() {
-    document.addEventListener("mousemove", this.handleMouseMove);
-    document.addEventListener("click", this.handleClick.bind(this));
-    document.addEventListener("scroll", this.handleScroll);
-    document.addEventListener("input", this.handleInput.bind(this));
+    if (this.uploadInterval) {
+      window.clearInterval(this.uploadInterval);
+      this.uploadInterval = null;
+    }
   }
 
   private addEvent(event: RecordedEvent) {
@@ -108,7 +58,7 @@ export class SessionRecorder {
   }
 
   private startEventUpload() {
-    setInterval(() => {
+    this.uploadInterval = window.setInterval(() => {
       if (this.events.length === 0) return;
 
       const eventsToSend = [...this.events];
@@ -117,46 +67,15 @@ export class SessionRecorder {
       sendEvents(this.collectorUrl, {
         id: this.sessionId,
         siteId: this.siteId,
+        startedAt: this.startTime,
+        duration: Date.now() - this.startTime,
         events: eventsToSend,
+        userAgent: navigator.userAgent,
+        screenResolution: {
+          width: window.screen.width,
+          height: window.screen.height,
+        },
       });
-    }, 5000);
-  }
-
-  // Event handlers
-  private handleMouseMove(e: MouseEvent) {
-    this.addEvent({
-      type: "mousemove",
-      x: e.clientX,
-      y: e.clientY,
-      timestamp: Date.now(),
-    });
-  }
-
-  private handleClick(e: MouseEvent) {
-    this.addEvent({
-      type: "click",
-      x: e.clientX,
-      y: e.clientY,
-      timestamp: Date.now(),
-    });
-  }
-
-  private handleScroll() {
-    this.addEvent({
-      type: "scroll",
-      x: window.scrollX,
-      y: window.scrollY,
-      timestamp: Date.now(),
-    });
-  }
-
-  private handleInput(e: Event) {
-    const target = e.target as HTMLInputElement;
-    this.addEvent({
-      type: "input",
-      elementId: getElementId(target),
-      value: sanitizeInputValue(target),
-      timestamp: Date.now(),
-    });
+    },8000);
   }
 }

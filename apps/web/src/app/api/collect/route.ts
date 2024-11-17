@@ -18,7 +18,6 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
-    console.log("Received request:", request);
     const session: Session = await request.json();
 
     if (!session.siteId || !session.id || !session.events) {

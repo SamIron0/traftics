@@ -1,12 +1,12 @@
-export const generateTrackingScript = async (id?: string) => {
+export const generateTrackingScript = async () => {
   try {
-    const response = await fetch(`/api/tracking-code/generate`, {
-      method: "POST",
-      body: JSON.stringify({ id }),
-    });
-
+    const response = await fetch(
+      `/api/tracking-code/generate`,
+      {
+        method: "GET",
+      }
+    );
     if (!response.ok) throw new Error("Failed to generate tracking code");
-
     const data = await response.json();
     return {
       script: data.script,

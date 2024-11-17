@@ -1,26 +1,43 @@
 import { createClient } from "@/utils/supabase/server";
 import Dashboard from "@/components/Dashboard/Dashboard";
+import { notFound } from "next/navigation";
+import { UnverifiedDashboard } from "@/components/Dashboard/UnverifiedDashboard";
+import { generateScript } from "@/utils/script";
+
 export default async function DashboardPage({
   params,
 }: {
-  params: { orgId: string; projectId: string; dashboardId: string };
+  params: Promise<{
+    orgId: string;
+    projectId: string;
+    dashboardId: string;
+  }>;
 }) {
-  const { projectId } = await params;
   const supabase = await createClient();
-  // check if website is verified
+  const { orgId, projectId, dashboardId } = await params;
 
-  const { data: websiteVerified } = await supabase
+  // Check if website exists and get verification status
+  const { data: website, error: websiteError } = await supabase
     .from("websites")
     .select("verified")
     .eq("id", projectId)
     .single();
 
-  return (
-    <div>
-      <Dashboard
+  if (websiteError || !website) {
+    notFound();
+  }
+  // generate tracking script
+  const script = await generateScript(projectId);
+  if (!website.verified) {
+    return (
+      <UnverifiedDashboard
         websiteId={projectId}
-        websiteVerified={websiteVerified?.verified || false}
+        orgId={orgId}
+        projectId={projectId}
+        dashboardId={dashboardId}
+        script={script}
       />
-    </div>
-  );
+    );
+  }
+  return <Dashboard />;
 }
