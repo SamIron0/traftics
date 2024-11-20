@@ -1,14 +1,12 @@
-import { RecordedEvent } from './events';
+import type { eventWithTime } from '@rrweb/types';
 
 export interface Session {
   id: string;
-  siteId: string;
-  startedAt: number;
+  site_id: string;
+  started_at: number;
   duration: number;
-  events: RecordedEvent[];
-  userAgent: string;
-  screenResolution: {
-    width: number;
-    height: number;
-  };
+  events: eventWithTime[];
+  user_agent: string;
+  screen_width: number;
+  screen_height: number;
 }

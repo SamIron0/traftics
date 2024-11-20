@@ -1,36 +1,78 @@
 {
   "name": "session-recorder",
+  "description": "record and replay the web",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/rrweb-io/rrweb.git"
+  },
+  "keywords": [
+    "rrweb"
+  ],
+  "author": "yanzhen@smartx.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rrweb-io/rrweb/issues"
+  },
   "private": true,
+  "homepage": "https://github.com/rrweb-io/rrweb#readme",
+  "workspaces": [
+    "packages/*",
+    "packages/plugins/*"
+  ],
+  "devDependencies": {
+    "@changesets/changelog-github": "^0.5.0",
+    "@changesets/cli": "^2.27.1",
+    "@monorepo-utils/workspaces-to-typescript-project-references": "^2.8.2",
+    "@types/prettier": "2.7.3",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "browserslist": "^4.22.1",
+    "concurrently": "^7.1.0",
+    "cross-env": "^7.0.3",
+    "esbuild": "0.17.19",
+    "esbuild-plugin-umd-wrapper": "^2.0.0",
+    "eslint": "^8.53.0",
+    "eslint-plugin-compat": "^5.0.0",
+    "eslint-plugin-jest": "^27.6.0",
+    "eslint-plugin-tsdoc": "^0.2.17",
+    "happy-dom": "^14.12.0",
+    "markdownlint": "^0.25.1",
+    "markdownlint-cli": "^0.31.1",
+    "prettier": "2.8.4",
+    "turbo": "^2.0.4",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.1",
+    "vite-plugin-dts": "^4.3.0"
+  },
   "scripts": {
     "dev": "pnpm -r dev",
-    "build": "pnpm build:types && pnpm build:tracker && pnpm build:web",
+    "build": "pnpm build:types && pnpm build:tracker && pnpm build:player && pnpm build:web",
     "build:types": "pnpm --filter @session-recorder/types build",
     "build:tracker": "pnpm --filter @session-recorder/tracker build",
+    "build:player": "pnpm --filter player build",
     "build:web": "pnpm --filter web build",
-    "install:all": "pnpm install && pnpm install --filter @session-recorder/types && pnpm install --filter @session-recorder/tracker && pnpm install --filter web",
+    "install:all": "pnpm install && pnpm install --filter @session-recorder/types && pnpm install --filter @session-recorder/tracker && pnpm install --filter player && pnpm install --filter web",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
-    "clean": "pnpm -r exec rm -rf dist node_modules",
+    "clean": "pnpm -r exec rm -rf dist node_modules pnpm-lock.yaml",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "deploy:all": "bash infrastructure/scripts/deploy.sh all",
+    "deploy:player": "bash infrastructure/scripts/deploy.sh player",
     "deploy:tracker": "bash infrastructure/scripts/deploy.sh tracker",
-    "deploy:web": "bash infrastructure/scripts/deploy.sh web"
+    "deploy:web": "bash infrastructure/scripts/deploy.sh web",
+    "references:update": "yarn workspaces-to-typescript-project-references",
+    "test:watch": "yarn turbo run test:watch",
+    "test:update": "yarn turbo run test:update",
+    "check-types": "yarn turbo run check-types --continue",
+    "format:head": "git diff --name-only HEAD^ |grep '\\.ts$\\|\\.md$' |xargs yarn prettier --write",
+    "repl": "cd packages/rrweb && npm run repl",
+    "live-stream": "cd packages/rrweb && yarn live-stream",
+    "lint:report": "yarn eslint --output-file eslint_report.json --format json packages/*/src --ext .ts,.tsx,.js,.jsx",
+    "release": "yarn build:all && changeset publish"
   },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.0.0",
-    "prettier": "^3.0.0",
-    "typescript": "^5.0.0"
-  },
-  "packageManager": "pnpm@8.15.4",
-  "engines": {
-    "node": ">=18",
-    "pnpm": ">=8.15.4"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.46.1",
-    "rrweb": "2.0.0-alpha.4"
-  }
+  "browserslist": [
+    "defaults",
+    "not op_mini all"
+  ],
+  "packageManager": "pnpm@8.15.4"
 }

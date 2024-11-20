@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { processEvents } from "@/server/collector/processor";
 import { addToQueue } from "@/server/collector/queue";
-import { Session } from "@/types";
+import { Session } from "types/api";
 import { createClient } from "@/utils/supabase/server";
+import type { eventWithTime } from '@rrweb/types';
 
 function corsResponse(response: NextResponse) {
   response.headers.set("Access-Control-Allow-Origin", "*");
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
   try {
     const session: Session = await request.json();
 
-    if (!session.siteId || !session.id || !session.events) {
+    if (!session.site_id || !session.id || !session.events) {
       return corsResponse(
         NextResponse.json({ error: "Missing required fields" }, { status: 400 })
       );
@@ -29,11 +30,11 @@ export async function POST(request: Request) {
     const supabase = await createClient();
 
     // Only check and update verification if this is the first event
-    if (session.events.some((event) => event.type === "metadata")) {
+    if (session.events.some((event: eventWithTime) => event.type === 4)) {
       const { data: website, error: websiteError } = await supabase
         .from("websites")
         .select("verified")
-        .eq("id", session.siteId)
+        .eq("id", session.site_id)
         .single();
 
       if (websiteError) {
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
         const { error: updateError } = await supabase
           .from("websites")
           .update({ verified: true })
-          .eq("id", session.siteId);
+          .eq("id", session.site_id);
 
         if (updateError) {
           console.error("Error verifying website:", updateError);

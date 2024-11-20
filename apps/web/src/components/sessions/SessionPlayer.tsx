@@ -1,96 +1,75 @@
-import { RecordedEvent } from "@/types";
-import * as rrweb from 'rrweb';
-import React, { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
+import rrwebPlayer from "rrweb-player";
+import "rrweb-player/dist/style.css";
+import { Session } from "types/api";
+import { Button } from "../ui/button";
+import { ArrowLeft } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-interface PlayerState {
-  currentTime: number;
-  duration: number;
-  events: RecordedEvent[];
-  isPlaying: boolean;
+interface SessionPlayerProps {
+  session: Session;
 }
 
-export function SessionPlayer({ sessionId }: { sessionId: string }) {
-  const [state, setState] = useState<PlayerState>({
-    currentTime: 0,
-    duration: 0,
-    events: [],
-    isPlaying: false,
-  });
-  
-  const playerRef = useRef<HTMLDivElement>(null);
-  const replayerRef = useRef<any>(null);
+export function SessionPlayer({ session }: SessionPlayerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<rrwebPlayer | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const loadSession = async () => {
-      const response = await fetch(`/api/sessions/${sessionId}`);
-      const { session, events } = await response.json();
+    if (!containerRef.current || !session.events.length) return;
+    console.log('useEffect', session.events.length);
 
-      setState((prev) => ({
-        ...prev,
-        events,
-        duration: session.duration,
-      }));
+    // Initialize new player
+    playerRef.current = new rrwebPlayer({
+      target: containerRef.current,
+      props: {
+        events: session.events,
+        width: containerRef.current.clientWidth,
+        height: containerRef.current.clientHeight,
+        autoPlay: true,
+        speedOption: [1, 2, 4, 8],
+        showController: true,
+        tags: {
+          privacy: '.privacy',
+          maskText: '.mask-text',
+        }
+      },
+    });
 
-      if (playerRef.current && events.length > 0) {
-        replayerRef.current = new rrweb.Replayer(events, {
-          root: playerRef.current,
-          skipInactive: true,
-        });
-      }
-    };
-
-    loadSession();
-
+    // Cleanup on unmount or when session changes
     return () => {
-      if (replayerRef.current) {
-        replayerRef.current.destroy();
+      if (playerRef.current) {
+        // Remove the player's DOM elements
+        if (containerRef.current) {
+          containerRef.current.innerHTML = '';
+        }
+        // Clear the reference
+        playerRef.current = null;
       }
     };
-  }, [sessionId]);
+  }, [session]);
 
-  useEffect(() => {
-    if (!replayerRef.current || !state.isPlaying) return;
-
-    replayerRef.current.play();
-
-    return () => {
-      if (replayerRef.current) {
-        replayerRef.current.pause();
-      }
-    };
-  }, [state.isPlaying]);
-
-  const handleTimeUpdate = (time: number) => {
-    setState(prev => ({
-      ...prev,
-      currentTime: time,
-    }));
-    if (replayerRef.current) {
-      replayerRef.current.goto(time);
-    }
+  const handleBack = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('mode');
+    router.push(`?${params.toString()}`);
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 relative" ref={playerRef} />
-      <div className="h-20 border-t p-4">
-        <button
-          onClick={() =>
-            setState((prev) => ({ ...prev, isPlaying: !prev.isPlaying }))
-          }
-          className="px-4 py-2 bg-blue-500 text-white rounded"
+    <div className="w-full h-full">
+      <div className="p-4">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleBack}
+          className="gap-2"
         >
-          {state.isPlaying ? "Pause" : "Play"}
-        </button>
-        <input
-          type="range"
-          min={0}
-          max={state.duration}
-          value={state.currentTime}
-          onChange={(e) => handleTimeUpdate(Number(e.target.value))}
-          className="ml-4 w-96"
-        />
+          <ArrowLeft className="h-4 w-4" />
+          Back to sessions
+        </Button>
       </div>
+      <div ref={containerRef} className="w-full aspect-video" />
     </div>
   );
 }

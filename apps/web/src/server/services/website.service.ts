@@ -1,5 +1,5 @@
 import { Tables, TablesInsert } from "../../../supabase/types";
-import { ServiceRequest } from "@/types/api";
+import { ServiceRequest } from "types/api";
 import { WebsiteModel } from "../models/website.model";
 
 export class WebsiteService {

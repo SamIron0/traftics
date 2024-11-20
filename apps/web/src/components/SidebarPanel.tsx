@@ -173,7 +173,7 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
     <div
       className={cn(
         "fixed top-0 bottom-0 flex flex-col min-h-0 w-[255px] border-r bg-background transition-all duration-200 ease-linear",
-        state === "expanded" ? "left-[280px]" : "left-[48px]"
+        state === "expanded" ? "left-[255px]" : ""
       )}
     >
       <div className="flex-none p-3">

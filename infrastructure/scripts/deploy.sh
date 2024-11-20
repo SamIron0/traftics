@@ -16,6 +16,14 @@ deploy_tracker() {
   cd ../..
 }
 
+deploy_player() {
+  echo "Deploying player to npm..."
+  cd packages/player
+  pnpm build
+  npm publish
+  cd ../..
+}
+
 # Deploy web app to Vercel
 deploy_web() {
   echo "Deploying web app to Vercel..."
@@ -32,12 +40,16 @@ case "$1" in
   "web")
     deploy_web
     ;;
+  "player")
+    deploy_player
+    ;;
   "all")
     deploy_tracker
     deploy_web
+    deploy_player
     ;;
   *)
-    echo "Usage: ./deploy.sh [tracker|web|all]"
+    echo "Usage: ./deploy.sh [tracker|web|player|all]"
     exit 1
     ;;
 esac 

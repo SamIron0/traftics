@@ -16,17 +16,20 @@
     "predeploy": "pnpm build"
   },
   "dependencies": {
-    "@session-recorder/types": "workspace:*"
+    "@rrweb/types": "^2.0.0-alpha.4",
+    "@session-recorder/types": "workspace:*",
+    "rrweb": "2.0.0-alpha.4",
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
+    "eslint": "^8.0.0",
     "jest": "^29.0.0",
     "ts-jest": "^29.0.0",
     "ts-loader": "^9.0.0",
+    "typescript": "^5.0.0",
     "webpack": "^5.0.0",
     "webpack-cli": "^5.0.0",
-    "typescript": "^5.0.0",
-    "eslint": "^8.0.0",
     "wrangler": "^3.0.0"
   },
   "sideEffects": false

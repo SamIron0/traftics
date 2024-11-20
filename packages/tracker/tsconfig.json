@@ -21,7 +21,7 @@
     "references": [
       { "path": "../types" }
     ],
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "tsconfig.json"],
     "exclude": ["node_modules", "dist", "**/*.test.ts"]
   }
   

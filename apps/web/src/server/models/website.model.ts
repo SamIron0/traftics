@@ -1,8 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { Tables } from "../../../supabase/types";
 import { TablesInsert } from "../../../supabase/types";
-import { ServiceRequest } from "@/types/api";
-
+import { ServiceRequest } from "types/api";
 export class WebsiteModel {
   static async create(
     req: ServiceRequest,
