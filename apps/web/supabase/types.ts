@@ -47,6 +47,65 @@ export type Database = {
           },
         ]
       }
+      heatmaps: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          filters: Json | null
+          id: string
+          name: string
+          precision: number
+          selected_session_ids: string[] | null
+          snapshot_url: string | null
+          updated_at: string | null
+          url_domain: string
+          url_match_type: string
+          url_protocol: string
+          use_history_data: boolean
+          website_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          filters?: Json | null
+          id?: string
+          name: string
+          precision: number
+          selected_session_ids?: string[] | null
+          snapshot_url?: string | null
+          updated_at?: string | null
+          url_domain: string
+          url_match_type: string
+          url_protocol: string
+          use_history_data?: boolean
+          website_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          filters?: Json | null
+          id?: string
+          name?: string
+          precision?: number
+          selected_session_ids?: string[] | null
+          snapshot_url?: string | null
+          updated_at?: string | null
+          url_domain?: string
+          url_match_type?: string
+          url_protocol?: string
+          use_history_data?: boolean
+          website_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "heatmaps_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string | null

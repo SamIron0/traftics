@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { processEvents } from "@/server/collector/processor";
 import { addToQueue } from "@/server/collector/queue";
-import { Session } from "types/api";
-import { createClient } from "@/utils/supabase/server";
+import { Session } from "@/types/api";
+import { WebsiteService } from "@/server/services/website.service";
 import type { eventWithTime } from '@rrweb/types';
 
 function corsResponse(response: NextResponse) {
@@ -12,7 +12,6 @@ function corsResponse(response: NextResponse) {
   return response;
 }
 
-// Add OPTIONS handler for CORS preflight
 export async function OPTIONS() {
   return corsResponse(new NextResponse(null, { status: 200 }));
 }
@@ -27,33 +26,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
-
     // Only check and update verification if this is the first event
     if (session.events.some((event: eventWithTime) => event.type === 4)) {
-      const { data: website, error: websiteError } = await supabase
-        .from("websites")
-        .select("verified")
-        .eq("id", session.site_id)
-        .single();
-
-      if (websiteError) {
-        return NextResponse.json(
-          { error: "Invalid website ID" },
-          { status: 400 }
-        );
-      }
-
-      // Only update if not already verified
-      if (!website.verified) {
-        const { error: updateError } = await supabase
-          .from("websites")
-          .update({ verified: true })
-          .eq("id", session.site_id);
-
-        if (updateError) {
-          console.error("Error verifying website:", updateError);
+      try {
+        const isVerified = await WebsiteService.getVerificationStatus(session.site_id);
+        
+        if (!isVerified) {
+          await WebsiteService.verifyWebsite(session.site_id);
         }
+      } catch (error) {
+        return corsResponse(
+          NextResponse.json({ error: "Invalid website ID" }, { status: 400 })
+        );
       }
     }
 

@@ -22,11 +22,11 @@ export default function RootLayout({
             {!isReplayMode && <AppSidebar />}
             <div 
               className={`flex-1 flex flex-col ${
-                !isReplayMode ? "ml-[255px]" : ""
+                !isReplayMode ? "ml-[255px] overflow-x-hidden" : ""
               }`}
             >
               {!isReplayMode && <Navbar />}
-              <main className={`flex-1 ${!isReplayMode ? "pt-3 px-2" : ""}`}>
+              <main className={`flex-1 w-full  ${!isReplayMode ? "pt-3 px-2" : ""}`}>
                 {children}
               </main>
             </div>

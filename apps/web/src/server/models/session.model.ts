@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { TablesInsert } from "supabase/types";
-import { ServiceRequest } from "types/api";
-import { Session } from "types/api";
+import { ServiceRequest } from "@/types/api";
+import { Session } from "@/types/api";
 export class SessionModel {
   static async findAll(req: ServiceRequest): Promise<Session[]> {
     const supabase = await createClient();

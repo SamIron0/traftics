@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { Tables } from "../../../supabase/types";
 import { TablesInsert } from "../../../supabase/types";
-import { ServiceRequest } from "types/api";
+import { ServiceRequest } from "@/types/api";
 export class WebsiteModel {
   static async create(
     req: ServiceRequest,
@@ -81,6 +81,28 @@ export class WebsiteModel {
       .delete()
       .eq("id", id)
       .eq("org_id", req.user?.orgId);
+
+    return !error;
+  }
+
+  static async getVerificationStatus(websiteId: string): Promise<boolean | null> {
+    const supabase = await createClient();
+    const { data: website, error } = await supabase
+      .from("websites")
+      .select("verified")
+      .eq("id", websiteId)
+      .single();
+
+    if (error) return null;
+    return website.verified;
+  }
+
+  static async setVerified(websiteId: string): Promise<boolean> {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("websites")
+      .update({ verified: true })
+      .eq("id", websiteId);
 
     return !error;
   }

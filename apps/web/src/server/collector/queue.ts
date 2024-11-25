@@ -1,4 +1,4 @@
-import { Session } from "types/api";
+import { Session } from "@/types/api";
 import { SessionService } from "../services/session.service";
 
 export async function addToQueue(session: Session): Promise<void> {

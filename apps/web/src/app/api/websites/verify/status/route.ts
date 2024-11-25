@@ -1,5 +1,6 @@
-import { createClient } from "@/utils/supabase/server";
+import { WebsiteService } from "@/server/services/website.service";
 import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request: Request) {
   try {
@@ -33,22 +34,18 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get the specific website's verification status
-    const { data: website } = await supabase
-      .from("websites")
-      .select("verified")
-      .eq("id", websiteId)
-      .eq("org_id", profile.org_id)
-      .single();
-
-    if (!website) {
-      return NextResponse.json(
-        { error: "Website not found" },
-        { status: 404 }
-      );
+    try {
+      const isVerified = await WebsiteService.getVerificationStatus(websiteId);
+      return NextResponse.json({ verified: isVerified });
+    } catch (error) {
+      if (error instanceof Error && error.message === "Website not found") {
+        return NextResponse.json(
+          { error: "Website not found" },
+          { status: 404 }
+        );
+      }
+      throw error;
     }
-
-    return NextResponse.json({ verified: website.verified });
   } catch (error) {
     console.error("Error checking verification status:", error);
     return NextResponse.json(

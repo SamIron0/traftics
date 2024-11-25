@@ -1,5 +1,5 @@
 import { Tables, TablesInsert } from "../../../supabase/types";
-import { ServiceRequest } from "types/api";
+import { ServiceRequest } from "@/types/api";
 import { WebsiteModel } from "../models/website.model";
 
 export class WebsiteService {
@@ -54,6 +54,22 @@ export class WebsiteService {
     if (!success) {
       throw new Error("Website not found");
     }
+  }
+
+  static async getVerificationStatus(websiteId: string): Promise<boolean> {
+    const status = await WebsiteModel.getVerificationStatus(websiteId);
+    if (status === null) {
+      throw new Error("Website not found");
+    }
+    return status;
+  }
+
+  static async verifyWebsite(websiteId: string): Promise<boolean> {
+    const success = await WebsiteModel.setVerified(websiteId);
+    if (!success) {
+      throw new Error("Failed to verify website");
+    }
+    return true;
   }
 
   private static isValidDomain(domain: string): boolean {

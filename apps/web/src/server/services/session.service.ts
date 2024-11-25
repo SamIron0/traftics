@@ -1,8 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { SessionModel } from "../models/session.model";
 import { TablesInsert } from "supabase/types";
-import { ServiceRequest } from "types/api";
-import { Session } from "types/api";
+import { ServiceRequest } from "@/types/api";
+import { Session } from "@/types/api";
 import { eventWithTime } from "@rrweb/types";
 const BUCKET_NAME = "sessions";
 

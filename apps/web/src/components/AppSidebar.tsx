@@ -81,7 +81,7 @@ export function AppSidebar() {
       group: "Settings",
       items: [
         {
-          label: "Options",
+          label: "Project Settings",
           icon: Settings,
           path: `/org/${orgId}/settings`,
         },

@@ -2,11 +2,11 @@
 
 import { useSearchParams } from "next/navigation";
 import { ClientSessionList } from "./ClientSessionList";
-import { SessionPlayer } from "./SessionPlayer";
-import { Session } from "types/api";
+import { Session } from "@/types/api";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { eventWithTime } from "@rrweb/types";
+import SessionPlayer from "./SessionPlayer";
 interface Props {
   sessions: Session[];
 }
@@ -35,7 +35,7 @@ export function SessionsPage({ sessions }: Props) {
     } catch (error) {
       console.error('Failed to fetch session events:', error);
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, sessionWithEvents]);
 
   useEffect(() => {
     

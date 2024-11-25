@@ -1,4 +1,4 @@
-import { Session } from "types/api";
+import { Session } from "@/types/api";
 import { formatDistanceToNow } from "date-fns";
 import {
   Table,

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { WebsiteService } from "@/server/services/website.service";
 
 // Helper function to handle CORS
 function corsResponse(response: NextResponse) {
@@ -27,48 +27,32 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
+    try {
+      // Check verification status
+      const isVerified = await WebsiteService.getVerificationStatus(siteId);
+      
+      // Only update if not already verified
+      if (!isVerified) {
+        await WebsiteService.verifyWebsite(siteId);
+      }
 
-    // Check if website exists and belongs to user's organization
-    const { data: website, error: websiteError } = await supabase
-      .from("websites")
-      .select("verified, org_id")
-      .eq("id", siteId)
-      .single();
-
-    if (websiteError || !website) {
       return corsResponse(
         NextResponse.json(
-          { error: "Website not found" },
-          { status: 404 }
+          { message: "Website verification successful" },
+          { status: 200 }
         )
       );
-    }
-    
-    // Only update if not already verified
-    if (!website.verified) {
-      const { error: updateError } = await supabase
-        .from("websites")
-        .update({ verified: true })
-        .eq("id", siteId);
-
-      if (updateError) {
-        console.error("Error verifying website:", updateError);
+    } catch (error) {
+      if (error instanceof Error && error.message === "Website not found") {
         return corsResponse(
           NextResponse.json(
-            { error: "Failed to verify website" },
-            { status: 500 }
+            { error: "Website not found" },
+            { status: 404 }
           )
         );
       }
+      throw error;
     }
-
-    return corsResponse(
-      NextResponse.json(
-        { message: "Website verification successful" },
-        { status: 200 }
-      )
-    );
   } catch (error) {
     console.error("Error verifying website:", error);
     return corsResponse(
