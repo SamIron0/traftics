@@ -77,7 +77,6 @@ const Heatmap = ({
 
     // No need for cleanup as heatmap.js doesn't provide a cleanup method
   }, [events, width, height, scale]);
-  console.log(width, height);
   return (
     <div className={`absolute inset-0 ${className}`}>
       <div

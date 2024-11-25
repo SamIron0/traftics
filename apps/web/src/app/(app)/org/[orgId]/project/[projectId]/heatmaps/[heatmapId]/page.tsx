@@ -122,6 +122,7 @@ const HeatmapPage = ({
 
     // Wait for content to load and capture screenshot
     const captureScreenshot = async () => {
+      console.log('captureScreenshot');           
       if (!iframe.contentDocument) {
         console.error('Unable to access iframe document');
         return;
@@ -151,19 +152,19 @@ const HeatmapPage = ({
           height: canvas.height
         });
         setScreenshotUrl(canvas.toDataURL('image/png'));
+        console.log('screenshotUrl', canvas.toDataURL('image/png'));
       } catch (err) {
         console.error('Error capturing screenshot:', err);
       }
     };
-
+    console.log('adding load listener');
     // Add load listener for iframe content
     iframe.addEventListener('load', captureScreenshot);
-
     return () => {
+      console.log('removing l woad listener');
       iframe.removeEventListener('load', captureScreenshot);
     };
   }, [firstSnapshot]);
-
   if (isLoading) {
     return <div>Loading heatmap data...</div>;
   }
@@ -199,7 +200,7 @@ const HeatmapPage = ({
         <Heatmap
           events={events}
           width={dimensions.width}
-          height={screenshotUrl ? screenshotUrl.split(',')[1] : dimensions.height}
+          height={screenshotUrl ? parseInt(screenshotUrl.split(',')[1]) : dimensions.height}
           scale={scale}
         />
       </div>
