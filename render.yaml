@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: screenshot-service
+    env: docker
+    rootDir: apps/screenshot-service
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: UPSTASH_REDIS_URL
+        sync: false
+      - key: UPSTASH_REDIS_TOKEN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false 

@@ -10,6 +10,7 @@
   "dependencies": {
     "@sparticuz/chromium": "^109.0.5",
     "@upstash/redis": "^1.28.4",
+    "@supabase/supabase-js": "^2.46.1",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "puppeteer-core": "^23.9.0"
