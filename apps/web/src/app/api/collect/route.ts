@@ -34,7 +34,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if screenshot is needed
+    // Process events and create session first
+    const processedEvents = await processEvents(session.events);
+    await addToQueue({
+      ...session,
+      events: processedEvents,
+    });
+
+    // Now check if screenshot is needed
     if (session.events.some((event: eventWithTime) => event.type === 4)) {
       try {
         const isVerified = await WebsiteService.getVerificationStatus(session.site_id);
@@ -43,7 +50,7 @@ export async function POST(request: Request) {
           await WebsiteService.verifyWebsite(session.site_id);
         }
         
-        // Create pending screenshot record
+        // Create pending screenshot record after session is created
         const { error: screenshotError } = await supabase
           .from('screenshots')
           .insert({
@@ -88,12 +95,6 @@ export async function POST(request: Request) {
           .match({ session_id: session.id });
       }
     }
-
-    const processedEvents = await processEvents(session.events);
-    await addToQueue({
-      ...session,
-      events: processedEvents,
-    });
 
     return corsResponse(NextResponse.json({ success: true }));
   } catch (error) {
