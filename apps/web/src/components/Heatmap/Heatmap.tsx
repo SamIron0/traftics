@@ -6,94 +6,86 @@ import {
   mouseInteractionData,
   MouseInteractions,
   IncrementalSource,
-  scrollPosition,
 } from "@rrweb/types";
 
 type Props = {
   events: eventWithTime[];
   width: number;
   height: number;
-  className?: string;
   scale?: number;
 };
 
-const Heatmap = ({
-  events,
-  width,
-  height,
-  className = "",
-  scale = 1,
-}: Props) => {
+const Heatmap = ({ events, width, height, scale = 1 }: Props) => {
   const heatmapRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!heatmapRef.current) return;
 
-    // Initialize heatmap instance with transparent background using gradient
+  useEffect(() => {
+    if (!heatmapRef.current || !events.length) return;
+
+    // Create heatmap instance
     const heatmapInstance = h337.create({
       container: heatmapRef.current,
-      radius: 20 * scale,
+      radius: 20,
       maxOpacity: 0.6,
-      minOpacity: 0,
+      minOpacity: 0.1,
       blur: 0.75,
-    });
-
-    // Process events to extract data points
-    const dataPoints: { x: number; y: number; value: number }[] = [];
-    const clickCounts = new Map<string, number>();
-    let currentScrollY = 0;
-    events.forEach((event) => {
-      if (event.type === 3) {
-        // IncrementalSnapshot type
-        const data = event.data;
-        if (data.source === IncrementalSource.MouseInteraction) {
-          const { type, x, y } = data as mouseInteractionData;
-          if (typeof x === "undefined" || typeof y === "undefined") return;
-
-          if (type === MouseInteractions.Click) {
-
-            const key = `${Math.round(x)},${Math.round(y)}`;
-            const count = (clickCounts.get(key) || 0) + 1;
-            clickCounts.set(key, count);
-
-            dataPoints.push({
-              x: Math.round(x),
-              y: Math.round(y) + currentScrollY,
-              value: count,
-            });
-          }
-        }
-        if (data.source === IncrementalSource.Scroll) {
-          const scrollData = data as scrollPosition;
-          currentScrollY = scrollData.y;
-        }
+      gradient: {
+        '.5': 'blue',
+        '.8': 'red',
+        '.95': 'white'
       }
     });
 
-    // Set the data
+    // Filter and transform click events
+    const clickEvents = events
+      .filter(event => 
+        event.type === 3 && // IncrementalSnapshot
+        (event.data).source === IncrementalSource.MouseInteraction &&
+        (event.data as mouseInteractionData).type === MouseInteractions.Click
+      )
+      .map(event => {
+        const data = event.data as mouseInteractionData;
+        if (typeof data.x === 'undefined' || typeof data.y === 'undefined') {
+          return null;
+        }
+        return {
+          x: Math.round(data.x / scale),
+          y: Math.round(data.y / scale),
+          value: 1
+        };
+      })
+      .filter((event): event is { x: number; y: number; value: number } => event !== null);
+
+    // Set heatmap data
     heatmapInstance.setData({
-      max: Math.max(...Array.from(clickCounts.values()), 1),
-      data: dataPoints,
+      max: clickEvents.length,
+      data: clickEvents
     });
 
-    // No need for cleanup as heatmap.js doesn't provide a cleanup method
+    // Manual cleanup
+    return () => {
+      if (heatmapRef.current) {
+        // Remove the heatmap canvas element
+        const canvas = heatmapRef.current.querySelector('canvas');
+        if (canvas) {
+          canvas.remove();
+        }
+      }
+    };
   }, [events, width, height, scale]);
+
   return (
-    <div className={`absolute inset-0 ${className}`}>
-      <div
-        ref={heatmapRef}
-        style={{
-          width: `${width}px`,
-          height: `${height}px`,
-          position: "absolute",
-          top: 0,
-          left: 0,
-          pointerEvents: "none",
-          zIndex: 10,
-          transform: `scale(${scale})`,
-          transformOrigin: "0 0",
-        }}
-      />
-    </div>
+    <div
+      ref={heatmapRef}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: `${width}px`,
+        height: `${height}px`,
+        pointerEvents: 'none',
+        zIndex: 1000,
+      }}
+    />
   );
 };
 

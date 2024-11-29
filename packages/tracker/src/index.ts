@@ -86,12 +86,10 @@ class SessionTracker {
       });
 
       if (response.ok) {
-        // Clear only events that were successfully sent
         this.events = [];
         
-        // If session is getting too long, create a new session
         if (this.lastEventTime - this.startedAt > 30 * 60 * 1000) { // 30 minutes
-          this.sessionId = uuidv4(); // Start a new session
+          this.sessionId = uuidv4(); 
           this.startedAt = Date.now();
         }
       }
@@ -104,11 +102,10 @@ class SessionTracker {
     if (this.intervalId) {
       window.clearInterval(this.intervalId);
     }
-    this.flush(); // Final flush of remaining events
+    this.flush(); 
   }
 }
 
-// Initialize tracker when script loads
 declare global {
   interface Window {
     _r?: {
@@ -124,7 +121,6 @@ if (typeof window !== 'undefined' && window._r) {
     collectorUrl: window._r.collectorUrl
   });
 
-  // Clean up on page unload
   window.addEventListener('unload', () => {
     tracker.stop();
   });

@@ -94,4 +94,6 @@ const HeatmapsList = forwardRef<HeatmapsListRef>((_, ref) => {
   );
 });
 
+HeatmapsList.displayName = 'HeatmapsList';
+
 export default HeatmapsList;

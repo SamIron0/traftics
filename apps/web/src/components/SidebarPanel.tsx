@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useRef } from "react";
 import {
   Activity,
   BarChart3,
@@ -102,7 +102,10 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                  >
                     Cancel
                   </Button>
                   <Button onClick={handleCreateDashboard}>Create</Button>
@@ -195,7 +198,7 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
 
             <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
               <SheetContent side="left" className="p-0 sm:w-[600px]">
-                <CreateHeatmap 
+                <CreateHeatmap
                   onClose={() => setFilterSheetOpen(false)}
                   onSuccess={handleHeatmapCreated}
                 />

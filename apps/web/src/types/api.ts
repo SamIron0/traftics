@@ -30,4 +30,5 @@ export interface Session {
   user_agent: string;
   screen_width: number;
   screen_height: number;
+  screenshot?: string | null;
 }
