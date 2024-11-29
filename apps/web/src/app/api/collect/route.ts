@@ -4,12 +4,14 @@ import { addToQueue } from "@/server/collector/queue";
 import { Session } from "@/types/api";
 import { WebsiteService } from "@/server/services/website.service";
 import type { eventWithTime } from '@rrweb/types';
-import { Redis } from '@upstash/redis';
+import { createClient } from '@supabase/supabase-js';
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_URL!,
-  token: process.env.UPSTASH_REDIS_TOKEN!,
-});
+const SCREENSHOT_SERVICE_URL = process.env.SCREENSHOT_SERVICE_URL;
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!
+);
 
 function corsResponse(response: NextResponse) {
   response.headers.set("Access-Control-Allow-Origin", "*");
@@ -41,14 +43,42 @@ export async function POST(request: Request) {
           await WebsiteService.verifyWebsite(session.site_id);
         }
         
-        // Queue screenshot job instead of processing directly
-        await redis.lpush('screenshot-queue', JSON.stringify({
-          sessionId: session.id,
-          siteId: session.site_id,
-          events: session.events
-        }));
+        // Create pending screenshot record
+        const { error: screenshotError } = await supabase
+          .from('screenshots')
+          .insert({
+            session_id: session.id,
+            site_id: session.site_id,
+            status: 'pending'
+          });
+
+        if (screenshotError) {
+          console.error('Error creating screenshot record:', screenshotError);
+        }
+        
+        // Send to screenshot service
+        const response = await fetch(`${SCREENSHOT_SERVICE_URL}/screenshot`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sessionId: session.id,
+            siteId: session.site_id,
+            events: session.events
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Screenshot service error: ${response.statusText}`);
+        }
       } catch (error) {
         console.error(error);
+        // Update screenshot record with error
+        await supabase
+          .from('screenshots')
+          .update({ status: 'failed', error: error instanceof Error ? error.message : 'Unknown error' })
+          .match({ session_id: session.id });
       }
     }
 

@@ -22,7 +22,6 @@ export async function processScreenshot(data: any) {
 
     const page = await browser.newPage();
     
-    // Rebuild DOM from events
     const container = await rebuildDOMFromSnapshot(data.events);
     if (!container) {
       throw new Error('Failed to rebuild DOM');
@@ -38,16 +37,44 @@ export async function processScreenshot(data: any) {
 
     await browser.close();
 
-    // Store screenshot in Supabase
+    // Upload to Supabase storage
+    const filePath = `screenshots/${data.siteId}/${data.sessionId}.png`;
+    const { error: uploadError } = await supabase.storage
+      .from('screenshots')
+      .upload(filePath, Buffer.from(screenshot, 'base64'), {
+        contentType: 'image/png',
+        upsert: true
+      });
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    // Get public URL
+    const { data: publicUrl } = supabase.storage
+      .from('screenshots')
+      .getPublicUrl(filePath);
+
+    // Store reference in database
     await supabase
       .from('screenshots')
       .insert({
         session_id: data.sessionId,
         site_id: data.siteId,
-        image: screenshot
+        image_url: publicUrl.publicUrl,
+        status: 'completed'
       });
 
   } catch (error) {
     console.error('Error processing screenshot:', error);
+    // Store error status
+    await supabase
+      .from('screenshots')
+      .insert({
+        session_id: data.sessionId,
+        site_id: data.siteId,
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
   }
 } 
