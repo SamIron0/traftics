@@ -78,24 +78,7 @@ export async function POST(request: Request) {
           throw new Error("No snapshot event found");
         }
 
-        // Send to screenshot service first
-        const response = await fetch(`${SCREENSHOT_SERVICE_URL}/screenshot`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            sessionId: session.id,
-            siteId: session.site_id,
-            events: [firstSnapshot],
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Screenshot service error: ${response.statusText}`);
-        }
-
-        // Create screenshot record and update session
+        // Create screenshot record first
         const { error: screenshotError } = await supabase
           .from("screenshots")
           .insert({
@@ -106,6 +89,7 @@ export async function POST(request: Request) {
 
         if (screenshotError) {
           console.error("Error creating screenshot record:", screenshotError);
+          return;
         }
 
         // Mark session as having a screenshot
@@ -113,6 +97,21 @@ export async function POST(request: Request) {
           .from("sessions")
           .update({ has_screenshot: true })
           .eq("id", session.id);
+
+        // Fire and forget screenshot service request
+        fetch(`${SCREENSHOT_SERVICE_URL}/screenshot`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sessionId: session.id,
+            siteId: session.site_id,
+            events: [firstSnapshot],
+          }),
+        }).catch(error => {
+          console.error('Error calling screenshot service:', error);
+        });
 
       } catch (error) {
         console.error("Error creating screenshot record:", error);

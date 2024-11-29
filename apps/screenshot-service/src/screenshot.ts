@@ -25,14 +25,27 @@ export async function processScreenshot(data: any) {
         '--disable-software-rasterizer',
         '--headless=new',
         '--memory-pressure-off',
-        '--single-process'
+        '--single-process',
+        '--deterministic-fetch',
+        '--disable-background-networking',
+        '--disable-default-apps',
+        '--disable-extensions',
+        '--disable-sync',
+        '--disable-translate',
+        '--hide-scrollbars',
+        '--metrics-recording-only',
+        '--mute-audio',
+        '--no-first-run',
+        '--safebrowsing-disable-auto-update'
       ],
       defaultViewport: {
-        width: 1920,
-        height: 1080
+        width: 1280,
+        height: 800
       },
       executablePath: process.env.CHROMIUM_PATH || await chromium.executablePath(),
       headless: true,
+      protocolTimeout: 60000,
+      timeout: 60000,
     }).catch(err => {
       console.error('Browser launch error details:', {
         message: err.message,

@@ -10,7 +10,9 @@ services:
       maxInstances: 1
     envVars:
       - key: NODE_OPTIONS
-        value: "--max-old-space-size=512"
+        value: "--max-old-space-size=384"
     limits:
-      memory: 512
-      maxConcurrency: 1 
+      memory: 384
+      maxConcurrency: 1
+    healthCheckPath: /health
+    healthCheckTimeout: 60 
