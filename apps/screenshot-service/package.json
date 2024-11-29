@@ -8,12 +8,14 @@
     "dev": "nodemon src/index.ts"
   },
   "dependencies": {
+    "@rrweb/types": "^2.0.0-alpha.17",
     "@sparticuz/chromium": "^109.0.5",
-    "@upstash/redis": "^1.28.4",
     "@supabase/supabase-js": "^2.46.1",
+    "@upstash/redis": "^1.28.4",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
-    "puppeteer-core": "^23.9.0"
+    "puppeteer-core": "^23.9.0",
+    "rrweb-snapshot": "^2.0.0-alpha.17"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
