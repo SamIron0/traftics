@@ -4,9 +4,12 @@ import { addToQueue } from "@/server/collector/queue";
 import { Session } from "@/types/api";
 import { WebsiteService } from "@/server/services/website.service";
 import type { eventWithTime } from '@rrweb/types';
-import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
-import { rebuildDOMFromSnapshot, cleanupRebuiltDOM } from '@/utils/dom-rebuilder';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_URL!,
+  token: process.env.UPSTASH_REDIS_TOKEN!,
+});
 
 function corsResponse(response: NextResponse) {
   response.headers.set("Access-Control-Allow-Origin", "*");
@@ -29,7 +32,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Only check and update verification if this is the first event
+    // Check if screenshot is needed
     if (session.events.some((event: eventWithTime) => event.type === 4)) {
       try {
         const isVerified = await WebsiteService.getVerificationStatus(session.site_id);
@@ -37,17 +40,19 @@ export async function POST(request: Request) {
         if (!isVerified) {
           await WebsiteService.verifyWebsite(session.site_id);
         }
-        const screenshot = await captureScreenshot(session.events);
-        console.log(screenshot);
+        
+        // Queue screenshot job instead of processing directly
+        await redis.lpush('screenshot-queue', JSON.stringify({
+          sessionId: session.id,
+          siteId: session.site_id,
+          events: session.events
+        }));
       } catch (error) {
-        return corsResponse(
-          NextResponse.json({ error: "Invalid website ID" }, { status: 400 })
-        );
+        console.error(error);
       }
     }
 
     const processedEvents = await processEvents(session.events);
-
     await addToQueue({
       ...session,
       events: processedEvents,
@@ -59,50 +64,5 @@ export async function POST(request: Request) {
     return corsResponse(
       NextResponse.json({ error: "Internal server error" }, { status: 500 })
     );
-  }
-}
-
-async function captureScreenshot(events: eventWithTime[]): Promise<string | null> {
-  try {
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: {
-        width: 1920,
-        height: 1080
-      },
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    });
-    
-    const page = await browser.newPage();
-    
-    // Rebuild DOM and wait for it to be ready
-    const container = await rebuildDOMFromSnapshot(events);
-    if (!container) {
-      throw new Error('Failed to rebuild DOM');
-    }
-
-    // Inject the rebuilt DOM into the page
-    await page.setContent(container.outerHTML);
-
-    // Wait for any images/resources to load
-    await page.waitForNetworkIdle();
-
-    // Take screenshot
-    const screenshot = await page.screenshot({
-      encoding: 'base64',
-      fullPage: true
-    });
-
-    await browser.close();
-    
-    // Clean up the temporary DOM
-    cleanupRebuiltDOM(container);
-    
-    return screenshot as string;
-
-  } catch (error) {
-    console.error('Error capturing screenshot:', error);
-    return null;
   }
 }

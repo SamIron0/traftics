@@ -8,8 +8,7 @@
     "start": "next start",
     "clean": "rm -rf .next node_modules pnpm-lock.yaml",
     "deploy": "vercel --prod",
-    "lint": "next lint",
-    "postinstall": "pnpm install"
+    "lint": "next lint"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.1",
@@ -28,6 +27,7 @@
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.46.1",
+    "@upstash/redis": "^1.28.4",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -44,7 +44,6 @@
     "supabase": "^1.219.2",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
-    "unpack": "link:@rrweb/packer/unpack",
     "uuid": "^11.0.3"
   },
   "devDependencies": {

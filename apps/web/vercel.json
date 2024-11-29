@@ -1,5 +1,16 @@
 {
-  "installCommand": "pnpm install",
-  "buildCommand": "pnpm build",
-  "framework": "nextjs"
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "framework": "nextjs",
+  "functions": {
+    "api/collect": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
+  "build": {
+    "env": {
+      "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
+    }
+  }
 }

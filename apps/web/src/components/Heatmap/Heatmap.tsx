@@ -21,9 +21,12 @@ const Heatmap = ({ events, width, height, scale = 1 }: Props) => {
   useEffect(() => {
     if (!heatmapRef.current || !events.length) return;
 
+    // Store ref in a variable to use in cleanup
+    const container = heatmapRef.current;
+
     // Create heatmap instance
     const heatmapInstance = h337.create({
-      container: heatmapRef.current,
+      container: container,
       radius: 20,
       maxOpacity: 0.6,
       minOpacity: 0.1,
@@ -63,12 +66,9 @@ const Heatmap = ({ events, width, height, scale = 1 }: Props) => {
 
     // Manual cleanup
     return () => {
-      if (heatmapRef.current) {
-        // Remove the heatmap canvas element
-        const canvas = heatmapRef.current.querySelector('canvas');
-        if (canvas) {
-          canvas.remove();
-        }
+      const canvas = container.querySelector('canvas');
+      if (canvas) {
+        canvas.remove();
       }
     };
   }, [events, width, height, scale]);

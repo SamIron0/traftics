@@ -38,3 +38,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Allow both lock files
+!package-lock.json
+!pnpm-lock.yaml
