@@ -19,14 +19,20 @@ export async function processScreenshot(data: any) {
       args: [
         ...chromium.args,
         '--no-sandbox',
-        '--disable-setuid-sandbox'
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--headless=new',
+        '--memory-pressure-off',
+        '--single-process'
       ],
       defaultViewport: {
         width: 1920,
         height: 1080
       },
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
+      executablePath: process.env.CHROMIUM_PATH || await chromium.executablePath(),
+      headless: true,
     }).catch(err => {
       console.error('Browser launch error details:', {
         message: err.message,

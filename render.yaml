@@ -4,12 +4,13 @@ services:
     env: docker
     rootDir: apps/screenshot-service
     dockerfilePath: ./Dockerfile
+    plan: free
+    scaling:
+      minInstances: 1
+      maxInstances: 1
     envVars:
-      - key: UPSTASH_REDIS_URL
-        sync: false
-      - key: UPSTASH_REDIS_TOKEN
-        sync: false
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SERVICE_KEY
-        sync: false 
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=512"
+    limits:
+      memory: 512
+      maxConcurrency: 1 
