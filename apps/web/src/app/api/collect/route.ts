@@ -9,7 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 const SCREENSHOT_SERVICE_URL = process.env.SCREENSHOT_SERVICE_URL;
 
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
 );
 
@@ -56,6 +56,13 @@ export async function POST(request: Request) {
           console.error('Error creating screenshot record:', screenshotError);
         }
         
+        // Find the first snapshot event
+        const firstSnapshot = session.events.find(event => event.type === 2);
+
+        if (!firstSnapshot) {
+          throw new Error('No snapshot event found');
+        }
+
         // Send to screenshot service
         const response = await fetch(`${SCREENSHOT_SERVICE_URL}/screenshot`, {
           method: 'POST',
@@ -65,7 +72,7 @@ export async function POST(request: Request) {
           body: JSON.stringify({
             sessionId: session.id,
             siteId: session.site_id,
-            events: session.events
+            events: [firstSnapshot]
           })
         });
 
