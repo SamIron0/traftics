@@ -182,6 +182,7 @@ export type Database = {
         Row: {
           created_at: string | null
           duration: number
+          has_screenshot: boolean | null
           id: string
           screen_height: number
           screen_width: number
@@ -193,6 +194,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           duration: number
+          has_screenshot?: boolean | null
           id?: string
           screen_height: number
           screen_width: number
@@ -204,6 +206,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           duration?: number
+          has_screenshot?: boolean | null
           id?: string
           screen_height?: number
           screen_width?: number

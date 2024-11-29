@@ -22,7 +22,7 @@ node_modules
 /build
 
 # misc
-/.DS_Store
+.DS_Store
 *.pem
 
 # debug

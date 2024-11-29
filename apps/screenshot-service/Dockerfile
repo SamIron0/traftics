@@ -22,12 +22,23 @@ RUN apt-get update && apt-get install -y \
     libxfixes3 \
     libxrandr2 \
     xdg-utils \
-    --no-install-recommends
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+# Copy package files first for better caching
 COPY package*.json ./
 RUN npm install
+
+# Copy source code
 COPY . .
 RUN npm run build
+
+# Set proper permissions
+RUN chmod -R 755 /app/node_modules/@sparticuz/chromium/bin
+
+# Run as non-root user for better security
+USER node
 
 CMD ["npm", "start"] 

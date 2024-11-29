@@ -75,6 +75,7 @@ export class SessionModel {
         user_agent,
         screen_width,
         screen_height,
+        has_screenshot: false,
       })
       .select()
       .single();
