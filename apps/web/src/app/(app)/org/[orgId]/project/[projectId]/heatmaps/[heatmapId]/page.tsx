@@ -1,112 +1,72 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-import type { eventWithTime, fullSnapshotEvent } from "@rrweb/types";
-import { createCache, createMirror, rebuild, serializedNodeWithId } from 'rrweb-snapshot';
+import { HeatmapService } from "@/server/services/heatmap.service";
+import { createClient } from "@/utils/supabase/server";
 import Heatmap from "@/components/Heatmap/Heatmap";
 
-const HeatmapPage = ({
+export default async function HeatmapPage({
   params,
 }: {
-  params: Promise<{
-    heatmapId: string;
-  }>;
-}) => {
-  const [events, setEvents] = useState<eventWithTime[]>([]);
-  const [firstSnapshot, setFirstSnapshot] = useState<fullSnapshotEvent | null>(
-    null
-  );
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const { heatmapId } = await params;
-        const response = await fetch(`/api/heatmaps/${heatmapId}/events`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch heatmap events");
-        }
-        const data = await response.json();
+  params: Promise<{ heatmapId: string; orgId: string; projectId: string }>;
+}) {
+  const { heatmapId, orgId, projectId } = await params;
+  const supabase = await createClient();
+  let dimensions = {
+    width: 0,
+    height: 0,
+  };
+  // Fetch initial data server-side
+  const user = await supabase.auth.getUser();
+  if (!user.data.user) {
+    throw new Error("User not found");
+  }
+  const events = await HeatmapService.getHeatmapEvents({
+    user: {
+      id: user.data.user?.id,
+      email: user.data.user?.email || "",
+      orgId,
+    },
+    params: {
+      projectId,
+      heatmapId,
+    },
+  });
 
-        if (!data.events?.length) {
-          throw new Error("No events found for this heatmap");
-        }
+  // Get the first session ID to fetch its screenshot
+  const { data: heatmap } = await supabase
+    .from("heatmaps")
+    .select("selected_session_ids")
+    .eq("id", heatmapId)
+    .single();
 
-        // Find meta event and second snapshot
-        const meta = data.events.find(
-          (e: eventWithTime) => e.type === 4 // EventType.Meta
-        );
+  let snapshotUrl = null;
+  if (heatmap?.selected_session_ids?.[0]) {
+    const sessionId = heatmap.selected_session_ids[0];
 
-        const snapshots = data.events.filter(
-          (e: eventWithTime) => e.type === 2 // EventType.FullSnapshot
-        );
-        const firstSnapshot = snapshots[0]; // Get the first snapshot
+    const { data: url } = await supabase.storage
+      .from("screenshots")
+      .getPublicUrl(`${projectId}/${sessionId}/screenshot.jpg`);
+    snapshotUrl = url.publicUrl;
 
-        if (!meta || !firstSnapshot) {
-          throw new Error("Missing required events");
-        }
-
-        setEvents(data.events);
-        setFirstSnapshot(firstSnapshot);
-        setDimensions({
-          width: meta.data.width,
-          height: meta.data.height,
-        });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setIsLoading(false);
-      }
+    //get thee width and height of the screenshot of session
+    const { data: session } = await supabase
+      .from("sessions")
+      .select("screen_width, screen_height")
+      .eq("id", sessionId)
+      .single();
+    dimensions = {
+      width: session?.screen_width,
+      height: session?.screen_height,
     };
-
-    fetchEvents();
-  }, [params]);
-
-  useEffect(() => {
-    if (!firstSnapshot?.data.node || !containerRef.current) return;
-
-    // Clear previous content
-    containerRef.current.innerHTML = '';
-
-    // Rebuild the DOM from the snapshot
-    const mirror = rebuild(firstSnapshot.data.node as serializedNodeWithId, {
-      doc: document,
-      mirror: createMirror(),
-      hackCss: true,
-      cache: createCache(),
-    });
-    
-    if (mirror && containerRef.current) {
-      containerRef.current.appendChild(mirror);
-    }
-  }, [firstSnapshot]);
-
-  if (isLoading) {
-    return <div>Loading...</div>;
   }
 
-  if (error) {
-    return <div>Error: {error}</div>;
+  if (!snapshotUrl) {
+    return <div>No snapshot found</div>;
   }
-
   return (
-    <div className="relative w-full h-full">
-      <div
-        ref={containerRef}
-        className="overflow-auto"
-        style={{
-          width: dimensions.width,
-          height: dimensions.height,
-          transform: 'scale(1)',
-          transformOrigin: 'top left',
-        }}
-      />
-      <Heatmap events={events} width={dimensions.width} height={dimensions.height} />
-    </div>
+    <Heatmap
+      events={events}
+      width={dimensions.width}
+      height={dimensions.height}
+      url={snapshotUrl}
+    />
   );
-};
-
-export default HeatmapPage;
+}

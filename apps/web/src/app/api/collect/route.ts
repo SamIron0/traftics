@@ -2,11 +2,8 @@ import { NextResponse } from "next/server";
 import { processEvents } from "@/server/collector/processor";
 import { addToQueue } from "@/server/collector/queue";
 import { Session } from "@/types/api";
-import { WebsiteService } from "@/server/services/website.service";
-import type { eventWithTime } from "@rrweb/types";
 import { createClient } from "@supabase/supabase-js";
-
-const SCREENSHOT_SERVICE_URL = process.env.SCREENSHOT_SERVICE_URL;
+import sharp from "sharp";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,89 +37,46 @@ export async function POST(request: Request) {
       ...session,
       events: processedEvents,
     });
-    console.log("Session added to queue");
 
-    if (session.events.some((event: eventWithTime) => event.type === 4)) {
+    // Handle screenshot if present
+    if (session.screenshot) {
       try {
-        const isVerified = await WebsiteService.getVerificationStatus(
-          session.site_id
-        );
+        // Convert base64 to buffer
+        const base64Data = session.screenshot.split(",")[1];
+        const buffer = Buffer.from(base64Data, "base64");
 
-        if (!isVerified) {
-          await WebsiteService.verifyWebsite(session.site_id);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
-    if (session.events.some((event: eventWithTime) => event.type === 2)) {
-      try {
-        // Check if session already has a screenshot
-        const { data: existingSession } = await supabase
-          .from("sessions")
-          .select("has_screenshot")
-          .eq("id", session.id)
-          .single();
-
-        if (existingSession?.has_screenshot) {
-          return;
-        }
-
-        // Find the first snapshot event
-        const firstSnapshot = session.events.find(
-          (event: eventWithTime) => event.type === 2
-        );
-
-        if (!firstSnapshot) {
-          throw new Error("No snapshot event found");
-        }
-
-        // Create screenshot record first
-        const { error: screenshotError } = await supabase
+        // Get image dimensions
+        const metadata = await sharp(buffer).metadata();
+        const imageWidth = metadata.width;
+        const imageHeight = metadata.height;
+        console.log("imageWidth", metadata);
+        // Upload to Supabase Storage
+        const filePath = `${session.site_id}/${session.id}/screenshot.jpg`;
+        const { error: uploadError } = await supabase.storage
           .from("screenshots")
-          .insert({
-            session_id: session.id,
-            site_id: session.site_id,
-            status: "pending",
+          .upload(filePath, buffer, {
+            contentType: "image/jpeg",
+            upsert: true,
           });
 
-        if (screenshotError) {
-          console.error("Error creating screenshot record:", screenshotError);
-          return;
-        }
+        if (uploadError) throw uploadError;
 
-        // Mark session as having a screenshot
-        await supabase
+        // Update session record with screenshot status and dimensions
+        const { error: updateError } = await supabase
           .from("sessions")
-          .update({ has_screenshot: true })
+          .update({
+            has_screenshot: true,
+            screen_width: imageWidth,
+            screen_height: imageHeight,
+          })
           .eq("id", session.id);
 
-        // Fire and forget screenshot service request
-        fetch(`${SCREENSHOT_SERVICE_URL}/screenshot`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            sessionId: session.id,
-            siteId: session.site_id,
-            events: [firstSnapshot],
-          }),
-        }).catch(error => {
-          console.error('Error calling screenshot service:', error);
-        });
-
+        if (updateError) {
+          console.error("Error updating session record:", updateError);
+          throw updateError;
+        }
       } catch (error) {
-        console.error("Error creating screenshot record:", error);
-        // Update screenshot record with error if it exists
-        await supabase
-          .from("screenshots")
-          .update({
-            status: "failed",
-            error: error instanceof Error ? error.message : "Unknown error",
-          })
-          .match({ session_id: session.id });
+        console.error("Error handling screenshot:", error);
       }
     }
 

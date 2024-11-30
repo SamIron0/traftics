@@ -1,92 +1,154 @@
 "use client";
-import React, { useEffect, useRef } from "react";
-import h337 from "heatmap.js";
+import React, { useEffect, useRef, useState } from "react";
 import {
   eventWithTime,
-  mouseInteractionData,
-  MouseInteractions,
+  EventType,
   IncrementalSource,
+  MouseInteractions,
+  mouseInteractionData,
+  scrollData,
 } from "@rrweb/types";
+import h337 from "heatmap.js";
+
+interface HeatmapData {
+  x: number;
+  y: number;
+  value: number;
+}
+
+interface HeatmapInstance {
+  setData: (data: { max: number; data: HeatmapData[] }) => void;
+  addData: (data: HeatmapData[]) => void;
+  getData: () => HeatmapData[];
+  destroy: () => void;
+}
 
 type Props = {
   events: eventWithTime[];
   width: number;
   height: number;
-  scale?: number;
+  url: string;
 };
 
-const Heatmap = ({ events, width, height, scale = 1 }: Props) => {
-  const heatmapRef = useRef<HTMLDivElement>(null);
+const Heatmap = ({ events, width, height, url }: Props) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const heatmapRef = useRef<HeatmapInstance | null>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+
+  // Track scroll position at each click
+  const clickEvents = events.filter((event) => {
+    return (
+      event.type === EventType.IncrementalSnapshot &&
+      // Keep both click and scroll events
+      ((event.data.source === IncrementalSource.MouseInteraction &&
+        event.data.type === MouseInteractions.Click) ||
+        event.data.source === IncrementalSource.Scroll)
+    );
+  });
 
   useEffect(() => {
-    if (!heatmapRef.current || !events.length) return;
+    if (!containerRef.current || !imageRef.current) return;
 
-    // Store ref in a variable to use in cleanup
-    const container = heatmapRef.current;
+    const updateHeatmap = () => {
+      const img = imageRef.current;
+      if (!img) return;
 
-    // Create heatmap instance
-    const heatmapInstance = h337.create({
-      container: container,
-      radius: 20,
-      maxOpacity: 0.6,
-      minOpacity: 0.1,
-      blur: 0.75,
-      gradient: {
-        '.5': 'blue',
-        '.8': 'red',
-        '.95': 'white'
-      }
-    });
+      // Get the natural dimensions of the image
+      const imgWidth = img.width;
+      const imgHeight = img.height;
 
-    // Filter and transform click events
-    const clickEvents = events
-      .filter(event => 
-        event.type === 3 && // IncrementalSnapshot
-        (event.data).source === IncrementalSource.MouseInteraction &&
-        (event.data as mouseInteractionData).type === MouseInteractions.Click
-      )
-      .map(event => {
-        const data = event.data as mouseInteractionData;
-        if (typeof data.x === 'undefined' || typeof data.y === 'undefined') {
-          return null;
+      if (imgWidth === 0 || imgHeight === 0) return;
+
+      // Set container dimensions to match image
+      containerRef.current!.style.width = `${imgWidth}px`;
+      containerRef.current!.style.height = `${imgHeight}px`;
+      containerRef.current!.style.position = "relative";
+
+      // Set image dimensions
+      img.style.width = "100%";
+      img.style.height = "100%";
+      img.style.position = "absolute";
+      img.style.top = "0";
+      img.style.left = "0";
+
+      // Create heatmap instance
+      if (heatmapRef.current) {
+        // Remove existing heatmap
+        const canvas = containerRef.current?.querySelector("canvas");
+        if (canvas) {
+          containerRef.current?.removeChild(canvas);
         }
-        return {
-          x: Math.round(data.x / scale),
-          y: Math.round(data.y / scale),
-          value: 1
-        };
-      })
-      .filter((event): event is { x: number; y: number; value: number } => event !== null);
+        heatmapRef.current = null;
+      }
 
-    // Set heatmap data
-    heatmapInstance.setData({
-      max: clickEvents.length,
-      data: clickEvents
-    });
+      const heatmapInstance = h337.create({
+        container: containerRef.current!,
+        radius: Math.min(imgWidth, imgHeight) * 0.02, // Adjust radius based on image size
+        maxOpacity: 0.6,
+        minOpacity: 0,
+        blur: 0.8,
+      });
 
-    // Manual cleanup
+      // Store instance in ref
+      heatmapRef.current = heatmapInstance as unknown as HeatmapInstance;
+
+      // Track scroll position
+      let currentScrollY = 0;
+
+      // Format click data for heatmap, accounting for scroll
+      const points = clickEvents.reduce<HeatmapData[]>((acc, event) => {
+        if ((event.data as any).source === IncrementalSource.Scroll) {
+          // Update scroll position
+          currentScrollY = (event.data as scrollData).y;
+          return acc;
+        }
+
+        // Handle click events
+        const data = event.data as mouseInteractionData;
+
+        // Calculate scale factors based on image vs original dimensions
+        const scaleX = imgWidth / width;
+        const scaleY = imgHeight / height;
+        // Scale the coordinates and add scroll offset
+        const scaledX = Math.round(data.x! * scaleX);
+        const scaledY = Math.round((data.y! + currentScrollY) * scaleY);
+
+        acc.push({
+          x: scaledX,
+          y: scaledY,
+          value: 1,
+        });
+        return acc;
+      }, []);
+
+      // Set data
+      heatmapInstance.setData({
+        max: 1,
+        data: points,
+      });
+    };
+    updateHeatmap();
+
     return () => {
-      const canvas = container.querySelector('canvas');
-      if (canvas) {
-        canvas.remove();
+      if (heatmapRef.current) {
+        const canvas = containerRef.current?.querySelector("canvas");
+        if (canvas) {
+          containerRef.current?.removeChild(canvas);
+        }
+        heatmapRef.current = null;
       }
     };
-  }, [events, width, height, scale]);
+  }, [clickEvents]);
 
   return (
-    <div
-      ref={heatmapRef}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: `${width}px`,
-        height: `${height}px`,
-        pointerEvents: 'none',
-        zIndex: 1000,
-      }}
-    />
+    <div ref={containerRef} style={{ position: "relative" }}>
+      <img
+        src={url}
+        ref={imageRef}
+        alt="Heatmap background"
+        style={{ display: "block" }}
+      />
+    </div>
   );
 };
-
 export default Heatmap;

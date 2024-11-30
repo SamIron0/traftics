@@ -57,8 +57,6 @@ export class SessionModel {
       started_at,
       duration,
       user_agent,
-      screen_width,   
-      screen_height,
     } = data;
 
     // Convert milliseconds timestamp to ISO string
@@ -73,8 +71,6 @@ export class SessionModel {
         started_at: startedAtDate,
         duration,
         user_agent,
-        screen_width,
-        screen_height,
         has_screenshot: false,
       })
       .select()

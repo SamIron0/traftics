@@ -89,10 +89,10 @@ body {
 
 .replayer-wrapper {
   position: absolute !important;
-  top: 0;
-  left: 0;
-  width: 100% !important;
-  height: 100% !important;
+    transform: scale(0.6);
+  transform-origin: center center;
+  align-items: center;
+  justify-content: center;
 }
 
 .replayer-mouse-tail {

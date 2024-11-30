@@ -137,7 +137,7 @@ export default function SessionPlayer({ session }: Props) {
       {/* Main Content */}
       <div className="flex flex-1">
         {/* Left Content */}
-        <div className="flex-1 p-4">
+        <div className="flex-1 p-4">  
           {/* URL Bar */}
           <div className="mb-4 flex items-center gap-2">
             <div className="relative flex-1">
@@ -166,7 +166,15 @@ export default function SessionPlayer({ session }: Props) {
           </div>
 
           {/* Video Area */}
-          <div ref={wrapperRef} className="aspect-video w-full bg-black rounded-lg relative overflow-hidden" />
+          <div 
+            ref={wrapperRef} 
+            className="aspect-video w-full bg-black rounded-lg relative overflow-hidden flex items-center justify-center"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          />
 
           {/* Timeline */}
           <div className="mt-4">
