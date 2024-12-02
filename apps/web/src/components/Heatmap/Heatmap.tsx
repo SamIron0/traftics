@@ -25,6 +25,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 interface HeatmapData {
   x: number;
   y: number;
@@ -96,7 +98,6 @@ const Heatmap = ({ events, width, height, url, name }: Props) => {
   const clickEvents = events.filter((event) => {
     return (
       event.type === EventType.IncrementalSnapshot &&
-      // Keep both click and scroll events
       ((event.data.source === IncrementalSource.MouseInteraction &&
         event.data.type === MouseInteractions.Click) ||
         event.data.source === IncrementalSource.Scroll)

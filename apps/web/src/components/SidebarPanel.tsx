@@ -7,7 +7,7 @@ import {
   PlusIcon,
   ThermometerSun,
 } from "lucide-react";
-import { SidebarTrigger, useSidebar } from "./ui/sidebar";
+import { useSidebar } from "./ui/sidebar";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -217,13 +217,12 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
   return (
     <div
       className={cn(
-        "fixed top-0 bottom-0 flex flex-col min-h-0 w-[255px] border-r bg-background transition-[left] duration-200 ease-linear",
-        state === "expanded" ? "left-[255px]" : "left-0"
+        "fixed top-0 bottom-0 flex flex-col min-h-0 w-[207px] border-r bg-background transition-[left] duration-200 ease-linear",
+        state === "expanded" ? "left-[207px]" : "left-[47px]"
       )}
     >
       <div className="flex-none p-3 mt-4">
         <h2 className="text-lg font-semibold flex gap-2">
-          <SidebarTrigger />
           {content.title}
         </h2>
       </div>

@@ -4,86 +4,103 @@ import { addToQueue } from "@/server/collector/queue";
 import { Session } from "@/types/api";
 import { createClient } from "@supabase/supabase-js";
 import sharp from "sharp";
+import { gunzip } from 'zlib';
+import { promisify } from 'util';
 
+const gunzipAsync = promisify(gunzip);
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
 );
 
-function corsResponse(response: NextResponse) {
-  response.headers.set("Access-Control-Allow-Origin", "*");
-  response.headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-  response.headers.set("Access-Control-Allow-Headers", "Content-Type");
-  return response;
-}
-
-export async function OPTIONS() {
-  return corsResponse(new NextResponse(null, { status: 200 }));
-}
+// Cache CORS headers
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Content-Encoding',
+};
 
 export async function POST(request: Request) {
   try {
-    const session: Session = await request.json();
+    // Handle compressed data
+    const contentEncoding = request.headers.get('content-encoding');
+    let sessionData: Session;
 
-    if (!session.site_id || !session.id || !session.events) {
-      return corsResponse(
-        NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    if (contentEncoding === 'gzip') {
+      const buffer = await request.arrayBuffer();
+      const decompressed = await gunzipAsync(Buffer.from(buffer));
+      sessionData = JSON.parse(decompressed.toString());
+    } else {
+      sessionData = await request.json();
+    }
+
+    if (!sessionData.site_id || !sessionData.id || !sessionData.events) {
+      return new NextResponse(
+        JSON.stringify({ error: "Missing required fields" }), 
+        { status: 400, headers: CORS_HEADERS }
       );
     }
 
-    // Process events and create session first
-    const processedEvents = await processEvents(session.events);
+    // Process events and session in parallel
+    const [processedEvents, screenshotResult] = await Promise.all([
+      processEvents(sessionData.events),
+      handleScreenshot(sessionData)
+    ]);
+
+    // Add to queue with processed events
     await addToQueue({
-      ...session,
+      ...sessionData,
       events: processedEvents,
+      ...screenshotResult
     });
 
-    // Handle screenshot if present
-    if (session.screenshot) {
-      try {
-        // Convert base64 to buffer
-        const base64Data = session.screenshot.split(",")[1];
-        const buffer = Buffer.from(base64Data, "base64");
-
-        // Get image dimensions
-        const metadata = await sharp(buffer).metadata();
-        const imageWidth = metadata.width;
-        const imageHeight = metadata.height;
-        // Upload to Supabase Storage
-        const filePath = `${session.site_id}/${session.id}/screenshot.jpg`;
-        const { error: uploadError } = await supabase.storage
-          .from("screenshots")
-          .upload(filePath, buffer, {
-            contentType: "image/jpeg",
-            upsert: true,
-          });
-
-        if (uploadError) throw uploadError;
-
-        // Update session record with screenshot status and dimensions
-        const { error: updateError } = await supabase
-          .from("sessions")
-          .update({
-            has_screenshot: true,
-            screen_width: imageWidth,
-            screen_height: imageHeight,
-          })
-          .eq("id", session.id);
-
-        if (updateError) {
-          console.error("Error updating session record:", updateError);
-          throw updateError;
-        }
-      } catch (error) {
-        console.error("Error handling screenshot:", error);
-      }
-    }
-
-    return corsResponse(NextResponse.json({ success: true }));
+    return new NextResponse(
+      JSON.stringify({ success: true }), 
+      { status: 200, headers: CORS_HEADERS }
+    );
   } catch (error) {
     console.error("Error processing session:", error);
-    return corsResponse(
-      NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return new NextResponse(
+      JSON.stringify({ error: "Internal server error" }), 
+      { status: 500, headers: CORS_HEADERS }
     );
+  }
+}
+
+async function handleScreenshot(session: Session) {
+  if (!session.screenshot) return {
+    has_screenshot: false,
+    screen_width: session.screen_width,
+    screen_height: session.screen_height
+  };
+
+  try {
+    const base64Data = session.screenshot.split(",")[1];
+    const buffer = Buffer.from(base64Data, "base64");
+
+    const [metadata, uploadResult] = await Promise.all([
+      sharp(buffer).metadata(),
+      supabase.storage
+        .from("screenshots")
+        .upload(`${session.site_id}/${session.id}/screenshot.jpg`, buffer, {
+          contentType: "image/jpeg",
+          upsert: true,
+        })
+    ]);
+
+    if (uploadResult.error) throw uploadResult.error;
+
+    return {
+      has_screenshot: true,
+      screen_width: metadata.width || session.screen_width,
+      screen_height: metadata.height || session.screen_height
+    };
+  } catch (error) {
+    console.error("Error handling screenshot:", error);
+    return {
+      has_screenshot: false,
+      screen_width: session.screen_width,
+      screen_height: session.screen_height
+    };
   }
 }

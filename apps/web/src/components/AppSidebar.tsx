@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useRouter, usePathname, useParams } from "next/navigation";
 import {
   BarChart3,
@@ -23,6 +24,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { SidebarPanel } from "./SidebarPanel";
 import { Button } from "./ui/button";
@@ -38,12 +41,15 @@ import {
 } from "./ui/dropdown-menu";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 import Image from "next/image";
+import { Separator } from "./ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
   const { signOut } = useAuthStatus();
+  const { state } = useSidebar();
 
   const orgSlug = params?.orgSlug as string;
   const projectSlug = params?.projectSlug as string;
@@ -99,14 +105,14 @@ export function AppSidebar() {
 
   return (
     <div className="flex flex-row h-100vh ">
-      <Sidebar className="  bg-black">
+      <Sidebar collapsible="icon" className="bg-black">
         <SidebarHeader>
           <div className="flex items-center gap-1 pt-5 ">
             <Image
-              src="/logo-text.svg"
+              src={state === "collapsed" ? "/logo.svg" : "/logo-text.svg"}
               alt="Traftics Logo"
-              width={180}
-              height={48}
+              width={state === "collapsed" ? 30 : 120}
+              height={state === "collapsed" ? 30 : 12}
               className="rounded-lg cursor-pointer"
               onClick={() => router.push("/")}
             />
@@ -114,31 +120,55 @@ export function AppSidebar() {
         </SidebarHeader>
 
         <SidebarContent>
-          {navigation.map((group) => (
-            <SidebarGroup key={group.group} className="space-y-2">
-              <SidebarGroupLabel>{group.group}</SidebarGroupLabel>
-
-              {group.items.map((item) => (
-                <SidebarMenuButton
-                  key={item.path}
-                  tooltip={item.label}
-                  isActive={pathname.includes(item.path)}
-                  onClick={() => router.push(item.path)}
-                >
-                  <item.icon />
-                  {item.label}
-                </SidebarMenuButton>
-              ))}
-            </SidebarGroup>
+          {navigation.map((group, index) => (
+            <React.Fragment key={group.group}>
+              {index > 0 && <Separator className="my-4 px-2" />}
+              <SidebarGroup className="space-y-2">
+                {group.items.map((item) => (
+                  <SidebarMenuButton
+                    key={item.path}
+                    tooltip={item.label}
+                    isActive={pathname.includes(item.path)}
+                    onClick={() => router.push(item.path)}
+                  >
+                    <item.icon />
+                    {item.label}
+                  </SidebarMenuButton>
+                ))}
+              </SidebarGroup>
+            </React.Fragment>
           ))}
         </SidebarContent>
 
         <SidebarFooter>
-          <Button variant="secondary" className="flex items-center gap-2">
-            <Rocket className="h-4 w-4" />
-            Upgrade plan
-          </Button>
-
+          <Separator className="my-4 px-2" />
+          <p className="text-xs group-data-[collapsible=icon]:hidden">
+            Get a 7-day free trial. Try our most advanced features for free.
+          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="secondary" 
+                  className="flex items-center gap-2 group-data-[collapsible=icon]:p-2"
+                >
+                  <Rocket className="h-4 w-4" />
+                  <span className="group-data-[collapsible=icon]:hidden">
+                    Upgrade plan
+                  </span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent 
+                side="right" 
+                className="font-medium"
+                hidden={state !== "collapsed"}
+              >
+                Upgrade plan
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <Separator className="my-4 px-2" />
+          <SidebarTrigger />
           <SidebarMenu>
             <SidebarMenuItem>
               <DropdownMenu>

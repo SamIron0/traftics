@@ -1,7 +1,7 @@
 import * as rrweb from "rrweb";
 import { v4 as uuidv4 } from "uuid";
-import { Session } from "@session-recorder/types";
 import type { eventWithTime } from "@rrweb/types";
+import pako from 'pako';
 
 interface SessionConfig {
   websiteId: string;
@@ -16,7 +16,9 @@ class SessionTracker {
   private startedAt: number;
   private lastEventTime: number;
   private flushInterval: number = 10000;
+  private initialFlushTimeout: number = 3000;
   private intervalId?: number;
+  private timeoutId?: number;
   private hasScreenshot: boolean = false;
 
   constructor(config: SessionConfig) {
@@ -38,7 +40,7 @@ class SessionTracker {
     } as eventWithTime);
 
     this.startRecording();
-    this.setupFlushInterval();
+    this.setupInitialFlush();
   }
 
   private startRecording(): void {
@@ -57,6 +59,15 @@ class SessionTracker {
     });
   }
 
+  private setupInitialFlush(): void {
+    // Set up initial flush after 3 seconds
+    this.timeoutId = window.setTimeout(() => {
+      this.flush();
+      // After initial flush, set up regular interval
+      this.setupFlushInterval();
+    }, this.initialFlushTimeout);
+  }
+
   private setupFlushInterval(): void {
     this.intervalId = window.setInterval(() => {
       this.flush();
@@ -72,7 +83,10 @@ class SessionTracker {
       this.hasScreenshot = true;
     }
 
-    const payload: Session = {
+    // Compress events using LZ compression
+    const compressedEvents = await this.compressEvents(this.events);
+    
+    const payload = {
       id: this.sessionId,
       site_id: this.websiteId,
       started_at: this.startedAt,
@@ -80,37 +94,70 @@ class SessionTracker {
       user_agent: navigator.userAgent,
       screen_width: window.screen.width,
       screen_height: window.screen.height,
-      events: [...this.events],
+      events: compressedEvents,
       screenshot: screenshot,
     };
 
     try {
+      // Use Beacon API for more reliable data sending, especially on page unload
+      if (navigator.sendBeacon) {
+        const blob = new Blob([JSON.stringify(payload)], {
+          type: 'application/json',
+        });
+        
+        const success = navigator.sendBeacon(
+          `${this.collectorUrl}/api/collect`,
+          blob
+        );
+        
+        if (success) {
+          this.events = [];
+          this.checkSessionReset();
+          return;
+        }
+      }
+
+      // Fallback to fetch if sendBeacon fails or isn't available
       const response = await fetch(`${this.collectorUrl}/api/collect`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
+          'Content-Encoding': 'gzip',
         },
         body: JSON.stringify(payload),
+        keepalive: true,
       });
 
       if (response.ok) {
         this.events = [];
-
-        if (this.lastEventTime - this.startedAt > 30 * 60 * 1000) {
-          // 30 minutes
-          this.sessionId = uuidv4();
-          this.startedAt = Date.now();
-          this.hasScreenshot = false; // Reset screenshot flag for new session
-        }
+        this.checkSessionReset();
       }
     } catch (error) {
       console.error("Failed to send session data:", error);
     }
   }
 
+  private checkSessionReset(): void {
+    if (this.lastEventTime - this.startedAt > 30 * 60 * 1000) {
+      this.sessionId = uuidv4();
+      this.startedAt = Date.now();
+      this.hasScreenshot = false;
+    }
+  }
+
+  private async compressEvents(events: eventWithTime[]): Promise<string> {
+    const jsonString = JSON.stringify(events);
+    const uint8Array = new TextEncoder().encode(jsonString);
+    const compressed = pako.gzip(uint8Array);
+    return btoa(String.fromCharCode.apply(null, Array.from(compressed)));
+  }
+
   public stop(): void {
     if (this.intervalId) {
       window.clearInterval(this.intervalId);
+    }
+    if (this.timeoutId) {
+      window.clearTimeout(this.timeoutId);
     }
     this.flush();
   }
