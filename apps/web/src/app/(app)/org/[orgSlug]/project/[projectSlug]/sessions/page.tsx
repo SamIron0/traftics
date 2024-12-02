@@ -1,15 +1,17 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { SessionsPage } from "@/components/sessions/SessionsPage";
 import { SessionService } from "@/server/services/session.service";
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
+import { SessionsSkeleton } from "@/components/sessions/SessionsSkeleton";
 
-export default async function Sessions({
-  params,
-}: {
-  params: Promise<{ projectSlug: string; orgSlug: string }>;
+async function SessionsContent({ 
+  orgSlug, 
+  projectSlug 
+}: { 
+  orgSlug: string; 
+  projectSlug: string;
 }) {
-  const { projectSlug, orgSlug } = await params;
   const supabase = await createClient();
   
   // Fetch organization ID using slug
@@ -51,4 +53,18 @@ export default async function Sessions({
   });
 
   return <SessionsPage sessions={sessions} />;
+}
+
+export default async function Sessions({
+  params,
+}: {
+  params: Promise<{ projectSlug: string; orgSlug: string }>;
+}) {
+  const { projectSlug, orgSlug } = await params;
+
+  return (
+    <Suspense fallback={<SessionsSkeleton />}>
+      <SessionsContent orgSlug={orgSlug} projectSlug={projectSlug} />
+    </Suspense>
+  );
 }

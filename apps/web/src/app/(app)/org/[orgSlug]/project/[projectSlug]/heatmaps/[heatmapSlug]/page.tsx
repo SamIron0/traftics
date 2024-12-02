@@ -1,14 +1,16 @@
 import { HeatmapService } from "@/server/services/heatmap.service";
 import { createClient } from "@/utils/supabase/server";
 import Heatmap from "@/components/Heatmap/Heatmap";
+import { Suspense } from "react";
+import { HeatmapsSkeleton } from "@/components/Heatmap/HeatmapsSkeleton";
 
 export default async function HeatmapPage({
   params,
 }: {
-  params: Promise<{ 
-    heatmapSlug: string; 
-    orgSlug: string; 
-    projectSlug: string 
+  params: Promise<{
+    heatmapSlug: string;
+    orgSlug: string;
+    projectSlug: string;
   }>;
 }) {
   const { heatmapSlug, orgSlug, projectSlug } = await params;
@@ -16,23 +18,23 @@ export default async function HeatmapPage({
 
   // Fetch IDs using slugs
   const { data: org } = await supabase
-    .from('organizations')
-    .select('id')
-    .eq('slug', orgSlug)
+    .from("organizations")
+    .select("id")
+    .eq("slug", orgSlug)
     .single();
 
   const { data: project } = await supabase
-    .from('websites')
-    .select('id')
-    .eq('slug', projectSlug)
-    .eq('org_id', org?.id)
+    .from("websites")
+    .select("id")
+    .eq("slug", projectSlug)
+    .eq("org_id", org?.id)
     .single();
 
   const { data: heatmap } = await supabase
-    .from('heatmaps')
-    .select('*')
-    .eq('slug', heatmapSlug)
-    .eq('website_id', project?.id)
+    .from("heatmaps")
+    .select("*")
+    .eq("slug", heatmapSlug)
+    .eq("website_id", project?.id)
     .single();
 
   let dimensions = {
@@ -88,11 +90,14 @@ export default async function HeatmapPage({
     return <div>No snapshot found</div>;
   }
   return (
-    <Heatmap
-      events={events}
-      width={dimensions.width}
-      height={dimensions.height}
-      url={snapshotUrl}
-    />
+    <Suspense fallback={<HeatmapsSkeleton />}>
+      <Heatmap
+        name={heatmap.name}
+        events={events}
+        width={dimensions.width}
+        height={dimensions.height}
+        url={snapshotUrl}
+      />
+    </Suspense>
   );
 }

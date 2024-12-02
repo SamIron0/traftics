@@ -37,6 +37,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
+import Image from "next/image";
 
 export function AppSidebar() {
   const router = useRouter();
@@ -90,16 +91,27 @@ export function AppSidebar() {
   ];
   const data = {
     user: {
-      name: "John Doe",
-      email: "john.doe@example.com",
+      name: "Samuel Ironkwe",
+      email: "samironkwe@gmail.com",
       avatar: "https://github.com/SamIron0.png",
     },
   };
 
   return (
     <div className="flex flex-row h-100vh ">
-      <Sidebar className="bg-black">
-        <SidebarHeader></SidebarHeader>
+      <Sidebar className="  bg-black">
+        <SidebarHeader>
+          <div className="flex items-center gap-1 pt-5 ">
+            <Image
+              src="/logo-text.svg"
+              alt="Traftics Logo"
+              width={180}
+              height={48}
+              className="rounded-lg cursor-pointer"
+              onClick={() => router.push("/")}
+            />
+          </div>
+        </SidebarHeader>
 
         <SidebarContent>
           {navigation.map((group) => (

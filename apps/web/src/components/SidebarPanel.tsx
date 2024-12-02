@@ -221,7 +221,7 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
         state === "expanded" ? "left-[255px]" : "left-0"
       )}
     >
-      <div className="flex-none p-3">
+      <div className="flex-none p-3 mt-4">
         <h2 className="text-lg font-semibold flex gap-2">
           <SidebarTrigger />
           {content.title}

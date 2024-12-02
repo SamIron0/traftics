@@ -37,7 +37,6 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useRouter, useSearchParams } from "next/navigation";
-import HeatmapsList from "../Heatmap/HeatmapsList";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -56,7 +55,6 @@ export default function SessionPlayer({ session }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [skipInactive, setSkipInactive] = useState(true);
-  const [isDetailsExpanded, setIsDetailsExpanded] = useState(true);
   const [activeView, setActiveView] = useState<
     "replay" | "devtools" | "analytics"
   >("replay");
@@ -130,7 +128,7 @@ export default function SessionPlayer({ session }: Props) {
           <motion.img
             src="/logo.svg"
             alt="logo"
-            className="mx-auto h-24 w-24"
+            className="mx-auto h-10 w-10"
             variants={itemVariants}
           />
           <Button
@@ -313,7 +311,7 @@ export default function SessionPlayer({ session }: Props) {
                   <div>42</div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <div className="">User's sessions</div>
+                  <div className="">User&apos;s sessions</div>
                   <div>1 / 2</div>
                 </div>
               </div>
