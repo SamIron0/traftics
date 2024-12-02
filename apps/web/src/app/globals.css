@@ -89,10 +89,11 @@ body {
 
 .replayer-wrapper {
   position: absolute !important;
-    transform: scale(0.6);
+  transform: scale(0.7125);
   transform-origin: center center;
   align-items: center;
   justify-content: center;
+  border-radius: 10px;
 }
 
 .replayer-mouse-tail {
@@ -107,4 +108,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
+}
+.aspect-video {
+  aspect-ratio: 16 /10;
 }

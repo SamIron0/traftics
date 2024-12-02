@@ -117,8 +117,6 @@ class SessionTracker {
 
   private async getPageScreenshot(): Promise<string | null> {
     try {
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
       const html2canvas = (await import("html2canvas")).default;
 
       const screenshot = await html2canvas(document.documentElement, {
@@ -126,10 +124,9 @@ class SessionTracker {
         scale: 1,
         logging: false,
         allowTaint: true,
-        foreignObjectRendering: true,
       });
 
-      return screenshot.toDataURL("image/jpeg", 0.8);
+      return screenshot.toDataURL("image/jpeg", 0.95);
     } catch (error) {
       console.error("Failed to capture screenshot:", error);
       return null;

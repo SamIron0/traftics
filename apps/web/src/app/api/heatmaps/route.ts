@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { HeatmapService } from "@/server/services/heatmap.service";
 import { createClient } from "@/utils/supabase/server";
+import { generateSlug } from "@/utils/slug";
 
 export async function POST(request: Request) {
   try {
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
       },
       {
         name: heatmapData.name,
+        slug: generateSlug(heatmapData.name), // Add this line
         website_id: profile.active_project_id,
         url_protocol: heatmapData.url.protocol,
         url_domain: heatmapData.url.domain,

@@ -5,10 +5,36 @@ import Heatmap from "@/components/Heatmap/Heatmap";
 export default async function HeatmapPage({
   params,
 }: {
-  params: Promise<{ heatmapId: string; orgId: string; projectId: string }>;
+  params: Promise<{ 
+    heatmapSlug: string; 
+    orgSlug: string; 
+    projectSlug: string 
+  }>;
 }) {
-  const { heatmapId, orgId, projectId } = await params;
+  const { heatmapSlug, orgSlug, projectSlug } = await params;
   const supabase = await createClient();
+
+  // Fetch IDs using slugs
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('id')
+    .eq('slug', orgSlug)
+    .single();
+
+  const { data: project } = await supabase
+    .from('websites')
+    .select('id')
+    .eq('slug', projectSlug)
+    .eq('org_id', org?.id)
+    .single();
+
+  const { data: heatmap } = await supabase
+    .from('heatmaps')
+    .select('*')
+    .eq('slug', heatmapSlug)
+    .eq('website_id', project?.id)
+    .single();
+
   let dimensions = {
     width: 0,
     height: 0,
@@ -22,28 +48,28 @@ export default async function HeatmapPage({
     user: {
       id: user.data.user?.id,
       email: user.data.user?.email || "",
-      orgId,
+      orgId: org?.id,
     },
     params: {
-      projectId,
-      heatmapId,
+      projectId: project?.id,
+      heatmapId: heatmap.id,
     },
   });
 
-  // Get the first session ID to fetch its screenshot
-  const { data: heatmap } = await supabase
+  // Second instance renamed to heatmapSession
+  const { data: heatmapSession } = await supabase
     .from("heatmaps")
     .select("selected_session_ids")
-    .eq("id", heatmapId)
+    .eq("id", heatmap.id)
     .single();
 
   let snapshotUrl = null;
-  if (heatmap?.selected_session_ids?.[0]) {
-    const sessionId = heatmap.selected_session_ids[0];
+  if (heatmapSession?.selected_session_ids?.[0]) {
+    const sessionId = heatmapSession.selected_session_ids[0];
 
     const { data: url } = await supabase.storage
       .from("screenshots")
-      .getPublicUrl(`${projectId}/${sessionId}/screenshot.jpg`);
+      .getPublicUrl(`${project?.id}/${sessionId}/screenshot.jpg`);
     snapshotUrl = url.publicUrl;
 
     //get thee width and height of the screenshot of session

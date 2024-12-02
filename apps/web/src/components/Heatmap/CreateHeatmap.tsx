@@ -43,7 +43,10 @@ interface AppliedFilters {
   country?: FilterGroup[];
 }
 
-export default function CreateHeatmap({ onClose, onSuccess }: CreateHeatmapProps) {
+export default function CreateHeatmap({
+  onClose,
+  onSuccess,
+}: CreateHeatmapProps) {
   const frequentlyUsed = [
     "Homepage",
     "Checkout",
@@ -186,14 +189,22 @@ export default function CreateHeatmap({ onClose, onSuccess }: CreateHeatmapProps
 
       const data = await response.json();
       onClose();
-      
+
       // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
       }
-
-      // Navigate to the new heatmap page
-      router.push(`${pathname}/${data.heatmap.id}`);
+      const segments = pathname.split("/");
+      
+      if (segments[segments.length - 1] === "heatmaps") {
+        // Case 1: On main heatmaps page
+        router.push(`${pathname}/${data.heatmap.slug}`);
+      } else {
+        // Case 2: Already on a specific heatmap page
+        // Replace the last segment (current heatmap slug) with the new one
+        segments[segments.length - 1] = data.heatmap.slug;
+        router.push(segments.join("/"));
+      }
     } catch (error) {
       console.error("Error creating heatmap:", error);
     }

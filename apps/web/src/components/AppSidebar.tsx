@@ -44,8 +44,8 @@ export function AppSidebar() {
   const params = useParams();
   const { signOut } = useAuthStatus();
 
-  const orgId = params?.orgId as string;
-  const projectId = params?.projectId as string;
+  const orgSlug = params?.orgSlug as string;
+  const projectSlug = params?.projectSlug as string;
 
   const handleLogout = async () => {
     try {
@@ -63,17 +63,17 @@ export function AppSidebar() {
         {
           label: "Dashboard",
           icon: LayoutDashboard,
-          path: `/org/${orgId}/project/${projectId}/dashboards/`,
+          path: `/org/${orgSlug}/project/${projectSlug}/dashboards/`,
         },
         {
           label: "Sessions",
           icon: BarChart3,
-          path: `/org/${orgId}/project/${projectId}/sessions`,
+          path: `/org/${orgSlug}/project/${projectSlug}/sessions`,
         },
         {
           label: "Heatmaps",
           icon: ThermometerSun,
-          path: `/org/${orgId}/project/${projectId}/heatmaps`,
+          path: `/org/${orgSlug}/project/${projectSlug}/heatmaps`,
         },
       ],
     },
@@ -83,7 +83,7 @@ export function AppSidebar() {
         {
           label: "Project Settings",
           icon: Settings,
-          path: `/org/${orgId}/settings`,
+          path: `/org/${orgSlug}/settings`,
         },
       ],
     },
@@ -92,7 +92,7 @@ export function AppSidebar() {
     user: {
       name: "John Doe",
       email: "john.doe@example.com",
-      avatar: "https://github.com/shadcn.png",
+      avatar: "https://github.com/SamIron0.png",
     },
   };
 

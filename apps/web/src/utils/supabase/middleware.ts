@@ -12,16 +12,29 @@ const onboardingRoutes = ["/onboarding"];
 const setupRoutes = ["/project-setup"];
 const authRoutes = ["/login", "/signup"];
 
-async function getDefaultDashboard(supabase: SupabaseClient, projectId: string) {
+async function getDefaultDashboard(
+  supabase: SupabaseClient,
+  projectSlug: string
+) {
+  const { data: project } = await supabase
+    .from("websites")
+    .select("id")
+    .eq("slug", projectSlug)
+    .single();
+
+  if (!project) return null;
+
   const { data: defaultDashboard } = await supabase
     .from("dashboards")
     .select("id")
-    .eq("website_id", projectId)
+    .eq("website_id", project.id)
     .order("created_at", { ascending: true })
     .limit(1)
     .single();
+
   return defaultDashboard?.id;
 }
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -77,21 +90,32 @@ export async function updateSession(request: NextRequest) {
       return supabaseResponse;
     }
   }
+
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("is_onboarded, org_id, active_project_id")
     .eq("user_id", user.id)
     .single();
 
+  // Get organization and project slugs
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("slug")
+    .eq("id", profile?.org_id)
+    .single();
+
+  const { data: project } = await supabase
+    .from("websites")
+    .select("slug")
+    .eq("id", profile?.active_project_id)
+    .single();
+
   // If user exists and trying to access auth routes, redirect to dashboard
   if (isAuthRoute) {
-    const defaultDashboard = await getDefaultDashboard(
-      supabase,
-      profile?.active_project_id
-    );
+    const defaultDashboard = await getDefaultDashboard(supabase, project?.slug);
 
     const url = request.nextUrl.clone();
-    url.pathname = `/org/${profile?.org_id}/project/${profile?.active_project_id}/dashboards/${defaultDashboard}`;
+    url.pathname = `/org/${org?.slug}/project/${project?.slug}/dashboards/${defaultDashboard}`;
     return NextResponse.redirect(url);
   }
 
@@ -106,10 +130,11 @@ export async function updateSession(request: NextRequest) {
     // If already onboarded but trying to access onboarding routes, redirect to dashboard
     if (isOnboardingRoute) {
       const url = request.nextUrl.clone();
-      url.pathname = `/org/${profile.org_id}/project/${profile.active_project_id}/dashboards/`;
+      url.pathname = `/org/${org?.slug}/project/${project?.slug}/dashboards/`;
       return NextResponse.redirect(url);
     }
   }
+
   if (!isSetupRoute) {
     return supabaseResponse;
   }
@@ -123,11 +148,8 @@ export async function updateSession(request: NextRequest) {
 
   if (setupStatus?.setup_completed) {
     const url = request.nextUrl.clone();
-    const defaultDashboard = await getDefaultDashboard(
-      supabase,
-      profile?.active_project_id
-    );
-    url.pathname = `/org/${profile?.org_id}/project/${profile?.active_project_id}/dashboards/${defaultDashboard}`;
+    const defaultDashboard = await getDefaultDashboard(supabase, project?.slug);
+    url.pathname = `/org/${org?.slug}/project/${project?.slug}/dashboards/${defaultDashboard}`;
     return NextResponse.redirect(url);
   }
 

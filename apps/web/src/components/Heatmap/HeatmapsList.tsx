@@ -10,6 +10,7 @@ interface Heatmap {
   url_match_type: string;
   precision: number;
   created_at: string;
+  slug: string;
 }
 
 export interface HeatmapsListRef {
@@ -43,17 +44,17 @@ const HeatmapsList = forwardRef<HeatmapsListRef>((_, ref) => {
     fetchHeatmaps();
   }, []);
 
-  const handleHeatmapClick = (heatmapId: string) => {
+  const handleHeatmapClick = (heatmapSlug: string) => {
     // Get the current pathname segments
     const segments = pathname.split('/');
     
     if (segments[segments.length - 1] === 'heatmaps') {
       // Case 1: On main heatmaps page
-      router.push(`${pathname}/${heatmapId}`);
+      router.push(`${pathname}/${heatmapSlug}`);
     } else {
       // Case 2: Already on a specific heatmap page
-      // Replace the last segment (current heatmap id) with the new one
-      segments[segments.length - 1] = heatmapId;
+      // Replace the last segment (current heatmap slug) with the new one
+      segments[segments.length - 1] = heatmapSlug;
       router.push(segments.join('/'));
     }
   };
@@ -74,7 +75,7 @@ const HeatmapsList = forwardRef<HeatmapsListRef>((_, ref) => {
             <div
               key={heatmap.id}
               className="p-2 rounded-lg border hover:bg-accent cursor-pointer"
-              onClick={() => handleHeatmapClick(heatmap.id)}
+              onClick={() => handleHeatmapClick(heatmap.slug)}
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="font-medium">{heatmap.name}</span>

@@ -9,18 +9,39 @@ export default async function DashboardPage({
   params,
 }: {
   params: Promise<{
-    orgId: string;
-    projectId: string;
+    orgSlug: string;
+    projectSlug: string;
     dashboardId: string;
   }>;
 }) {
   const supabase = await createClient();
-  const { orgId, projectId, dashboardId } = await params;
+  const { orgSlug, projectSlug, dashboardId } = await params;
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
+    notFound();
+  }
+
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('id')
+    .eq('slug', orgSlug)
+    .single();
+
+  if (!org) {
+    notFound();
+  }
+
+  const { data: project } = await supabase
+    .from('websites')
+    .select('id')
+    .eq('slug', projectSlug)
+    .eq('org_id', org.id)
+    .single();
+
+  if (!project) {
     notFound();
   }
 
@@ -35,15 +56,15 @@ export default async function DashboardPage({
   }
 
   try {
-    const isVerified = await WebsiteService.getVerificationStatus(projectId);
-    const script = await generateScript(projectId);
+    const isVerified = await WebsiteService.getVerificationStatus(project.id);
+    const script = await generateScript(project.id);
 
     if (!isVerified) {
       return (
         <UnverifiedDashboard
-          websiteId={projectId}
-          orgId={orgId}
-          projectId={projectId}
+          websiteId={project.id}
+          orgId={org.id}
+          projectId={project.id}
           dashboardId={dashboardId}
           script={script}
         />

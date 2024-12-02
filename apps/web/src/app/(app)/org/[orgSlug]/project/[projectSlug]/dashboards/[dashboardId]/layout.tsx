@@ -3,7 +3,11 @@ import { notFound } from "next/navigation";
 
 interface ProjectLayoutProps {
   children: React.ReactNode;
-  params: Promise<{ projectId: string; dashboardId: string; orgId: string }>;
+  params: Promise<{ 
+    orgSlug: string;
+    projectSlug: string;
+    dashboardId: string 
+  }>;
 }
 
 export default async function ProjectLayout({
@@ -12,7 +16,30 @@ export default async function ProjectLayout({
 }: ProjectLayoutProps) {
   const supabase = await createClient();
   const { data: user } = await supabase.auth.getUser();
-  const { orgId, projectId, dashboardId } = await params;
+  const { orgSlug, projectSlug, dashboardId } = await params;
+
+  // Fetch organization ID using slug
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('id')
+    .eq('slug', orgSlug)
+    .single();
+
+  if (!org) {
+    notFound();
+  }
+
+  // Fetch project ID using slug
+  const { data: project } = await supabase
+    .from('websites')
+    .select('id')
+    .eq('slug', projectSlug)
+    .eq('org_id', org.id)
+    .single();
+
+  if (!project) {
+    notFound();
+  }
 
   // verify user has access to this org and project
   const { data: userProfile } = await supabase
@@ -25,7 +52,7 @@ export default async function ProjectLayout({
     notFound();
   }
 
-  if (userProfile.org_id !== orgId || userProfile.active_project_id !== projectId) {
+  if (userProfile.org_id !== org.id || userProfile.active_project_id !== project.id) {
     notFound();
   }
 
@@ -34,7 +61,7 @@ export default async function ProjectLayout({
     .from("dashboards")
     .select("id")
     .eq("id", dashboardId)
-    .eq("website_id", projectId)
+    .eq("website_id", project.id)
     .single();
 
   if (!dashboard) {

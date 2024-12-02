@@ -49,7 +49,6 @@ export async function POST(request: Request) {
         const metadata = await sharp(buffer).metadata();
         const imageWidth = metadata.width;
         const imageHeight = metadata.height;
-        console.log("imageWidth", metadata);
         // Upload to Supabase Storage
         const filePath = `${session.site_id}/${session.id}/screenshot.jpg`;
         const { error: uploadError } = await supabase.storage

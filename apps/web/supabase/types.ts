@@ -56,6 +56,7 @@ export type Database = {
           name: string
           precision: number
           selected_session_ids: string[] | null
+          slug: string
           snapshot_url: string | null
           updated_at: string | null
           url_domain: string
@@ -72,6 +73,7 @@ export type Database = {
           name: string
           precision: number
           selected_session_ids?: string[] | null
+          slug: string
           snapshot_url?: string | null
           updated_at?: string | null
           url_domain: string
@@ -88,6 +90,7 @@ export type Database = {
           name?: string
           precision?: number
           selected_session_ids?: string[] | null
+          slug?: string
           snapshot_url?: string | null
           updated_at?: string | null
           url_domain?: string
@@ -112,6 +115,7 @@ export type Database = {
           id: string
           name: string
           size: number
+          slug: string
           updated_at: string | null
         }
         Insert: {
@@ -119,6 +123,7 @@ export type Database = {
           id?: string
           name: string
           size: number
+          slug: string
           updated_at?: string | null
         }
         Update: {
@@ -126,6 +131,7 @@ export type Database = {
           id?: string
           name?: string
           size?: number
+          slug?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -281,6 +287,7 @@ export type Database = {
           id: string
           name: string
           org_id: string
+          slug: string
           tracking_id: string
           updated_at: string | null
           verified: boolean
@@ -291,6 +298,7 @@ export type Database = {
           id?: string
           name: string
           org_id: string
+          slug: string
           tracking_id?: string
           updated_at?: string | null
           verified?: boolean
@@ -301,6 +309,7 @@ export type Database = {
           id?: string
           name?: string
           org_id?: string
+          slug?: string
           tracking_id?: string
           updated_at?: string | null
           verified?: boolean
@@ -320,7 +329,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_slug: {
+        Args: {
+          name: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       user_role:
