@@ -1,30 +1,23 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect} from "react";
 import { TrackingScript } from "../TrackingScript";
 import { useVerificationStatus } from "../../hooks/useVerificationStatus";
 import { useRouter } from "next/navigation";
-export function UnverifiedDashboard({
-  websiteId,
-  orgId,
-  projectId,
-  dashboardId,
-  script,
-}: {
-  websiteId: string;
-  orgId: string;
-  projectId: string;
-  dashboardId: string;
-  script: string;
-}) {
-  const isVerified = useVerificationStatus(websiteId);
+import { useAppStore } from "@/stores/useAppStore";
+
+export function UnverifiedDashboard({ script }: { script: string }) {
+  const { orgSlug, projectSlug, projectId, defaultDashboardId } =
+    useAppStore.getState();
+  const isVerified = useVerificationStatus(projectId);
   const router = useRouter();
+
   useEffect(() => {
     if (isVerified) {
       router.push(
-        `/org/${orgId}/project/${projectId}/dashboards/${dashboardId}`
+        `/org/${orgSlug}/project/${projectSlug}/dashboards/${defaultDashboardId}`
       );
     }
-  }, [isVerified, router, orgId, projectId, dashboardId]);
+  }, [isVerified, router, orgSlug, projectSlug, defaultDashboardId]);
   return <TrackingScript trackingScript={script} />;
 }

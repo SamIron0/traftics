@@ -19,7 +19,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -55,7 +54,6 @@ export function AppSidebar() {
 
   const orgSlug = params?.orgSlug as string;
   const projectSlug = params?.projectSlug as string;
-
   const handleLogout = async () => {
     try {
       await signOut();

@@ -185,6 +185,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          active_heatmap_id: string | null
           active_project_id: string | null
           city: string
           country: string
@@ -201,6 +202,7 @@ export type Database = {
           zip: string
         }
         Insert: {
+          active_heatmap_id?: string | null
           active_project_id?: string | null
           city: string
           country: string
@@ -217,6 +219,7 @@ export type Database = {
           zip: string
         }
         Update: {
+          active_heatmap_id?: string | null
           active_project_id?: string | null
           city?: string
           country?: string
@@ -234,10 +237,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_active_heatmap"
+            columns: ["active_heatmap_id"]
+            isOneToOne: false
+            referencedRelation: "heatmaps"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_active_project"
             columns: ["active_project_id"]
             isOneToOne: false
             referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_active_heatmap_id_fkey"
+            columns: ["active_heatmap_id"]
+            isOneToOne: false
+            referencedRelation: "heatmaps"
             referencedColumns: ["id"]
           },
           {

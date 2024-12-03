@@ -31,13 +31,18 @@ export function LoginForm() {
       // Get user profile to redirect to correct org/project
       const { data: profile } = await supabase
         .from("user_profiles")
-        .select("org_id, active_project_id")
+        .select(`
+          org_id, 
+          active_project_id,
+          organizations!inner(slug),
+          websites!inner(slug)
+        `)
         .eq("user_id", user?.user?.id)
         .single();
 
-      if (profile?.org_id && profile?.active_project_id) {
+      if (profile?.organizations?.slug && profile?.websites?.slug) {
         router.push(
-          `/org/${profile.org_id}/project/${profile.active_project_id}/dashboards`
+          `/org/${profile.organizations.slug}/project/${profile.websites.slug}/dashboards`
         );
       } else {
         // If no profile/project found, redirect to onboarding

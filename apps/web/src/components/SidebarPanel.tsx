@@ -24,8 +24,6 @@ import { Sheet, SheetContent } from "./ui/sheet";
 import { Label } from "./ui/label";
 import CreateHeatmap from "./Heatmap/CreateHeatmap";
 import HeatmapsList from "./Heatmap/HeatmapsList";
-import { useAppStore } from "@/stores/useAppStore";
-import { Badge } from "./ui/badge";
 
 interface SidebarPanelProps {
   currentPath: string;

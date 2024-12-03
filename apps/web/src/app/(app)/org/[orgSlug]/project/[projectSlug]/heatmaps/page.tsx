@@ -1,29 +1,26 @@
-"use client";
-import { useEffect } from "react";
-import { useAppStore } from "@/stores/useAppStore";
+import UnverifiedHeatmap from "@/components/Heatmap/UnverifiedHeatmap";
+import { HeatmapService } from "@/server/services/heatmap.service";
+import { WebsiteService } from "@/server/services/website.service";
+import { redirect } from "next/navigation";
 
-export default function HeatmapsPage() {
-  const { heatmaps, setHeatmaps } = useAppStore.getState();
+export default async function HeatmapsPage({
+  params,
+}: {
+  params: Promise<{ orgSlug: string; projectSlug: string }>;
+}) {
+  const { orgSlug, projectSlug } = await params;
+  const websiteId = await WebsiteService.getIdBySlug(orgSlug, projectSlug);
+  const isWebsiteVerified = await WebsiteService.getVerificationStatus(websiteId);
+  
+  if (!isWebsiteVerified) {
+    return <UnverifiedHeatmap />;
+  }
 
-  useEffect(() => {
-    const fetchHeatmaps = async () => {
-      try {
-        const response = await fetch("/api/heatmaps");
-        if (!response.ok) throw new Error("Failed to fetch heatmaps");
-        const data = await response.json();
-        setHeatmaps(data.heatmaps);
-      } catch (error) {
-        console.error("Error fetching heatmaps:", error);
-      }
-    };
-    if (heatmaps.length === 0) {
-      fetchHeatmaps();
-    }
-  }, [setHeatmaps]);
+  const activeHeatmap = await HeatmapService.getActiveHeatmap(websiteId);
+  
+  if (activeHeatmap) {
+    redirect(`/org/${orgSlug}/project/${projectSlug}/heatmaps/${activeHeatmap.slug}`);
+  }
 
-  return (
-    <div>
-      <h1>Heatmaps</h1>
-    </div>
-  );
+  return <div>No active heatmap</div>;
 }

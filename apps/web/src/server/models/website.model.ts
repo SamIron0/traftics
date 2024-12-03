@@ -22,7 +22,17 @@ export class WebsiteModel {
     if (error) throw error;
     return website;
   }
+  static async getIdBySlug(orgSlug: string, projectSlug: string): Promise<string> {
+    const supabase = await createClient();
+    const { data: website, error } = await supabase
+      .from("websites")
+      .select("id")
+      .eq("slug", projectSlug)
+      .single();
 
+    if (error) throw error;
+    return website.id;
+  }
   static async findAll(req: ServiceRequest): Promise<Tables<"websites">[]> {
     const supabase = await createClient();
     const { data: websites, error } = await supabase

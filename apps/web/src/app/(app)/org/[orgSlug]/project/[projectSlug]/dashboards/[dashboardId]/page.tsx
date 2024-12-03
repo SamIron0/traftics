@@ -1,42 +1,30 @@
-import { createClient } from "@/utils/supabase/server";
 import Dashboard from "@/components/Dashboard/Dashboard";
-import { notFound } from "next/navigation";
 import { UnverifiedDashboard } from "@/components/Dashboard/UnverifiedDashboard";
 import { generateScript } from "@/utils/script";
-import { WebsiteService } from "@/server/services/website.service";
-import { useAppStore } from "@/stores/useAppStore";
+import { createClient } from "@/utils/supabase/server";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  params,
+}: {
+  params: Promise<{
+    orgSlug: string;
+    projectSlug: string;
+    dashboardId: string;
+  }>;
+}) {
   const supabase = await createClient();
-  const { orgId, projectId, defaultDashboardId } = useAppStore.getState();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { projectSlug } = await params;
+  // Get project ID from slug
+  const { data: project } = await supabase
+    .from("websites")
+    .select("id, verified")
+    .eq("slug", projectSlug)
+    .single();
 
-  if (!user) {
-    notFound();
+  if (!project?.verified) {
+    const script = await generateScript(project?.id);
+    return <UnverifiedDashboard script={script} />;
   }
-  if (!projectId || !defaultDashboardId || !orgId) {
-    notFound();
-  }
-  try {
-    const isVerified = await WebsiteService.getVerificationStatus(projectId);
 
-    if (!isVerified) {
-      const script = await generateScript(projectId);
-      return (
-        <UnverifiedDashboard
-          websiteId={projectId}
-          orgId={orgId}
-          projectId={projectId}
-          dashboardId={defaultDashboardId}
-          script={script}
-        />
-      );
-    }
-    return <Dashboard />;
-  } catch (error) {
-    console.error(error);
-    notFound();
-  }
+  return <Dashboard />;
 }

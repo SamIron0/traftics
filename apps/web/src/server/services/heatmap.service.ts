@@ -103,13 +103,16 @@ export class HeatmapService {
     req: ServiceRequest,
     id: string
   ): Promise<Tables<"heatmaps">> {
+    console.log("getHeatmap", id, req);
     const heatmap = await HeatmapModel.findOne(req, id);
     if (!heatmap) {
       throw new Error("Heatmap not found");
     }
     return heatmap;
   }
-
+  static async getActiveHeatmap(websiteId: string): Promise<Tables<"heatmaps">> {
+    return HeatmapModel.getActiveHeatmap(websiteId);
+  }
   static async deleteHeatmap(req: ServiceRequest, id: string): Promise<void> {
     const success = await HeatmapModel.delete(req, id);
     if (!success) {
@@ -160,6 +163,13 @@ export class HeatmapService {
     }
 
     return allEvents;
+  }
+
+  static async setActiveHeatmap(userId: string, heatmapId: string): Promise<void> {
+    const success = await HeatmapModel.setActiveHeatmap(userId, heatmapId);
+    if (!success) {
+      throw new Error("Failed to set active heatmap");
+    }
   }
 
   private static isValidDomain(domain: string): boolean {

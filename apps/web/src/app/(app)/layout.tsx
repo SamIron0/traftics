@@ -17,7 +17,6 @@ export default function RootLayout({
   const isReplayMode = searchParams.get("mode") === "replay";
   const initializeState = useAppStore((state) => state.initializeState);
   const isLoading = useAppStore((state) => state.isLoading);
-  const orgId = useAppStore((state) => state.orgId);
   useEffect(() => {
     initializeState();
   }, [initializeState]);

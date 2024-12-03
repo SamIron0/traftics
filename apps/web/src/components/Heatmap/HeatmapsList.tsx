@@ -2,6 +2,7 @@ import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useRouter, usePathname } from "next/navigation";
 import { useAppStore } from "@/stores/useAppStore";
+import { createClient } from "@/utils/supabase/client";
 
 
 export interface HeatmapsListRef {
@@ -37,20 +38,35 @@ const HeatmapsList = forwardRef<HeatmapsListRef>((_, ref) => {
 
   useEffect(() => {
     fetchHeatmaps();
-  }, []);
+  }, [ ]);
 
-  const handleHeatmapClick = (heatmapSlug: string) => {
-    // Get the current pathname segments
-    const segments = pathname.split('/');
-    
-    if (segments[segments.length - 1] === 'heatmaps') {
-      // Case 1: On main heatmaps page
-      router.push(`${pathname}/${heatmapSlug}`);
-    } else {
-      // Case 2: Already on a specific heatmap page
-      // Replace the last segment (current heatmap slug) with the new one
-      segments[segments.length - 1] = heatmapSlug;
-      router.push(segments.join('/'));
+  const handleHeatmapClick = async (heatmapId: string, heatmapSlug: string) => {
+    try {
+      const supabase = createClient();
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      
+      if (!userId) {
+        throw new Error("User not found");
+      }
+
+      // Update active heatmap through the service
+      await fetch(`/api/heatmaps/${heatmapId}/activate`, {
+        method: 'POST'
+      });
+
+      // Update local state
+      useAppStore.getState().setActiveHeatmap(heatmapId, heatmapSlug);
+
+      // Navigate to the heatmap
+      const segments = pathname.split('/');
+      if (segments[segments.length - 1] === 'heatmaps') {
+        router.push(`${pathname}/${heatmapSlug}`);
+      } else {
+        segments[segments.length - 1] = heatmapSlug;
+        router.push(segments.join('/'));
+      }
+    } catch (error) {
+      console.error('Error setting active heatmap:', error);
     }
   };
 
@@ -70,7 +86,7 @@ const HeatmapsList = forwardRef<HeatmapsListRef>((_, ref) => {
             <div
               key={heatmap.id}
               className="p-2 rounded-lg border hover:bg-accent cursor-pointer"
-              onClick={() => handleHeatmapClick(heatmap.slug)}
+              onClick={() => handleHeatmapClick(heatmap.id, heatmap.slug)}
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="font-medium">{heatmap.name}</span>

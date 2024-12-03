@@ -1,8 +1,7 @@
-import { HeatmapService } from "@/server/services/heatmap.service";
-import { createClient } from "@/utils/supabase/server";
-import Heatmap from "@/components/Heatmap/Heatmap";
 import { Suspense } from "react";
+import { createClient } from "@/utils/supabase/server";
 import { HeatmapsSkeleton } from "@/components/Heatmap/HeatmapsSkeleton";
+import HeatmapDataLoader from "@/components/Heatmap/HeatmapDataLoader";
 
 export default async function HeatmapPage({
   params,
@@ -13,90 +12,59 @@ export default async function HeatmapPage({
     projectSlug: string;
   }>;
 }) {
-  const { heatmapSlug, orgSlug, projectSlug } = await params;
+  const { heatmapSlug, projectSlug } = await params;
   const supabase = await createClient();
 
-  // Fetch IDs using slugs
-  const { data: org } = await supabase
-    .from("organizations")
-    .select("id")
-    .eq("slug", orgSlug)
-    .single();
+  // Parallel fetch critical data
+  const [projectResult, heatmapResult] = await Promise.all([
+    supabase.from("websites").select("id").eq("slug", projectSlug).single(),
+    supabase.from("heatmaps").select("*").eq("slug", heatmapSlug).single(),
+  ]);
 
-  const { data: project } = await supabase
-    .from("websites")
-    .select("id")
-    .eq("slug", projectSlug)
-    .eq("org_id", org?.id)
-    .single();
-
-  const { data: heatmap } = await supabase
-    .from("heatmaps")
-    .select("*")
-    .eq("slug", heatmapSlug)
-    .eq("website_id", project?.id)
-    .single();
-
-  let dimensions = {
-    width: 0,
-    height: 0,
-  };
-  // Fetch initial data server-side
-  const user = await supabase.auth.getUser();
-  if (!user.data.user) {
-    throw new Error("User not found");
-  }
-  const events = await HeatmapService.getHeatmapEvents({
-    user: {
-      id: user.data.user?.id,
-      email: user.data.user?.email || "",
-      orgId: org?.id,
-    },
-    params: {
-      projectId: project?.id,
-      heatmapId: heatmap.id,
-    },
-  });
-
-  // Second instance renamed to heatmapSession
   const { data: heatmapSession } = await supabase
     .from("heatmaps")
     .select("selected_session_ids")
-    .eq("id", heatmap.id)
+    .eq("id", heatmapResult.data.id)
     .single();
 
   let snapshotUrl = null;
+  let dimensions = { width: 0, height: 0 };
+
   if (heatmapSession?.selected_session_ids?.[0]) {
     const sessionId = heatmapSession.selected_session_ids[0];
 
-    const { data: url } = await supabase.storage
-      .from("screenshots")
-      .getPublicUrl(`${project?.id}/${sessionId}/screenshot.jpg`);
-    snapshotUrl = url.publicUrl;
+    // Parallel fetch session data and snapshot URL
+    const [sessionResult, urlResult] = await Promise.all([
+      supabase
+        .from("sessions")
+        .select("screen_width, screen_height")
+        .eq("id", sessionId)
+        .single(),
+      supabase.storage
+        .from("screenshots")
+        .getPublicUrl(`${projectResult.data?.id}/${sessionId}/screenshot.jpg`),
+    ]);
 
-    //get thee width and height of the screenshot of session
-    const { data: session } = await supabase
-      .from("sessions")
-      .select("screen_width, screen_height")
-      .eq("id", sessionId)
-      .single();
+    snapshotUrl = urlResult.data.publicUrl;
     dimensions = {
-      width: session?.screen_width,
-      height: session?.screen_height,
+      width: sessionResult.data?.screen_width,
+      height: sessionResult.data?.screen_height,
     };
   }
 
   if (!snapshotUrl) {
     return <div>No snapshot found</div>;
   }
+
   return (
     <Suspense fallback={<HeatmapsSkeleton />}>
-      <Heatmap
-        name={heatmap.name}
-        events={events}
-        width={dimensions.width}
-        height={dimensions.height}
-        url={snapshotUrl}
+      <HeatmapDataLoader
+        initialHeatmap={{
+          id: heatmapResult.data.id,
+          name: heatmapResult.data.name,
+          snapshotUrl,
+          dimensions,
+        }}
       />
     </Suspense>
   );

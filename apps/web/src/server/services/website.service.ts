@@ -19,7 +19,9 @@ export class WebsiteService {
 
     return WebsiteModel.create(req, data);
   }
-
+  static async getIdBySlug(orgSlug: string, projectSlug: string): Promise<string> {
+    return WebsiteModel.getIdBySlug(orgSlug, projectSlug);
+  }
   static async getWebsites(req: ServiceRequest): Promise<Tables<"websites">[]> {
     return WebsiteModel.findAll(req);
   }
