@@ -1,29 +1,24 @@
 import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useRouter, usePathname } from "next/navigation";
+import { useAppStore } from "@/stores/useAppStore";
 
-interface Heatmap {
-  id: string;
-  name: string;
-  url_domain: string;
-  url_protocol: string;
-  url_match_type: string;
-  precision: number;
-  created_at: string;
-  slug: string;
-}
 
 export interface HeatmapsListRef {
   refresh: () => void;
 }
 
 const HeatmapsList = forwardRef<HeatmapsListRef>((_, ref) => {
-  const [heatmaps, setHeatmaps] = useState<Heatmap[]>([]);
+  const { heatmaps, setHeatmaps } = useAppStore.getState();
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
   const fetchHeatmaps = async () => {
+    if (heatmaps.length > 0) {
+      setIsLoading(false);
+      return;
+    }
     try {
       const response = await fetch("/api/heatmaps");
       if (!response.ok) throw new Error("Failed to fetch heatmaps");

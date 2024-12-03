@@ -47,7 +47,8 @@
     "supabase": "^1.219.2",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
-    "uuid": "^11.0.3"
+    "uuid": "^11.0.3",
+    "zustand": "^5.0.1"
   },
   "devDependencies": {
     "@types/node": "^20",

@@ -43,6 +43,7 @@ import { useAuthStatus } from "@/hooks/useAuthStatus";
 import Image from "next/image";
 import { Separator } from "./ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useAppStore } from "@/stores/useAppStore";
 
 export function AppSidebar() {
   const router = useRouter();
@@ -50,6 +51,7 @@ export function AppSidebar() {
   const params = useParams();
   const { signOut } = useAuthStatus();
   const { state } = useSidebar();
+  const reset = useAppStore((state) => state.reset);
 
   const orgSlug = params?.orgSlug as string;
   const projectSlug = params?.projectSlug as string;
@@ -57,6 +59,7 @@ export function AppSidebar() {
   const handleLogout = async () => {
     try {
       await signOut();
+      reset();
       router.push("/login");
     } catch (error) {
       console.error("Error signing out:", error);
@@ -107,7 +110,7 @@ export function AppSidebar() {
     <div className="flex flex-row h-100vh ">
       <Sidebar collapsible="icon" className="bg-black">
         <SidebarHeader>
-          <div className="flex items-center gap-1 pt-5 ">
+          <div className="flex items-center gap-1 py-2 ">
             <Image
               src={state === "collapsed" ? "/logo.svg" : "/logo-text.svg"}
               alt="Traftics Logo"

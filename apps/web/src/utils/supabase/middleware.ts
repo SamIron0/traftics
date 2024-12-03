@@ -152,6 +152,5 @@ export async function updateSession(request: NextRequest) {
     url.pathname = `/org/${org?.slug}/project/${project?.slug}/dashboards/${defaultDashboard}`;
     return NextResponse.redirect(url);
   }
-
   return supabaseResponse;
 }

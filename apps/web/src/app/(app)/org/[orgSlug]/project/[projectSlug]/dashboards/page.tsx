@@ -1,26 +1,12 @@
-import { createClient } from "@/utils/supabase/server";
+"use client";
 import { redirect } from "next/navigation";
+import { useAppStore } from "@/stores/useAppStore";
 
-export default async function DashboardsPage({
-  params,
-}: {
-  params: Promise<{ orgId: string; projectId: string }>;
-}) {
-  const { orgId, projectId } = await params;
-  const supabase = await createClient();
-
-  // Get default dashboard
-  const { data: defaultDashboard } = await supabase
-    .from("dashboards")
-    .select("id")
-    .eq("website_id", projectId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .single();
-
-  if (defaultDashboard) {
+export default function DashboardsPage() {
+  const { orgSlug, projectSlug, defaultDashboardId } = useAppStore.getState();
+  if (defaultDashboardId) {
     redirect(
-      `/org/${orgId}/project/${projectId}/dashboards/${defaultDashboard.id}`
+      `/org/${orgSlug}/project/${projectSlug}/dashboards/${defaultDashboardId}`
     );
   }
 }

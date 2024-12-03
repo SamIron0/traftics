@@ -24,6 +24,8 @@ import { Sheet, SheetContent } from "./ui/sheet";
 import { Label } from "./ui/label";
 import CreateHeatmap from "./Heatmap/CreateHeatmap";
 import HeatmapsList from "./Heatmap/HeatmapsList";
+import { useAppStore } from "@/stores/useAppStore";
+import { Badge } from "./ui/badge";
 
 interface SidebarPanelProps {
   currentPath: string;
@@ -36,7 +38,7 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
   const [dashboardName, setDashboardName] = React.useState("");
   const router = useRouter();
   const heatmapsListRef = useRef<{ refresh: () => void }>(null);
-
+ 
   const handleCreateDashboard = () => {
     // Handle dashboard creation here
     console.log("Creating dashboard:", dashboardName);
@@ -70,7 +72,7 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
                 className="w-full"
                 onClick={() => setDialogOpen(true)}
               >
-                <PlusIcon className="h-4 w-4 mr-3" /> New Dashboard
+                <PlusIcon className="h-4 w-4 mr-1" /> New Dashboard
               </Button>
               <Button
                 onClick={() => router.push("/")}
@@ -128,7 +130,7 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
                 className="w-full"
                 onClick={() => setDialogOpen(true)}
               >
-                <PlusIcon className="h-4 w-4 mr-3" />
+                <PlusIcon className="h-4 w-4 mr-1" />
                 New Filter
               </Button>
               <span className="h-[1px] w-full bg-border" />
@@ -187,7 +189,7 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
                 className="w-full"
                 onClick={() => setFilterSheetOpen(true)}
               >
-                <PlusIcon className="h-4 w-4 mr-3" />
+                <PlusIcon className="h-4 w-4 mr-1" />
                 New Heatmap
               </Button>
 
@@ -221,7 +223,7 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
         state === "expanded" ? "left-[207px]" : "left-[47px]"
       )}
     >
-      <div className="flex-none p-3 mt-4">
+      <div className="flex-none p-3 mt-1.5">
         <h2 className="text-lg font-semibold flex gap-2">
           {content.title}
         </h2>

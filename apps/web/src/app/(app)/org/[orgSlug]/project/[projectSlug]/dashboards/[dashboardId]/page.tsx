@@ -4,18 +4,11 @@ import { notFound } from "next/navigation";
 import { UnverifiedDashboard } from "@/components/Dashboard/UnverifiedDashboard";
 import { generateScript } from "@/utils/script";
 import { WebsiteService } from "@/server/services/website.service";
+import { useAppStore } from "@/stores/useAppStore";
 
-export default async function DashboardPage({
-  params,
-}: {
-  params: Promise<{
-    orgSlug: string;
-    projectSlug: string;
-    dashboardId: string;
-  }>;
-}) {
+export default async function DashboardPage() {
   const supabase = await createClient();
-  const { orgSlug, projectSlug, dashboardId } = await params;
+  const { orgId, projectId, defaultDashboardId } = useAppStore.getState();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -23,49 +16,20 @@ export default async function DashboardPage({
   if (!user) {
     notFound();
   }
-
-  const { data: org } = await supabase
-    .from('organizations')
-    .select('id')
-    .eq('slug', orgSlug)
-    .single();
-
-  if (!org) {
+  if (!projectId || !defaultDashboardId || !orgId) {
     notFound();
   }
-
-  const { data: project } = await supabase
-    .from('websites')
-    .select('id')
-    .eq('slug', projectSlug)
-    .eq('org_id', org.id)
-    .single();
-
-  if (!project) {
-    notFound();
-  }
-
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("org_id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!profile?.org_id) {
-    notFound();
-  }
-
   try {
-    const isVerified = await WebsiteService.getVerificationStatus(project.id);
-    const script = await generateScript(project.id);
+    const isVerified = await WebsiteService.getVerificationStatus(projectId);
 
     if (!isVerified) {
+      const script = await generateScript(projectId);
       return (
         <UnverifiedDashboard
-          websiteId={project.id}
-          orgId={org.id}
-          projectId={project.id}
-          dashboardId={dashboardId}
+          websiteId={projectId}
+          orgId={orgId}
+          projectId={projectId}
+          dashboardId={defaultDashboardId}
           script={script}
         />
       );

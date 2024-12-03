@@ -1,70 +1,40 @@
-import React, { Suspense } from "react";
+"use client";
+
+import React, { Suspense, useEffect } from "react";
 import { SessionsPage } from "@/components/sessions/SessionsPage";
-import { SessionService } from "@/server/services/session.service";
-import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import { SessionsSkeleton } from "@/components/sessions/SessionsSkeleton";
+import { useAppStore } from "@/stores/useAppStore";
 
-async function SessionsContent({ 
-  orgSlug, 
-  projectSlug 
-}: { 
-  orgSlug: string; 
-  projectSlug: string;
-}) {
-  const supabase = await createClient();
-  
-  // Fetch organization ID using slug
-  const { data: org } = await supabase
-    .from('organizations')
-    .select('id')
-    .eq('slug', orgSlug)
-    .single();
+export default function Sessions() {
+  const { orgId, projectId, sessions, setSessions } = useAppStore();
 
-  if (!org) {
+  useEffect(() => {
+    async function fetchSessions() {
+      if (!orgId || !projectId) return;
+      
+      try {
+        const response = await fetch(`/api/sessions`);
+        if (!response.ok) throw new Error('Failed to fetch sessions');
+        const data = await response.json();
+        setSessions(data);
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+      }
+    }
+
+    if (sessions.length === 0) {
+      fetchSessions();
+    }
+  }, [orgId, projectId, sessions.length, setSessions]);
+
+  if (!orgId || !projectId) {
     notFound();
   }
-
-  // Fetch project ID using slug
-  const { data: project } = await supabase
-    .from('websites')
-    .select('id')
-    .eq('slug', projectSlug)
-    .eq('org_id', org.id)
-    .single();
-
-  if (!project) {
-    notFound();
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const sessions = await SessionService.getSessions({
-    user: {
-      id: user?.id || "",
-      email: user?.email || "",
-      orgId: org.id,
-    },
-    params: {
-      projectId: project.id,
-    },
-  });
-
-  return <SessionsPage sessions={sessions} />;
-}
-
-export default async function Sessions({
-  params,
-}: {
-  params: Promise<{ projectSlug: string; orgSlug: string }>;
-}) {
-  const { projectSlug, orgSlug } = await params;
 
   return (
     <Suspense fallback={<SessionsSkeleton />}>
-      <SessionsContent orgSlug={orgSlug} projectSlug={projectSlug} />
+      <SessionsPage sessions={sessions} />
     </Suspense>
   );
 }
