@@ -18,9 +18,6 @@
         "@session-recorder/*": ["../../packages/*/src"]
       }
     },
-    "references": [
-      { "path": "../types" }
-    ],
     "include": ["src/**/*", "tsconfig.json"],
     "exclude": ["node_modules", "dist", "**/*.test.ts"]
   }

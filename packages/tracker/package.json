@@ -5,10 +5,10 @@
   "main": "dist/tracker.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prebuild": "pnpm --filter @session-recorder/types build",
     "build": "webpack --mode production",
     "dev": "webpack --mode development --watch",
-    "test": "jest",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",
     "clean": "rm -rf dist node_modules",
     "deploy": "wrangler publish",
@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "@rrweb/types": "^2.0.0-alpha.4",
-    "@session-recorder/types": "workspace:*",
     "rrweb": "2.0.0-alpha.4",
     "uuid": "^11.0.3"
   },

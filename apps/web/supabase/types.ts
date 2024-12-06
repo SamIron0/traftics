@@ -9,6 +9,27 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      customers: {
+        Row: {
+          created_at: string | null
+          id: string
+          stripe_customer_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          stripe_customer_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          stripe_customer_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       dashboards: {
         Row: {
           created_at: string | null
@@ -47,68 +68,6 @@ export type Database = {
           },
         ]
       }
-      heatmaps: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          filters: Json | null
-          id: string
-          name: string
-          precision: number
-          selected_session_ids: string[] | null
-          slug: string
-          snapshot_url: string | null
-          updated_at: string | null
-          url_domain: string
-          url_match_type: string
-          url_protocol: string
-          use_history_data: boolean
-          website_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          filters?: Json | null
-          id?: string
-          name: string
-          precision: number
-          selected_session_ids?: string[] | null
-          slug: string
-          snapshot_url?: string | null
-          updated_at?: string | null
-          url_domain: string
-          url_match_type: string
-          url_protocol: string
-          use_history_data?: boolean
-          website_id: string
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          filters?: Json | null
-          id?: string
-          name?: string
-          precision?: number
-          selected_session_ids?: string[] | null
-          slug?: string
-          snapshot_url?: string | null
-          updated_at?: string | null
-          url_domain?: string
-          url_match_type?: string
-          url_protocol?: string
-          use_history_data?: boolean
-          website_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "heatmaps_website_id_fkey"
-            columns: ["website_id"]
-            isOneToOne: false
-            referencedRelation: "websites"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       organizations: {
         Row: {
           created_at: string | null
@@ -136,12 +95,122 @@ export type Database = {
         }
         Relationships: []
       }
+      page_events: {
+        Row: {
+          href: string
+          id: string
+          session_id: string | null
+          site_id: string | null
+          timestamp: string
+        }
+        Insert: {
+          href: string
+          id?: string
+          session_id?: string | null
+          site_id?: string | null
+          timestamp: string
+        }
+        Update: {
+          href?: string
+          id?: string
+          session_id?: string | null
+          site_id?: string | null
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_events_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prices: {
+        Row: {
+          active: boolean | null
+          currency: string | null
+          id: string
+          interval: Database["public"]["Enums"]["pricing_plan_interval"] | null
+          interval_count: number | null
+          product_id: string | null
+          trial_period_days: number | null
+          type: Database["public"]["Enums"]["pricing_type"] | null
+          unit_amount: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          currency?: string | null
+          id: string
+          interval?: Database["public"]["Enums"]["pricing_plan_interval"] | null
+          interval_count?: number | null
+          product_id?: string | null
+          trial_period_days?: number | null
+          type?: Database["public"]["Enums"]["pricing_type"] | null
+          unit_amount?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          currency?: string | null
+          id?: string
+          interval?: Database["public"]["Enums"]["pricing_plan_interval"] | null
+          interval_count?: number | null
+          product_id?: string | null
+          trial_period_days?: number | null
+          type?: Database["public"]["Enums"]["pricing_type"] | null
+          unit_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean | null
+          description: string | null
+          id: string
+          image: string | null
+          metadata: Json | null
+          name: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          description?: string | null
+          id: string
+          image?: string | null
+          metadata?: Json | null
+          name?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          description?: string | null
+          id?: string
+          image?: string | null
+          metadata?: Json | null
+          name?: string | null
+        }
+        Relationships: []
+      }
       sessions: {
         Row: {
           created_at: string | null
           duration: number
-          has_screenshot: boolean | null
           id: string
+          location: string | null
           screen_height: number | null
           screen_width: number | null
           site_id: string
@@ -152,8 +221,8 @@ export type Database = {
         Insert: {
           created_at?: string | null
           duration: number
-          has_screenshot?: boolean | null
           id?: string
+          location?: string | null
           screen_height?: number | null
           screen_width?: number | null
           site_id: string
@@ -164,8 +233,8 @@ export type Database = {
         Update: {
           created_at?: string | null
           duration?: number
-          has_screenshot?: boolean | null
           id?: string
+          location?: string | null
           screen_height?: number | null
           screen_width?: number | null
           site_id?: string
@@ -183,9 +252,70 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          cancel_at: string | null
+          cancel_at_period_end: boolean | null
+          canceled_at: string | null
+          created: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          ended_at: string | null
+          id: string
+          metadata: Json | null
+          price_id: string | null
+          quantity: number | null
+          status: Database["public"]["Enums"]["subscription_status"] | null
+          trial_end: string | null
+          trial_start: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          created?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ended_at?: string | null
+          id: string
+          metadata?: Json | null
+          price_id?: string | null
+          quantity?: number | null
+          status?: Database["public"]["Enums"]["subscription_status"] | null
+          trial_end?: string | null
+          trial_start?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          created?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json | null
+          price_id?: string | null
+          quantity?: number | null
+          status?: Database["public"]["Enums"]["subscription_status"] | null
+          trial_end?: string | null
+          trial_start?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_price_id_fkey"
+            columns: ["price_id"]
+            isOneToOne: false
+            referencedRelation: "prices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
-          active_heatmap_id: string | null
           active_project_id: string | null
           city: string
           country: string
@@ -202,7 +332,6 @@ export type Database = {
           zip: string
         }
         Insert: {
-          active_heatmap_id?: string | null
           active_project_id?: string | null
           city: string
           country: string
@@ -219,7 +348,6 @@ export type Database = {
           zip: string
         }
         Update: {
-          active_heatmap_id?: string | null
           active_project_id?: string | null
           city?: string
           country?: string
@@ -237,24 +365,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_active_heatmap"
-            columns: ["active_heatmap_id"]
-            isOneToOne: false
-            referencedRelation: "heatmaps"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_active_project"
             columns: ["active_project_id"]
             isOneToOne: false
             referencedRelation: "websites"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_profiles_active_heatmap_id_fkey"
-            columns: ["active_heatmap_id"]
-            isOneToOne: false
-            referencedRelation: "heatmaps"
             referencedColumns: ["id"]
           },
           {
@@ -343,7 +457,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      dashboard_metrics: {
+        Row: {
+          avg_duration: number | null
+          pages_per_session: number | null
+          site_id: string | null
+          top_pages: Json | null
+          total_sessions: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       generate_slug: {
@@ -354,6 +485,17 @@ export type Database = {
       }
     }
     Enums: {
+      pricing_plan_interval: "day" | "week" | "month" | "year"
+      pricing_type: "one_time" | "recurring"
+      subscription_status:
+        | "trialing"
+        | "active"
+        | "canceled"
+        | "incomplete"
+        | "incomplete_expired"
+        | "past_due"
+        | "unpaid"
+        | "paused"
       user_role:
         | "ux_and_design"
         | "product_management"

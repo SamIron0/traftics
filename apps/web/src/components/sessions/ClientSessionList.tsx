@@ -39,12 +39,12 @@ export function ClientSessionList({ sessions, onSelectSession }: Props) {
                 onClick={() => handleSessionClick(session.id)}
               >
                 <TableCell>
-                  {formatDistanceToNow(new Date(session.started_at), {
+                  {session.started_at ? formatDistanceToNow(new Date(session.started_at), {
                     addSuffix: true,
-                  })}
+                  }) : "N/A"}
                 </TableCell>
-                <TableCell>{formatTime(session.duration)}</TableCell>
-                <TableCell>{getBrowserInfo(session.user_agent)}</TableCell>
+                <TableCell>{session.duration ? formatTime(session.duration) : "N/A"}</TableCell>
+                <TableCell>{session.user_agent ? getBrowserInfo(session.user_agent) : "N/A"}</TableCell>
                 <TableCell>
                   {session.screen_width} x{" "}
                   {session.screen_height}

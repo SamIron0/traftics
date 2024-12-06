@@ -57,10 +57,13 @@ export class SessionModel {
       started_at,
       duration,
       user_agent,
+      location,
+      screen_width,
+      screen_height,
     } = data;
 
     // Convert milliseconds timestamp to ISO string
-    const startedAtDate = new Date(started_at).toISOString();
+    const startedAtDate = started_at ? new Date(started_at).toISOString() : undefined;
 
     const supabase = await createClient();
     const { data: session, error } = await supabase
@@ -71,7 +74,9 @@ export class SessionModel {
         started_at: startedAtDate,
         duration,
         user_agent,
-        has_screenshot: false,
+        location,
+        screen_width,
+        screen_height,
       })
       .select()
       .single();

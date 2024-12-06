@@ -97,8 +97,6 @@ async function buildFile({
     ],
   });
   const filename = output.replace(new RegExp(`^.+/(${outDir}/)`), '$1');
-  console.log(filename);
-  console.log(`${filename}.map`);
 }
 
 export default function (

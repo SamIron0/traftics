@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { useAppStore } from "@/stores/useAppStore";
 
 export function useVerificationStatus(websiteId: string | null) {
   const [isVerified, setIsVerified] = useState(false);
+  const setWebsiteVerified = useAppStore(state => state.setWebsiteVerified);
 
   useEffect(() => {
     if (!websiteId) return;
@@ -14,9 +16,10 @@ export function useVerificationStatus(websiteId: string | null) {
         const data = await response.json();
         if (data.verified) {
           setIsVerified(true);
-          return true; // Return true if verified
+          setWebsiteVerified(true);
+          return true;
         }
-        return false; // Return false if not verified
+        return false;
       } catch (error) {
         console.error("Error checking verification status:", error);
         return false;
@@ -30,13 +33,12 @@ export function useVerificationStatus(websiteId: string | null) {
     const interval = setInterval(async () => {
       const verified = await checkVerification();
       if (verified) {
-        clearInterval(interval); // Stop polling if verified
+        clearInterval(interval);
       }
-    }, 20000);
+    }, 10000);
 
-    // Cleanup
     return () => clearInterval(interval);
-  }, [websiteId]);
+  }, [websiteId, setWebsiteVerified]);
 
   return isVerified;
 }

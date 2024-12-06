@@ -7,6 +7,7 @@ const publicRoutes = [
   "/auth/callback",
   "/api/collect",
   "/api/tracking-code/generate",
+  "/api/webhooks",
 ];
 const onboardingRoutes = ["/onboarding"];
 const setupRoutes = ["/project-setup"];

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useRouter, usePathname, useParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   BarChart3,
   CreditCard,
@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   Rocket,
   Settings,
-  ThermometerSun,
   Sparkles,
   BadgeCheck,
 } from "lucide-react";
@@ -43,17 +42,17 @@ import Image from "next/image";
 import { Separator } from "./ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAppStore } from "@/stores/useAppStore";
+import SidebarMembershipSection from "./settings/SidebarMembershipSection";
 
 export function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const params = useParams();
   const { signOut } = useAuthStatus();
   const { state } = useSidebar();
   const reset = useAppStore((state) => state.reset);
-
-  const orgSlug = params?.orgSlug as string;
-  const projectSlug = params?.projectSlug as string;
+  const { defaultDashboardId} = useAppStore();
+  const orgSlug = useAppStore((state) => state.orgSlug);
+  const projectSlug = useAppStore((state) => state.projectSlug);  
   const handleLogout = async () => {
     try {
       await signOut();
@@ -71,19 +70,14 @@ export function AppSidebar() {
         {
           label: "Dashboard",
           icon: LayoutDashboard,
-          path: `/org/${orgSlug}/project/${projectSlug}/dashboards/`,
+          path: `/org/${orgSlug}/project/${projectSlug}/dashboards/${defaultDashboardId}`,
         },
         {
           label: "Sessions",
           icon: BarChart3,
           path: `/org/${orgSlug}/project/${projectSlug}/sessions`,
         },
-        {
-          label: "Heatmaps",
-          icon: ThermometerSun,
-          path: `/org/${orgSlug}/project/${projectSlug}/heatmaps`,
-        },
-      ],
+       ],
     },
     {
       group: "Settings",
@@ -102,6 +96,10 @@ export function AppSidebar() {
       email: "samironkwe@gmail.com",
       avatar: "https://github.com/SamIron0.png",
     },
+  };
+
+  const handleUpgradeClick = () => {
+    router.push(`/org/${orgSlug}/settings/plans`);
   };
 
   return (
@@ -143,32 +141,8 @@ export function AppSidebar() {
 
         <SidebarFooter>
           <Separator className="my-4 px-2" />
-          <p className="text-xs group-data-[collapsible=icon]:hidden">
-            Get a 7-day free trial. Try our most advanced features for free.
-          </p>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="secondary" 
-                  className="flex items-center gap-2 group-data-[collapsible=icon]:p-2"
-                >
-                  <Rocket className="h-4 w-4" />
-                  <span className="group-data-[collapsible=icon]:hidden">
-                    Upgrade plan
-                  </span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent 
-                side="right" 
-                className="font-medium"
-                hidden={state !== "collapsed"}
-              >
-                Upgrade plan
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <Separator className="my-4 px-2" />
+          <SidebarMembershipSection state={state} handleUpgradeClick={handleUpgradeClick}/>
+           <Separator className="my-4 px-2" />
           <SidebarTrigger />
           <SidebarMenu>
             <SidebarMenuItem>
@@ -225,7 +199,7 @@ export function AppSidebar() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleUpgradeClick}>
                       <Sparkles />
                       Upgrade to Pro
                     </DropdownMenuItem>

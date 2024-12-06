@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Navbar } from "@/components/Navbar";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import { useAppStore } from "@/stores/useAppStore";
 
 export default function RootLayout({
@@ -14,10 +14,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const isReplayMode = searchParams.get("mode") === "replay";
   const initializeState = useAppStore((state) => state.initializeState);
   const isLoading = useAppStore((state) => state.isLoading);
+
+  // Check if the current path should show the sidebar panel
+  const dashboardsPattern = /^\/org\/[^/]+\/project\/[^/]+\/dashboards(?:\/[^/]+)?$/;
+  const sessionsPattern = /^\/org\/[^/]+\/project\/[^/]+\/sessions(?:\/[^/]+)?$/;
+  const shouldShowPanel = dashboardsPattern.test(pathname) || sessionsPattern.test(pathname);
+
   useEffect(() => {
+    console.log("Initializing state");
     initializeState();
   }, [initializeState]);
 
@@ -30,7 +38,7 @@ export default function RootLayout({
           {!isReplayMode && <AppSidebar />}
           <div
             className={`flex-1 flex flex-col ${
-              !isReplayMode ? "ml-[207px] overflow-x-hidden" : ""
+              !isReplayMode && shouldShowPanel ? "ml-[207px] overflow-x-hidden" : ""
             }`}
           >
             {!isReplayMode && <Navbar />}

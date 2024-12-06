@@ -1,18 +1,19 @@
 "use client";
 
-import React, { Suspense, useEffect } from "react";
+import React, { Suspense } from "react";
 import { SessionsPage } from "@/components/sessions/SessionsPage";
 import { notFound } from "next/navigation";
 import { SessionsSkeleton } from "@/components/sessions/SessionsSkeleton";
 import { useAppStore } from "@/stores/useAppStore";
+import { UnverifiedView } from "@/components/Dashboard/UnverifiedView";
+import { generateScript } from "@/utils/script";
 
 export default function Sessions() {
-  const { orgId, projectId, sessions, setSessions } = useAppStore();
+  const { orgId, projectId, sessions, setSessions, isWebsiteVerified } = useAppStore();
 
-  useEffect(() => {
+  React.useEffect(() => {
     async function fetchSessions() {
       if (!orgId || !projectId) return;
-      
       try {
         const response = await fetch(`/api/sessions`);
         if (!response.ok) throw new Error('Failed to fetch sessions');
@@ -23,13 +24,18 @@ export default function Sessions() {
       }
     }
 
-    if (sessions.length === 0) {
+    if (isWebsiteVerified) {
       fetchSessions();
     }
-  }, [orgId, projectId, sessions.length, setSessions]);
+  }, [orgId, projectId, setSessions, isWebsiteVerified]);
 
   if (!orgId || !projectId) {
     notFound();
+  }
+
+  if (!isWebsiteVerified && projectId) {
+    const script = generateScript(projectId);
+    return <UnverifiedView script={script} />;
   }
 
   return (

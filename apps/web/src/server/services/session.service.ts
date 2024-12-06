@@ -51,30 +51,86 @@ export class SessionService {
   static async createSession(
     session: Session
   ): Promise<TablesInsert<"sessions">> {
-    const supabase = await createClient();
-
     try {
       // 1. Create/update session record in database
       const createdSession = await SessionModel.create(session);
-
-      // 2. Store events in chunks
-      const chunkNumber = Math.floor(Date.now() / 1000); // Use timestamp as chunk identifier
-      const filePath = `${session.site_id}/${session.id}/chunks/${chunkNumber}.json`;
-
-      const { error: storageError } = await supabase.storage
-        .from(BUCKET_NAME)
-        .upload(filePath, JSON.stringify(session.events), {
-          contentType: "application/json",
-          upsert: false, // We never update chunks, only create new ones
-        });
-
-      if (storageError) {
-        throw storageError;
-      }
       return createdSession;
     } catch (error) {
       console.error("Error creating session:", error);
       throw error;
     }
+  }
+
+  static async updateDuration(sessionId: string, duration: number): Promise<void> {
+    const supabase = await createClient();
+    
+    const { error } = await supabase
+      .from('sessions')
+      .update({ duration })
+      .eq('id', sessionId);
+
+    if (error) throw error;
+  }
+
+  static async storeEvents(
+    sessionId: string, 
+    siteId: string, 
+    events: eventWithTime[]
+  ): Promise<void> {
+    const supabase = await createClient();
+    const chunkNumber = Math.floor(Date.now() / 1000);
+    const filePath = `${siteId}/${sessionId}/chunks/${chunkNumber}.json`;
+
+    const { error } = await supabase.storage
+      .from('sessions')
+      .upload(filePath, JSON.stringify(events), {
+        contentType: "application/json",
+        upsert: false,
+      });
+
+    if (error) throw error;
+  }
+
+  static async storePageEvents(
+    sessionId: string,
+    siteId: string,
+    events: eventWithTime[]
+  ): Promise<void> {
+    const supabase = await createClient();
+    
+    // Process events to extract page visits
+    const pageVisits: Array<{
+      session_id: string;
+      site_id: string;
+      href: string;
+      timestamp: string;
+    }> = [];
+    
+    let currentHref: string | null = null;
+    let currentTimestamp: number | null = null;
+
+    for (const event of events) {
+      // Check for Meta events that indicate page changes
+      if (event.type === 4 && 'href' in event.data) {
+        // If we find a meta event with href, record it as a page visit
+        currentHref = event.data.href as string;
+        currentTimestamp = event.timestamp;
+        
+        pageVisits.push({
+          session_id: sessionId,
+          site_id: siteId,
+          href: currentHref,
+          timestamp: new Date(currentTimestamp).toISOString()
+        });
+      }
+    }
+
+    if (pageVisits.length === 0) return;
+
+    const { error } = await supabase
+      .from('page_events')
+      .insert(pageVisits);
+
+    if (error) throw error;
   }
 }

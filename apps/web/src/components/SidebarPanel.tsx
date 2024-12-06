@@ -1,11 +1,10 @@
-import React, { useRef } from "react";
+import React from "react";
 import {
   Activity,
   BarChart3,
   CheckCircle2,
   LayoutDashboard,
   PlusIcon,
-  ThermometerSun,
 } from "lucide-react";
 import { useSidebar } from "./ui/sidebar";
 import { Button } from "./ui/button";
@@ -20,10 +19,7 @@ import {
 import { Input } from "./ui/input";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Sheet, SheetContent } from "./ui/sheet";
 import { Label } from "./ui/label";
-import CreateHeatmap from "./Heatmap/CreateHeatmap";
-import HeatmapsList from "./Heatmap/HeatmapsList";
 
 interface SidebarPanelProps {
   currentPath: string;
@@ -32,31 +28,19 @@ interface SidebarPanelProps {
 export function SidebarPanel({ currentPath }: SidebarPanelProps) {
   const { state } = useSidebar();
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [filterSheetOpen, setFilterSheetOpen] = React.useState(false);
   const [dashboardName, setDashboardName] = React.useState("");
   const router = useRouter();
-  const heatmapsListRef = useRef<{ refresh: () => void }>(null);
  
   const handleCreateDashboard = () => {
     // Handle dashboard creation here
-    console.log("Creating dashboard:", dashboardName);
     setDialogOpen(false);
     setDashboardName("");
-  };
-
-  const handleHeatmapCreated = () => {
-    if (heatmapsListRef.current) {
-      heatmapsListRef.current.refresh();
-    }
   };
 
   const dashboardsPattern =
     /^\/org\/[^/]+\/project\/[^/]+\/dashboards(?:\/[^/]+)?$/;
   const sessionsPattern =
     /^\/org\/[^/]+\/project\/[^/]+\/sessions(?:\/[^/]+)?$/;
-  const heatmapsPattern =
-    /^\/org\/[^/]+\/project\/[^/]+\/heatmaps(?:\/[^/]+)?$/;
-
   const getContent = () => {
     if (dashboardsPattern.test(currentPath)) {
       return {
@@ -175,40 +159,7 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
         ),
       };
     }
-    if (heatmapsPattern.test(currentPath)) {
-      return {
-        title: "Heatmap Filters",
-        icon: ThermometerSun,
-        content: (
-          <>
-            <div className="space-y-2 max-w-sm">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setFilterSheetOpen(true)}
-              >
-                <PlusIcon className="h-4 w-4 mr-1" />
-                New Heatmap
-              </Button>
-
-              <div className="mt-4 space-y-2">
-                <HeatmapsList ref={heatmapsListRef} />
-              </div>
-            </div>
-
-            <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
-              <SheetContent side="left" className="p-0 sm:w-[600px]">
-                <CreateHeatmap
-                  onClose={() => setFilterSheetOpen(false)}
-                  onSuccess={handleHeatmapCreated}
-                />
-              </SheetContent>
-            </Sheet>
-          </>
-        ),
-      };
-    }
-    return null;
+   return null;
   };
 
   const content = getContent();
