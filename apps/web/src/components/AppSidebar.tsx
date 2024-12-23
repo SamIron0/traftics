@@ -4,14 +4,12 @@ import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   BarChart3,
-  CreditCard,
   ChevronsUpDown,
   LogOut,
   LayoutDashboard,
-  Rocket,
   Settings,
-  Sparkles,
   BadgeCheck,
+  LucideIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,8 +23,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { SidebarPanel } from "./SidebarPanel";
-import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   DropdownMenu,
@@ -40,9 +36,15 @@ import {
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 import Image from "next/image";
 import { Separator } from "./ui/separator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAppStore } from "@/stores/useAppStore";
 import SidebarMembershipSection from "./settings/SidebarMembershipSection";
+
+type NavigationItem = {
+  label: string;
+  icon: LucideIcon;
+  path: string;
+  exact?: boolean;
+};
 
 export function AppSidebar() {
   const router = useRouter();
@@ -63,7 +65,7 @@ export function AppSidebar() {
     }
   };
 
-  const navigation = [
+  const navigation: { group: string; items: NavigationItem[] }[] = [
     {
       group: "Analytics",
       items: [
@@ -86,6 +88,7 @@ export function AppSidebar() {
           label: "Project Settings",
           icon: Settings,
           path: `/org/${orgSlug}/settings`,
+          exact: true,
         },
       ],
     },
@@ -127,7 +130,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     key={item.path}
                     tooltip={item.label}
-                    isActive={pathname.includes(item.path)}
+                    isActive={item.exact ? pathname === item.path : pathname.includes(item.path)}
                     onClick={() => router.push(item.path)}
                   >
                     <item.icon />
@@ -140,9 +143,14 @@ export function AppSidebar() {
         </SidebarContent>
 
         <SidebarFooter>
-          <Separator className="my-4 px-2" />
-          <SidebarMembershipSection state={state} handleUpgradeClick={handleUpgradeClick}/>
-           <Separator className="my-4 px-2" />
+          <div className="px-2 flex flex-col gap-2 relative p-6 mb-6 group-data-[collapsible=icon]:bg-transparent">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-purple-500/20 backdrop-blur-xl rounded-lg group-data-[collapsible=icon]:opacity-0 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-blue-400/10 to-purple-400/10 rounded-lg group-data-[collapsible=icon]:opacity-0 transition-opacity duration-300" />
+            <div className="absolute inset-0 rounded-lg border border-white/5 group-data-[collapsible=icon]:opacity-0 transition-opacity duration-300" />
+            <div className={`relative z-1 flex gap-2 justify-center w-full ${state === "collapsed" ? "" : "flex-col "}`}>
+              <SidebarMembershipSection state={state} handleUpgradeClick={handleUpgradeClick}/>
+            </div>
+          </div>
           <SidebarTrigger />
           <SidebarMenu>
             <SidebarMenuItem>
@@ -199,20 +207,9 @@ export function AppSidebar() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={handleUpgradeClick}>
-                      <Sparkles />
-                      Upgrade to Pro
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push(`/org/${orgSlug}/settings/account`)}>
                       <BadgeCheck />
                       Account
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <CreditCard />
-                      Billing
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
@@ -226,7 +223,6 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
-      <SidebarPanel currentPath={pathname} />
     </div>
   );
 }

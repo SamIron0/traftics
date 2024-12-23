@@ -66,8 +66,22 @@ export class WebsiteService {
     return status;
   }
 
-  static async verifyWebsite(websiteId: string): Promise<boolean> {
-    const success = await WebsiteModel.setVerified(websiteId);
+  static async verifyWebsite(websiteId: string, url?: string): Promise<boolean> {
+    const data: { verified: boolean; domain?: string } = { verified: true };
+    
+    // If URL is provided, update the domain
+    if (url) {
+      try {
+        const domain = new URL(url).hostname;
+        data.domain = domain;
+      } catch (error) {
+        console.error("Invalid URL format:", error);
+        // Continue with verification even if URL parsing fails
+      }
+    }
+    
+    const success = await WebsiteModel.setVerified(websiteId, data);
+    
     if (!success) {
       throw new Error("Failed to verify website");
     }

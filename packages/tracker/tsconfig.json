@@ -15,7 +15,7 @@
       "moduleResolution": "node",
       "resolveJsonModule": true,
       "paths": {
-        "@session-recorder/*": ["../../packages/*/src"]
+        "@traftics/*": ["../../packages/*/src"]
       }
     },
     "include": ["src/**/*", "tsconfig.json"],

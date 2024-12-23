@@ -43,3 +43,11 @@ next-env.d.ts
 # Allow both lock files
 !package-lock.json
 !pnpm-lock.yaml
+
+# Mintlify
+.mintlify
+docs/.cache
+
+# Docs
+docs/.next
+docs/out

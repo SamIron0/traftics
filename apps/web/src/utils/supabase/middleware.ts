@@ -4,10 +4,12 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const publicRoutes = [
   "/forgot-password",
-  "/auth/callback",
   "/api/collect",
   "/api/tracking-code/generate",
   "/api/webhooks",
+  "/auth/confirm",
+  "/auth/update-password",
+  "/api/onboarding",
 ];
 const onboardingRoutes = ["/onboarding"];
 const setupRoutes = ["/project-setup"];

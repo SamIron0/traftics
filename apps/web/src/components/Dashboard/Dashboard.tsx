@@ -1,9 +1,10 @@
 'use client'
 import { AnalyticsCard } from "./AnalyticsCard"
 import { useEffect, useState } from "react"
-import { formatPlayerTime } from "@/utils/format"
+import { formatPlayerTime } from "@/utils/helpers"
 import { TopPages } from "./TopPages"
 import { DashboardMetrics } from "@/services/metrics"
+import { DashboardSkeleton } from "./DashboardSkeleton"
 
 interface Props {
   websiteId: string
@@ -11,7 +12,6 @@ interface Props {
 
 export default function Dashboard({ websiteId }: Props) {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
-
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
@@ -37,7 +37,6 @@ export default function Dashboard({ websiteId }: Props) {
         const trendResponse = await fetch(`/api/websites/${websiteId}/trends`)
         const trendData = await trendResponse.json()
         transformedMetrics.trends = trendData
-
         setMetrics(transformedMetrics)
       } catch (error) {
         console.error('Failed to fetch metrics:', error)
@@ -48,7 +47,7 @@ export default function Dashboard({ websiteId }: Props) {
     fetchMetrics()
   }, [websiteId])
 
-  if (!metrics) return <div>Loading...</div>
+  if (!metrics) return <DashboardSkeleton />
 
   return (
     <div className="space-y-8 p-8">

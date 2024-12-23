@@ -35,10 +35,10 @@ export function useVerificationStatus(websiteId: string | null) {
       if (verified) {
         clearInterval(interval);
       }
-    }, 10000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [websiteId, setWebsiteVerified]);
 
-  return isVerified;
+  return isVerified;  
 }

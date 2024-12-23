@@ -2,7 +2,7 @@
 
 import Dashboard from "@/components/Dashboard/Dashboard";
 import { UnverifiedView } from "@/components/Dashboard/UnverifiedView";
-import { generateScript } from "@/utils/script";
+import { generateScript } from "@/utils/helpers";
 import { useAppStore } from "@/stores/useAppStore";
 
 export default function DashboardPage() {

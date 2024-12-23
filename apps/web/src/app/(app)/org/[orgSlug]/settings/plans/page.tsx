@@ -66,7 +66,7 @@ export default function PricingPage() {
   }, []);
 
   return (
-    <div className="w-full space-y-12 flex flex-col justify-center items-center">
+    <div className="w-full space-y-12 flex flex-col justify-center items-center p-6 mt-12">
       {products.length > 0 ? (
         <Pricing
           products={products}

@@ -24,7 +24,7 @@ export async function GET() {
       );
     }
 
-    const sessions = await SessionService.getSessions({
+    const sessions = await SessionService.getAllSessions({
       user: {
         id: user.id,
         email: user.email!,

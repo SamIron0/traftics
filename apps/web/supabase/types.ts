@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      console_errors: {
+        Row: {
+          column_number: number | null
+          error_message: string
+          error_type: string
+          file_name: string | null
+          id: string
+          line_number: number | null
+          session_id: string
+          stack_trace: string | null
+          timestamp: string
+        }
+        Insert: {
+          column_number?: number | null
+          error_message: string
+          error_type: string
+          file_name?: string | null
+          id?: string
+          line_number?: number | null
+          session_id: string
+          stack_trace?: string | null
+          timestamp: string
+        }
+        Update: {
+          column_number?: number | null
+          error_message?: string
+          error_type?: string
+          file_name?: string | null
+          id?: string
+          line_number?: number | null
+          session_id?: string
+          stack_trace?: string | null
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "console_errors_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string | null
@@ -68,6 +112,47 @@ export type Database = {
           },
         ]
       }
+      network_events: {
+        Row: {
+          id: string
+          is_successful: boolean
+          method: string
+          request_url: string
+          response_time: number
+          session_id: string
+          status_code: number
+          timestamp: string
+        }
+        Insert: {
+          id?: string
+          is_successful: boolean
+          method: string
+          request_url: string
+          response_time: number
+          session_id: string
+          status_code: number
+          timestamp: string
+        }
+        Update: {
+          id?: string
+          is_successful?: boolean
+          method?: string
+          request_url?: string
+          response_time?: number
+          session_id?: string
+          status_code?: number
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string | null
@@ -97,24 +182,39 @@ export type Database = {
       }
       page_events: {
         Row: {
+          error_count: number | null
           href: string
           id: string
+          page_load_time: number | null
+          referrer: string | null
+          scroll_depth: number | null
           session_id: string | null
           site_id: string | null
+          time_spent: number | null
           timestamp: string
         }
         Insert: {
+          error_count?: number | null
           href: string
           id?: string
+          page_load_time?: number | null
+          referrer?: string | null
+          scroll_depth?: number | null
           session_id?: string | null
           site_id?: string | null
+          time_spent?: number | null
           timestamp: string
         }
         Update: {
+          error_count?: number | null
           href?: string
           id?: string
+          page_load_time?: number | null
+          referrer?: string | null
+          scroll_depth?: number | null
           session_id?: string | null
           site_id?: string | null
+          time_spent?: number | null
           timestamp?: string
         }
         Relationships: [
@@ -207,38 +307,89 @@ export type Database = {
       }
       sessions: {
         Row: {
+          browser: Json | null
+          city: string | null
           created_at: string | null
+          device_type: string | null
           duration: number
+          end_reason: string | null
+          engagement_score: number | null
+          frustration_score: number | null
           id: string
+          is_active: boolean | null
+          isp: string | null
           location: string | null
+          network_speed: string | null
+          os: Json | null
+          region: string | null
+          relevance_score: number | null
           screen_height: number | null
           screen_width: number | null
+          session_error_count: number | null
           site_id: string
           started_at: string
+          timezone: string | null
+          total_clicks: number | null
+          total_inputs: number | null
+          total_scroll_distance: number | null
           updated_at: string | null
           user_agent: string
         }
         Insert: {
+          browser?: Json | null
+          city?: string | null
           created_at?: string | null
+          device_type?: string | null
           duration: number
+          end_reason?: string | null
+          engagement_score?: number | null
+          frustration_score?: number | null
           id?: string
+          is_active?: boolean | null
+          isp?: string | null
           location?: string | null
+          network_speed?: string | null
+          os?: Json | null
+          region?: string | null
+          relevance_score?: number | null
           screen_height?: number | null
           screen_width?: number | null
+          session_error_count?: number | null
           site_id: string
           started_at: string
+          timezone?: string | null
+          total_clicks?: number | null
+          total_inputs?: number | null
+          total_scroll_distance?: number | null
           updated_at?: string | null
           user_agent: string
         }
         Update: {
+          browser?: Json | null
+          city?: string | null
           created_at?: string | null
+          device_type?: string | null
           duration?: number
+          end_reason?: string | null
+          engagement_score?: number | null
+          frustration_score?: number | null
           id?: string
+          is_active?: boolean | null
+          isp?: string | null
           location?: string | null
+          network_speed?: string | null
+          os?: Json | null
+          region?: string | null
+          relevance_score?: number | null
           screen_height?: number | null
           screen_width?: number | null
+          session_error_count?: number | null
           site_id?: string
           started_at?: string
+          timezone?: string | null
+          total_clicks?: number | null
+          total_inputs?: number | null
+          total_scroll_distance?: number | null
           updated_at?: string | null
           user_agent?: string
         }
@@ -310,6 +461,41 @@ export type Database = {
             columns: ["price_id"]
             isOneToOne: false
             referencedRelation: "prices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_events: {
+        Row: {
+          element_selector: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          session_id: string
+          timestamp: string
+        }
+        Insert: {
+          element_selector?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          session_id: string
+          timestamp: string
+        }
+        Update: {
+          element_selector?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          session_id?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
             referencedColumns: ["id"]
           },
         ]

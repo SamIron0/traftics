@@ -6,7 +6,7 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
     filename: 'tracker.js',
     library: {
-      name: 'SessionRecorder',
+      name: 'TrafticsTracker',
       type: 'umd',
       export: 'default'
     },
@@ -15,7 +15,7 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js', '.d.ts'],
     alias: {
-      '@session-recorder': path.resolve(__dirname, '../../packages')
+      '@traftics': path.resolve(__dirname, '../../packages')
     }
   },
   module: {

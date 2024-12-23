@@ -10,7 +10,7 @@ deploy_tracker() {
   echo "Deploying tracker to Cloudflare Pages..."
   cd packages/tracker
   pnpm build
-  wrangler pages deploy dist --project-name session-recorder-tracker --branch main
+  wrangler pages deploy dist --project-name traftics-tracker --branch main
   cd ../..
 }
 
@@ -22,6 +22,13 @@ deploy_web() {
   cd ../..
 }
 
+deploy_docs() {
+  echo "Deploying docs to Vercel..."
+  cd docs
+  vercel deploy --prod
+  cd ..
+}
+
 # Main deployment logic
 case "$1" in
   "tracker")
@@ -30,12 +37,16 @@ case "$1" in
   "web")
     deploy_web
     ;;
+  "docs")
+    deploy_docs
+    ;;
   "all")
     deploy_tracker
     deploy_web
+    deploy_docs
     ;;
   *)
-    echo "Usage: ./deploy.sh [tracker|web|all]"
+    echo "Usage: ./deploy.sh [tracker|web|docs|all]"
     exit 1
     ;;
 esac 

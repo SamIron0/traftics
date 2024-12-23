@@ -1,5 +1,5 @@
 {
-  "name": "session-recorder",
+  "name": "traftics",
   "description": "record and replay the web",
   "repository": {
     "type": "git",
@@ -47,9 +47,10 @@
   "scripts": {
     "dev": "pnpm -r dev",
     "build": "pnpm build:tracker && pnpm build:web",
-    "build:tracker": "pnpm --filter @session-recorder/tracker build",
+    "build:tracker": "pnpm --filter @traftics/tracker build",
     "build:web": "pnpm --filter web build",
-    "install:all": "pnpm install && pnpm install --filter @session-recorder/tracker && pnpm install --filter web",
+    "build:docs": "cd docs && pnpm build",
+    "install:all": "pnpm install && pnpm install --filter @traftics/tracker && pnpm install --filter web && pnpm install --filter docs",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "clean": "pnpm -r exec rm -rf dist node_modules pnpm-lock.yaml",
@@ -57,6 +58,7 @@
     "deploy:all": "bash infrastructure/scripts/deploy.sh all",
     "deploy:tracker": "bash infrastructure/scripts/deploy.sh tracker",
     "deploy:web": "bash infrastructure/scripts/deploy.sh web",
+    "deploy:docs": "vercel deploy docs --prod",
     "references:update": "yarn workspaces-to-typescript-project-references",
     "test:watch": "yarn turbo run test:watch",
     "test:update": "yarn turbo run test:update",

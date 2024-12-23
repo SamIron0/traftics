@@ -1,8 +1,5 @@
 import React from "react";
 import {
-  Activity,
-  BarChart3,
-  CheckCircle2,
   LayoutDashboard,
   PlusIcon,
 } from "lucide-react";
@@ -11,7 +8,6 @@ import { Button } from "./ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogFooter,
   DialogDescription,
@@ -30,7 +26,7 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [dashboardName, setDashboardName] = React.useState("");
   const router = useRouter();
- 
+
   const handleCreateDashboard = () => {
     // Handle dashboard creation here
     setDialogOpen(false);
@@ -39,8 +35,6 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
 
   const dashboardsPattern =
     /^\/org\/[^/]+\/project\/[^/]+\/dashboards(?:\/[^/]+)?$/;
-  const sessionsPattern =
-    /^\/org\/[^/]+\/project\/[^/]+\/sessions(?:\/[^/]+)?$/;
   const getContent = () => {
     if (dashboardsPattern.test(currentPath)) {
       return {
@@ -100,66 +94,7 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
         ),
       };
     }
-    if (sessionsPattern.test(currentPath)) {
-      return {
-        title: "Session Filters",
-        icon: BarChart3,
-        content: (
-          <>
-            <div className="space-y-2 max-w-sm">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setDialogOpen(true)}
-              >
-                <PlusIcon className="h-4 w-4 mr-1" />
-                New Filter
-              </Button>
-              <span className="h-[1px] w-full bg-border" />
-              <h2 className="text-md font-semibold pt-3">Default Segments</h2>
-              <Button
-                onClick={() => router.push("/")}
-                variant="ghost"
-                className="w-full justify-start"
-              >
-                <CheckCircle2 className="h-4 w-4 mr-1" />
-                Completed Sessions
-              </Button>
-              <Button
-                onClick={() => router.push("/")}
-                variant="ghost"
-                className="w-full justify-start"
-              >
-                <Activity className="h-4 w-4 mr-1" />
-                Active Sessions
-              </Button>
-            </div>
-
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create Dashboard</DialogTitle>
-                </DialogHeader>
-                <div className="py-4">
-                  <Input
-                    placeholder="Dashboard name"
-                    value={dashboardName}
-                    onChange={(e) => setDashboardName(e.target.value)}
-                  />
-                </div>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setDialogOpen(false)}>
-                    Discard
-                  </Button>
-                  <Button onClick={handleCreateDashboard}>Save</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </>
-        ),
-      };
-    }
-   return null;
+    return null;
   };
 
   const content = getContent();
@@ -173,9 +108,7 @@ export function SidebarPanel({ currentPath }: SidebarPanelProps) {
       )}
     >
       <div className="flex-none p-3 mt-1.5">
-        <h2 className="text-lg font-semibold flex gap-2">
-          {content.title}
-        </h2>
+        <h2 className="text-lg font-semibold flex gap-2">{content.title}</h2>
       </div>
       <div className="flex-1 overflow-y-auto p-3">{content.content}</div>
     </div>

@@ -1,5 +1,5 @@
 import { SessionsSkeleton } from "@/components/sessions/SessionsSkeleton";
 
 export default function Loading() {
-  return <SessionsSkeleton />;
+  return <div className="p-6"><SessionsSkeleton /></div>;
 } 

@@ -7,7 +7,7 @@ import { eventWithTime } from "@rrweb/types";
 const BUCKET_NAME = "sessions";
 
 export class SessionService {
-  static async getSessions(req: ServiceRequest): Promise<Session[]> {
+  static async getAllSessions(req: ServiceRequest): Promise<Session[]> {
     return SessionModel.findAll(req);
   }
 
@@ -61,15 +61,19 @@ export class SessionService {
     }
   }
 
-  static async updateDuration(sessionId: string, duration: number): Promise<void> {
+  static async updateSession(
+    sessionId: string,
+    updates: Partial<Session>
+  ): Promise<void> {
     const supabase = await createClient();
-    
     const { error } = await supabase
-      .from('sessions')
-      .update({ duration })
-      .eq('id', sessionId);
+      .from("sessions")
+      .update(updates)
+      .eq("id", sessionId);
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
   }
 
   static async storeEvents(
@@ -92,45 +96,76 @@ export class SessionService {
   }
 
   static async storePageEvents(
-    sessionId: string,
+    sessionId: string, 
     siteId: string,
-    events: eventWithTime[]
+    pageMetrics: Array<{
+      href: string,
+      timestamp: string,
+      referrer: string | null,
+      loadTime: number | null,
+      timeSpent: number | null,
+      scrollDepth: number,
+      errorCount: number
+    }>
   ): Promise<void> {
     const supabase = await createClient();
     
-    // Process events to extract page visits
-    const pageVisits: Array<{
-      session_id: string;
-      site_id: string;
-      href: string;
-      timestamp: string;
-    }> = [];
-    
-    let currentHref: string | null = null;
-    let currentTimestamp: number | null = null;
+    const pageEvents = pageMetrics.map(metric => ({
+      session_id: sessionId,
+      site_id: siteId,
+      href: metric.href,
+      timestamp: metric.timestamp,
+      referrer: metric.referrer,
+      page_load_time: metric.loadTime,
+      time_spent: metric.timeSpent,
+      scroll_depth: metric.scrollDepth,
+      error_count: metric.errorCount
+    }));
 
-    for (const event of events) {
-      // Check for Meta events that indicate page changes
-      if (event.type === 4 && 'href' in event.data) {
-        // If we find a meta event with href, record it as a page visit
-        currentHref = event.data.href as string;
-        currentTimestamp = event.timestamp;
-        
-        pageVisits.push({
-          session_id: sessionId,
-          site_id: siteId,
-          href: currentHref,
-          timestamp: new Date(currentTimestamp).toISOString()
-        });
-      }
-    }
-
-    if (pageVisits.length === 0) return;
+    if (pageEvents.length === 0) return;
 
     const { error } = await supabase
       .from('page_events')
-      .insert(pageVisits);
+      .insert(pageEvents);
 
     if (error) throw error;
+  }
+
+  static async deleteSession(req: ServiceRequest, id: string): Promise<void> {
+    const session = await SessionModel.findOne(req, id);
+    if (!session) {
+      throw new Error("Session not found");
+    }
+  
+    const supabase = await createClient();
+    // Delete session events from storage
+    const prefix = `${session.site_id}/${session.id}/chunks/`;
+    const { data: chunks, error: listError } = await supabase.storage
+      .from('sessions')
+      .list(prefix);
+  
+    if (listError) {
+      throw new Error(`Failed to list chunks: ${listError.message}`);
+    }
+  
+    if (chunks?.length) {
+      const { error: removeError } = await supabase.storage
+        .from('sessions')
+        .remove(chunks.map(chunk => `${prefix}${chunk.name}`));
+      
+      if (removeError) {
+        throw new Error(`Failed to remove chunks: ${removeError.message}`);
+      }
+    }
+  
+    // Delete session record and related page_events
+    const { error: deleteError } = await supabase
+      .from('sessions')
+      .delete()
+      .eq('id', id);
+  
+    if (deleteError) {
+      throw new Error(`Failed to delete session record: ${deleteError.message}`);
+    }
   }
 }

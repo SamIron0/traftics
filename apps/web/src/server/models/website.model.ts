@@ -107,11 +107,11 @@ export class WebsiteModel {
     return website.verified;
   }
 
-  static async setVerified(websiteId: string): Promise<boolean> {
+  static async setVerified(websiteId: string, data: { verified: boolean; domain?: string }): Promise<boolean> {
     const supabase = await createClient();
     const { error } = await supabase
       .from("websites")
-      .update({ verified: true })
+      .update(data)
       .eq("id", websiteId);
 
     return !error;

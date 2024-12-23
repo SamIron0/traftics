@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Navbar } from "@/components/Navbar";
 import { useSearchParams, usePathname } from "next/navigation";
 import { useAppStore } from "@/stores/useAppStore";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function RootLayout({
   children,
@@ -22,7 +23,8 @@ export default function RootLayout({
   // Check if the current path should show the sidebar panel
   const dashboardsPattern = /^\/org\/[^/]+\/project\/[^/]+\/dashboards(?:\/[^/]+)?$/;
   const sessionsPattern = /^\/org\/[^/]+\/project\/[^/]+\/sessions(?:\/[^/]+)?$/;
-  const shouldShowPanel = dashboardsPattern.test(pathname) || sessionsPattern.test(pathname);
+  const shouldShowPanel = dashboardsPattern.test(pathname);
+  const shouldShowNavbar = !isReplayMode && sessionsPattern.test(pathname);
 
   useEffect(() => {
     console.log("Initializing state");
@@ -30,7 +32,11 @@ export default function RootLayout({
   }, [initializeState]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
   } else {
     return (
       <SidebarProvider>
@@ -38,12 +44,12 @@ export default function RootLayout({
           {!isReplayMode && <AppSidebar />}
           <div
             className={`flex-1 flex flex-col ${
-              !isReplayMode && shouldShowPanel ? "ml-[207px] overflow-x-hidden" : ""
+              !isReplayMode && shouldShowPanel ? "overflow-x-hidden" : ""
             }`}
           >
-            {!isReplayMode && <Navbar />}
+            {shouldShowNavbar && <Navbar />}
             <main
-              className={`flex-1 w-full ${!isReplayMode ? "pt-3 px-2" : ""}`}
+              className={`flex-1 w-full`}
             >
               {children}
             </main>

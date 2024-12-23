@@ -1,16 +1,14 @@
 import { Session } from "@/types/api";
-import { parseUserAgent } from "@/utils/browser";
 import { formatDistanceToNow, format} from "date-fns";
 import { Monitor, Globe, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatPlayerTime } from "@/utils/format";
+import { formatPlayerTime } from "@/utils/helpers";
 
 interface Props {
   session: Session;
 }
 
 export function SessionInfo({ session }: Props) {
-  const { browser, os } = session.user_agent ? parseUserAgent(session.user_agent) : { browser: null, os: null };
   
   return (
     <Card>
@@ -38,7 +36,7 @@ export function SessionInfo({ session }: Props) {
             <div className="space-y-1">
               <p className="text-sm font-medium">System</p>
               <p className="text-sm text-muted-foreground">
-                {os?.name} {os?.version} / {browser?.name} {browser?.version}
+                {session.os?.name} {session.os?.version} / {session.browser?.name} {session.browser?.version}
               </p>
               <p className="text-sm text-muted-foreground">
                 {session.screen_width}x{session.screen_height}

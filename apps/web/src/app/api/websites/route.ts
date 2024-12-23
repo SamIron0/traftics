@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { WebsiteService } from "../../../server/services/website.service";
 import { createClient } from "@/utils/supabase/server";
+import { WebsiteService } from "@/server/services/website.service";
 interface ApiError {
   message: string;
   code?: string;

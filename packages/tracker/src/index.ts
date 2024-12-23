@@ -2,6 +2,7 @@ import * as rrweb from "rrweb";
 import { v4 as uuidv4 } from "uuid";
 import type { eventWithTime } from "@rrweb/types";
 import type { Session, RetryConfig, BatchConfig, SessionConfig } from "./types";
+import { ErrorType } from "./types";
 
 const DEFAULT_BATCH_CONFIG: BatchConfig = {
   maxBatchSize: 1000,
@@ -10,6 +11,8 @@ const DEFAULT_BATCH_CONFIG: BatchConfig = {
 };
 
 export class SessionTracker {
+  private readonly INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+  private inactivityTimer: number | null = null;
   private sessionId: string;
   private readonly websiteId: string;
   private readonly collectorUrl: string;
@@ -37,16 +40,11 @@ export class SessionTracker {
     this.collectorUrl = config.collectorUrl || "https://gaha.vercel.app";
     this.startedAt = Date.now();
     this.lastEventTime = this.startedAt;
-
-    // Get location and initialize session
     this.getLocation().then((location) => {
       this.location = location;
     });
-
-    // Listen for URL changes
     window.addEventListener("popstate", () => this.handleUrlChange());
 
-    // Intercept history methods
     const originalPushState = history.pushState.bind(history);
     const originalReplaceState = history.replaceState.bind(history);
 
@@ -61,18 +59,37 @@ export class SessionTracker {
     };
 
     this.startRecording();
-    this.scheduleFlush();
+    this.scheduleFlush(false, 5000);
 
     this.retryConfig = {
       maxRetries: 3,
       backoffMs: 1000,
       maxBackoffMs: 10000,
     };
+
+    this.setupCustomEventListeners();
+  }
+
+  private resetInactivityTimer() {
+    if (this.inactivityTimer) {
+      window.clearTimeout(this.inactivityTimer);
+    }
+    this.inactivityTimer = window.setTimeout(() => {
+      this.stop();
+      this.sendBatch({
+        id: this.sessionId,
+        site_id: this.websiteId,
+        duration: Date.now() - this.startedAt,
+        is_active: false,
+        end_reason: 'inactivity_timeout'
+      });
+    }, this.INACTIVITY_TIMEOUT);
   }
 
   private queueEvent(event: eventWithTime): void {
     this.eventQueue.push(event);
     this.lastEventTime = Date.now();
+    this.resetInactivityTimer(); // Reset timer on each event
 
     // If queue size exceeds max, schedule immediate flush
     if (this.eventQueue.length >= this.batchConfig.maxQueueSize) {
@@ -80,32 +97,35 @@ export class SessionTracker {
     }
   }
 
-  private scheduleFlush(immediate = false): void {
+  private scheduleFlush(immediate = false, customTimeout?: number): void {
     if (this.flushTimeout) {
       window.clearTimeout(this.flushTimeout);
     }
 
-    const timeout = immediate ? 0 : this.batchConfig.flushInterval;
+    const timeout = immediate ? 0 : (customTimeout || this.batchConfig.flushInterval);
     this.flushTimeout = window.setTimeout(() => this.flush(), timeout);
   }
 
   private async flush(): Promise<void> {
-    if (this.isFlushInProgress || this.eventQueue.length === 0) return;
+    if (this.isFlushInProgress) return;
 
-    this.isFlushInProgress = true;
-    const batches = this.createBatches();
+    if (this.eventQueue.length > 0) {
+      this.isFlushInProgress = true;
+      const batches = this.createBatches();
 
-    try {
-      await Promise.all(batches.map((batch) => this.sendBatch(batch)));
-      this.eventQueue = []; // Clear queue after successful send
-    } catch (error) {
-      console.error("Failed to send batches:", error);
-      // Schedule retry
-      this.scheduleFlush(true);
-    } finally {
-      this.isFlushInProgress = false;
-      this.scheduleFlush();
+      try {
+        await Promise.all(batches.map((batch) => this.sendBatch(batch)));
+        this.eventQueue = [];
+      } catch (error) {
+        console.error("Failed to send batches:", error);
+        // Schedule retry immediately
+        this.scheduleFlush(true);
+      } finally {
+        this.isFlushInProgress = false;
+      }
     }
+    // Schedule next flush
+    this.scheduleFlush();
   }
 
   private createBatches(): Session[] {
@@ -116,21 +136,15 @@ export class SessionTracker {
       const batchEvents = this.eventQueue.slice(i, i + maxBatchSize);
       const isFirstBatch = !this.hasFirstBatchBeenSent;
 
-      if (isFirstBatch) {
-        console.log("Batch Events:", batchEvents);
-        console.log("length:", this.eventQueue.length);
-        console.log("maxBatchSize:", maxBatchSize);
-      }
-
-      batches.push({
+      batches.push({        
         id: this.sessionId,
         site_id: this.websiteId,
-        ...(isFirstBatch
+        ...(isFirstBatch      // add session metadata only to first batch
           ? {
               started_at: this.startedAt,
               user_agent: navigator.userAgent,
-              screen_width: window.screen.width,
-              screen_height: window.screen.height,
+              screen_width: window.innerWidth,
+              screen_height: window.innerHeight,
               location: this.location || undefined,
             }
           : {}),
@@ -139,15 +153,34 @@ export class SessionTracker {
       });
     }
 
-    // Mark first batch as sent after creating batches
     this.hasFirstBatchBeenSent = true;
     return batches;
   }
 
   private async sendBatch(batch: Session): Promise<void> {
+    // If batch contains status update (is_active is set)
+    if (batch.is_active !== undefined) {
+        try {
+            await fetch(`${this.collectorUrl}/api/collect`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionId: batch.id,
+                    status: {
+                        is_active: batch.is_active,
+                        end_reason: batch.end_reason,
+                        last_active_at: Date.now()
+                    }
+                })
+            });
+        } catch (error) {
+            console.error('Failed to update session status:', error);
+        }
+    }
+    
     const success = await this.flushWithRetry(batch);
     if (!success) {
-      this.storeFailedEvents(batch);
+        this.storeFailedEvents(batch);
     }
   }
 
@@ -157,9 +190,9 @@ export class SessionTracker {
         this.queueEvent(event);
       },
       sampling: {
-        mousemove: 50, // Record 1 out of every 50 mouse moves
-        scroll: 150, // Record 1 out of every 150 scrolls
-        input: "last", // Only record last input in text field
+        mousemove: 50,
+        scroll: 150,
+        input: "last",
       },
       blockClass: "privacy",
       maskTextClass: "mask-text",
@@ -168,7 +201,12 @@ export class SessionTracker {
   }
 
   private async flushWithRetry(payload: Session): Promise<boolean> {
-    if (this.quotaExceeded) return false;
+    if (this.quotaExceeded) {
+      // Set session as inactive when quota exceeded
+      payload.is_active = false;
+      payload.end_reason = 'quota_exceeded';
+      return false;
+    }
 
     let retries = 0;
     let backoff = this.retryConfig.backoffMs;
@@ -202,7 +240,7 @@ export class SessionTracker {
       }
 
       await new Promise((resolve) => setTimeout(resolve, backoff));
-      backoff = Math.min(backoff * 2, this.retryConfig.maxBackoffMs);
+      backoff = Math.min(backoff * 2, this.retryConfig.maxBackoffMs); // exponential backoff
       retries++;
     }
 
@@ -235,10 +273,18 @@ export class SessionTracker {
     if (this.flushTimeout) {
       window.clearTimeout(this.flushTimeout);
     }
-    // Flush remaining events immediately
-    this.flush();
+    const finalBatch: Session = {
+      id: this.sessionId,
+      site_id: this.websiteId,
+      duration: Date.now() - this.startedAt,
+      is_active: false,
+      end_reason: 'manual_stop'
+    };
+    
+    this.sendBatch(finalBatch);
   }
 
+  // Fetches location from Cloudflare trace endpoint
   private async getLocation(): Promise<string | null> {
     try {
       const response = await fetch("https://cloudflare.com/cdn-cgi/trace");
@@ -247,7 +293,6 @@ export class SessionTracker {
         .split("\n")
         .find((line) => line.startsWith("loc="))
         ?.split("=")[1];
-      console.log("Location:", loc);
       return loc || null;
     } catch (error) {
       console.error("Failed to fetch location:", error);
@@ -257,11 +302,12 @@ export class SessionTracker {
 
   private handleUrlChange() {
     const newHref = window.location.href;
+    const now = Date.now();
     if (newHref !== this.currentHref) {
       this.currentHref = newHref;
       this.queueEvent({
         type: 4,
-        timestamp: Date.now(),
+        timestamp: now,
         data: {
           href: this.currentHref,
           width: window.innerWidth,
@@ -269,6 +315,90 @@ export class SessionTracker {
         },
       });
     }
+  }
+  private setupCustomEventListeners(): void {
+    // 1. Capture console errors
+    const originalConsoleError = console.error.bind(console);
+    console.error = (...args) => {
+      this.queueEvent({
+        type: 5,
+        timestamp: Date.now(),
+        data: {
+          tag: "console_error" as ErrorType,
+          payload: args,
+        }
+      });
+      originalConsoleError(...args);
+    };
+
+    // 2. Capture unhandled promise rejections
+    window.addEventListener('unhandledrejection', (event) => {
+      this.queueEvent({
+        type: 5,
+        timestamp: Date.now(),
+        data: {
+          tag: "unhandled_promise" as ErrorType,
+          payload: event.reason
+        }
+      });
+    });
+
+    // 3. Capture global errors
+    window.addEventListener('error', (event) => {
+      this.queueEvent({
+        type: 5,
+        timestamp: Date.now(),
+        data: {
+          tag: "runtime_error" as ErrorType,
+          payload: {
+            message: event.message,
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno,
+            stack: event.error?.stack
+          }
+        }
+      });
+    });
+
+    // 4. Capture network errors
+    const originalFetch = window.fetch;
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const method = init?.method || 'GET';
+      try {
+        const response = await originalFetch(input, init);
+        if (!response.ok) {
+          this.queueEvent({
+            type: 5,
+            timestamp: Date.now(),
+            data: {
+              tag: "network_error" as ErrorType,
+              payload: {
+                url: input instanceof Request ? input.url : input instanceof URL ? input.toString() : input,
+                method,
+                status: response.status,
+                statusText: response.statusText
+              }
+            }
+          });
+        }
+        return response;
+      } catch (error) {
+        this.queueEvent({
+          type: 5,
+          timestamp: Date.now(),
+          data: {
+            tag: "network_error" as ErrorType,
+            payload: {
+              url: input instanceof Request ? input.url : input instanceof URL ? input.toString() : input,
+              method,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            }
+          }
+        });
+        throw error;
+      }
+    };
   }
 }
 

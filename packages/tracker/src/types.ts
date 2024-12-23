@@ -11,24 +11,39 @@ export interface RetryConfig {
   backoffMs: number;
   maxBackoffMs: number;
 }
+export type ErrorType = 'error' | 'console_error' | 'network_error' | 'unhandled_promise' | 'runtime_error';
 
 export interface BatchConfig {
-  maxBatchSize: number;  // Maximum number of events per batch
-  flushInterval: number; // Time in ms between flushes
-  maxQueueSize: number;  // Maximum number of events to queue before forcing a flush
+  maxBatchSize: number;
+  flushInterval: number;
+  maxQueueSize: number;
 }
-
-
 export interface Session {
-    id: string;
-    site_id: string;
-    started_at?: number;
-    duration?: number;
-    events?: eventWithTime[];
-    user_agent?: string;
-    screen_width?: number;
-    screen_height?: number;
-    screenshot?: string | null;
-    location?: string;
-  }
-  
+  id: string;
+  site_id: string;
+  started_at?: number;
+  duration: number;
+  events?: eventWithTime[];
+  user_agent?: string;
+  screen_width?: number;
+  screen_height?: number;
+  screenshot?: string | null;
+  location?: string;
+  relevance_score?: number;
+  frustration_score?: number;
+  engagement_score?: number;
+  device_type?: string;
+  os?: UAParser.IOS;
+  browser?: UAParser.IBrowser;
+  city?: string;
+  region?: string;
+  timezone?: string;
+  total_clicks?: number;
+  total_scroll_distance?: number;
+  total_inputs?: number;
+  session_error_count?: number;
+  network_speed?: string;
+  isp?: string;
+  is_active?: boolean;
+  end_reason?: string;
+}

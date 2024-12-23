@@ -82,8 +82,7 @@ export default function Pricing({ products, user }: Props) {
       { id: "free", currency: "usd", interval: "month", unit_amount: 0 },
     ],
   };
-  const growthTier = products[0];
-  const proTier = products[1];
+  const proTier = products[0];
 
   const handleCancelSubscription = async () => {
     try {
@@ -123,8 +122,8 @@ export default function Pricing({ products, user }: Props) {
             )}
           </p>
         </div>
-        <div className="mt-12 space-y-4 sm:mt-16 sm:grid sm:grid-cols-3 sm:gap-6 sm:space-y-0 lg:mx-auto lg:max-w-7xl">
-          {[freeTier, proTier, growthTier].map((product, index) => {
+        <div className="mt-12 space-y-4 sm:mt-16 sm:grid sm:grid-cols-2 sm:gap-6 sm:space-y-0 lg:mx-auto lg:max-w-7xl">
+          {[freeTier, proTier].map((product, index) => {
             const price = product.prices[0];
             const priceString =
               index === 0
@@ -136,33 +135,32 @@ export default function Pricing({ products, user }: Props) {
                   }).format((price?.unit_amount || 0) / 100);
 
             const isFreeTier = index === 0;
-            const isGrowthTier = index === 1;
-            const isProTier = index === 2;
+            const isProTier = index === 1;
             const hasActiveSubscription =
               subscriptionStatus === "active" ||
               subscriptionStatus === "trialing";
 
-            let buttonText = isFreeTier
-              ? "Signup up Free"
-              : "Upgrade to Premium";
-            let buttonAction = isFreeTier
-              ? handleFreeSignup
-              : () => handleStripeCheckout(price as Price);
-            let buttonDisabled = false;
+            let buttonText = "";
+            let buttonAction = () => {};
+            let showButton = true;
 
             if (hasActiveSubscription) {
               if (isProTier) {
-                buttonText = "Pro (Active)";
+                buttonText = "Current Plan";
                 buttonAction = handleManageSubscription;
-              } else if (isGrowthTier) {
-                buttonText = "Downgrade to Free";
-                buttonAction = () => setShowCancelDialog(true);
+              } else {
+                buttonText = "Downgrade";
+                buttonAction = () => { handleCancelSubscription() };
               }
-            } else if (user && isFreeTier) {
-              buttonText = "Free Plan (Active)";
-              buttonDisabled = true;
-            } else if (!user && !isFreeTier) {
-              buttonText = "Go Premium";
+            } else {
+              if (isFreeTier) {
+                buttonText = "Get Started";
+                buttonAction = handleFreeSignup;
+                showButton = false;
+              } else {
+                buttonText = "Subscribe";
+                buttonAction = () => handleStripeCheckout(price as Price);
+              }
             }
 
             return (
@@ -170,7 +168,7 @@ export default function Pricing({ products, user }: Props) {
                 key={product.id}
                 className={cn(
                   "divide-y divide-gray-200 rounded-lg border shadow-sm",
-                  isGrowthTier
+                  isProTier
                     ? "border-primary/90 border-2 scale-105 z-10 bg-white"
                     : "border-gray-200"
                 )}
@@ -192,19 +190,21 @@ export default function Pricing({ products, user }: Props) {
                       </span>
                     )}
                   </p>
-                  <Button
-                    onClick={buttonAction}
-                    disabled={buttonDisabled}
-                    className={cn(
-                      "mt-8 block w-full rounded-md py-2 text-center text-sm font-semibold",
-                      isGrowthTier
-                        ? "bg-primary text-white hover:bg-primary/90"
-                        : "bg-gray-900 text-white hover:bg-gray-800",
-                      buttonDisabled && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    {buttonText}
-                  </Button>
+                  {showButton && (
+                    <Button
+                      onClick={buttonAction}
+                      disabled={buttonText === "Current Plan"}
+                      className={cn(
+                        "mt-8 block w-full rounded-md py-2 text-center text-sm font-semibold",
+                        isProTier
+                          ? "bg-primary text-white hover:bg-primary/90"
+                          : "bg-gray-900 text-white hover:bg-gray-800",
+                        buttonText === "Current Plan" && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {buttonText}
+                    </Button>
+                  )}
                 </div>
                 <div className="px-6 pt-6 pb-8">
                   <h4 className="text-sm font-medium text-gray-900">
@@ -224,7 +224,7 @@ export default function Pricing({ products, user }: Props) {
                     ))}
                   </ul>
                 </div>
-                {isGrowthTier && (
+                {isProTier && (
                   <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-0">
                     <span className="inline-flex rounded-full bg-primary px-4 py-1 text-sm font-semibold text-white">
                       Most Popular

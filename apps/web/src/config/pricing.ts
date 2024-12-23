@@ -35,21 +35,4 @@ export const PRICING_PLANS: PricingPlan[] = [
       retention: 30,
     },
   },
-  {
-    id: "price_1QSvE6BwxSl9KXhs2RFlD6xL",
-    name: "Pro",
-    price: 99,
-    interval: "month",
-    description: "For larger organizations",
-    features: [
-      "Everything in Growth, plus:",
-      "Unlimited monthly sessions",
-      "Data retention - 1 year",
-      "Dedicated support",
-    ],
-    limits: {
-      sessions: -1, // Unlimited
-      retention: 365,
-    },
-  },
 ];

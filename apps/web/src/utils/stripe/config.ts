@@ -6,9 +6,9 @@ export const stripe = new Stripe(
     // @ts-expect-error - Stripe types are not properly resolved in this context
     apiVersion: null,
     appInfo: {
-      name: 'Traftic',
+      name: 'Traftics',
       version: '0.0.0',
-      url: 'https://traftic.com'
+      url: 'https://traftics.com'
     }
   }
 );

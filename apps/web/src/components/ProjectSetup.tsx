@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useVerificationStatus } from "@/hooks/useVerificationStatus";
 import { TrackingScript } from "./TrackingScript";
-import { generateTrackingScript } from "@/utils/tracking";
+import { generateTrackingScript } from "@/utils/helpers";
 
 interface ProjectSetupProps {
   orgId: string | null;

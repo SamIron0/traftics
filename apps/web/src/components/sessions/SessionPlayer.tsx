@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  CodeXml,
   ArrowLeft,
   ChevronDown,
   Copy,
@@ -10,7 +9,6 @@ import {
   Play,
   SkipBack,
   SkipForward,
-  Sun,
   Pause,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -19,31 +17,60 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Replayer } from "rrweb";
 import { Session } from "@/types/api";
 import { eventWithTime } from "@rrweb/types";
-import { formatPlayerTime } from "@/utils/format";
+import { formatPlayerTime } from "@/utils/helpers";
 import { Button } from "@/components/ui/button";
-import { Card} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useRouter, useSearchParams } from "next/navigation";
-import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { SessionInfo } from "./SessionInfo";
+import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
 interface Props {
   session: Session & { events: eventWithTime[] };
+  onNextSession?: () => void;
+  onPreviousSession?: () => void;
+  hasNextSession?: boolean;
+  hasPreviousSession?: boolean;
+  currentSessionIndex?: number;
+  totalSessions?: number;
+  onDeleteSession?: () => void;
 }
 
-export default function SessionPlayer({ session }: Props) {
+function getRelativeTimestamp(eventTime: string, sessionStartTime: string | number): number {
+  const eventTimestamp = new Date(eventTime).getTime();
+  const startTimestamp = typeof sessionStartTime === 'string' 
+    ? new Date(sessionStartTime).getTime()
+    : sessionStartTime;
+  return eventTimestamp - startTimestamp;
+}
+
+// function timeStringToSeconds(timeString: string): number {
+//   const [minutes, seconds] = timeString.split(':').map(Number);
+//   return minutes * 60 + seconds;
+// }
+
+export default function SessionPlayer({ 
+  session, 
+  onNextSession, 
+  onPreviousSession,
+  hasNextSession,
+  hasPreviousSession,
+  currentSessionIndex,
+  totalSessions,
+  onDeleteSession
+}: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [replayer, setReplayer] = useState<Replayer | null>(null);
   const [currentTime, setCurrentTime] = useState("00:00");
@@ -55,16 +82,24 @@ export default function SessionPlayer({ session }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [skipInactive, setSkipInactive] = useState(true);
-  const [activeView, setActiveView] = useState<
-    "replay" | "devtools" | "analytics"
-  >("replay");
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const { toast } = useToast();
+  const [pages, setPages] = useState<Array<{ href: string; timestamp: string }>>([]);
+  const [selectedPageIndex, setSelectedPageIndex] = useState(0);
 
   useEffect(() => {
-    if (!wrapperRef.current || !session.events.length) return;
+    const currentWrapper = wrapperRef.current; // Copy ref to variable
+
+    if (!currentWrapper || !session.events.length) return;
+
+    // Only clear content if there's existing content AND we're switching sessions
+    const existingWrapper = currentWrapper.querySelector('.replayer-wrapper');
+    if (existingWrapper && existingWrapper.getAttribute('data-session-id') !== session.id) {
+      currentWrapper.innerHTML = '';
+    }
 
     const player = new Replayer(session.events, {
-      root: wrapperRef.current,
+      root: currentWrapper,
       skipInactive: skipInactive,
       showWarning: false,
       blockClass: "privacy",
@@ -72,95 +107,218 @@ export default function SessionPlayer({ session }: Props) {
       speed: playbackSpeed,
     });
 
+    const replayerWrapper = currentWrapper.querySelector('.replayer-wrapper');
+    
+    if (replayerWrapper) {
+      // Add session ID to wrapper for tracking
+      replayerWrapper.setAttribute('data-session-id', session.id);
+      
+      const containerHeight =currentWrapper.clientHeight;
+      const containerWidth = currentWrapper.clientWidth;
+      const sessionHeight = session.screen_height || 0;
+      const sessionWidth = session.screen_width || 0;
+
+      const heightScale = containerHeight / sessionHeight;
+      const widthScale = containerWidth / sessionWidth;
+      const scale = Math.min(heightScale, widthScale);
+
+      Object.assign((replayerWrapper as HTMLElement).style, {
+        position: "absolute",
+        height: `${sessionHeight}px`,
+        width: `${sessionWidth}px`,
+        transform: `scale(${scale})`,
+        transformOrigin: "center center",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "10px",
+         });
+    }
+
     setReplayer(player);
     setDuration(formatPlayerTime(session.duration || 0));
+    setCurrentTime("00:00");
+    setSliderValue(0);
+    setIsPlaying(false);
 
     return () => {
       player.pause();
       setReplayer(null);
+      // Only clear content during cleanup if we're unmounting completely
+      if (currentWrapper && !currentWrapper.parentElement) {
+        currentWrapper.innerHTML = '';
+      }
     };
-  }, [session.events, session.duration, skipInactive, playbackSpeed]);
+  }, [session.events, session.duration, skipInactive, playbackSpeed, session.screen_height, session.screen_width, session.id]);
+  
 
   useEffect(() => {
-    if (!replayer) return;
+    if (!replayer || !pages.length) return;
 
     const updateTime = () => {
       const time = replayer.getCurrentTime();
-      setCurrentTime(formatPlayerTime(time));
+      setCurrentTime(formatPlayerTime(time > 0 ? time : 0));
       setSliderValue(time);
 
-      if (time >= (session.duration || 0)) {
+      // Find the last page that was visited before the current time
+      const currentTimeFromStart = time;
+      const currentPageIndex = pages.reduce((lastIndex, page, index) => {
+        const pageTime = getRelativeTimestamp(page.timestamp, session.started_at || 0);
+        return pageTime <= currentTimeFromStart ? index : lastIndex;
+      }, 0);
+
+      setSelectedPageIndex(currentPageIndex);
+
+      if(session.duration && time >= (session.duration)) {
         setIsPlaying(false);
       }
     };
 
     const timer = setInterval(updateTime, 100);
     return () => clearInterval(timer);
-  }, [replayer, session.duration]);
+  }, [replayer, session.duration, pages, session.started_at]);
 
   const handlePlayPause = useCallback(() => {
     if (!replayer) return;
+    const currentTime = replayer.getCurrentTime();
     if (isPlaying) {
       replayer.pause();
     } else {
-      replayer.play();
+      replayer.play(
+        currentTime < 0 || currentTime >= session.duration ? 0 : currentTime
+      );
     }
     setIsPlaying(!isPlaying);
-  }, [replayer, isPlaying]);
+  }, [replayer, isPlaying, session.duration]);
+
+  const handleSkipInactive = useCallback(() => {
+    if (!replayer) return;
+    if (wrapperRef.current) {
+      wrapperRef.current.innerHTML = '';
+    }
+    replayer.setConfig({ skipInactive: !skipInactive }); 
+    setSkipInactive(!skipInactive);
+  }, [replayer, skipInactive]);
 
   const handleSliderChange = (value: number[]) => {
     if (!replayer) return;
     replayer.pause();
     setSliderValue(value[0]);
     replayer.play(value[0]);
-    setIsPlaying(false);
+    setIsPlaying(true);
   };
 
   const handleBack = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("mode");
+    params.delete("sessionId");
     router.push(`?${params.toString()}`);
   };
 
   const handleSpeedChange = (speed: number) => {
     if (!replayer) return;
+    if (wrapperRef.current) {
+      wrapperRef.current.innerHTML = '';
+    }
+
     replayer.setConfig({ speed });
     setPlaybackSpeed(speed);
   };
 
-  const handleJump = useCallback((seconds: number) => {
-    if (!replayer) return;
-    const currentTime = replayer.getCurrentTime();
-    const newTime = Math.max(0, Math.min(currentTime + seconds * 1000, session.duration || 0));
-    replayer.play(newTime);
-    setSliderValue(newTime);
-    setIsPlaying(true);
-  }, [replayer, session.duration]);
+  const handleJump = useCallback(
+    (seconds: number) => {
+      if (!replayer) return;
+      const currentTime = replayer.getCurrentTime();
+      const newTime = Math.max(
+        0,
+        Math.min(currentTime + seconds * 1000, session.duration || 0)
+      );
+      replayer.play(newTime);
+      setSliderValue(newTime);
+      setIsPlaying(true);
+    },
+    [replayer, session.duration]
+  );
+
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`/api/sessions/${session.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete session');
+
+      toast({
+        title: "Session deleted",
+        description: "The session has been successfully deleted",
+      });
+
+      // Go back to sessions list
+      handleBack();
+      onDeleteSession?.();
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete session",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return; // Don't trigger when typing in inputs
-      
-      switch(e.key) {
-        case 'ArrowLeft':
+
+      switch (e.key) {
+        case "ArrowLeft":
           handleJump(-10);
           break;
-        case 'ArrowRight':
+        case "ArrowRight":
           handleJump(10);
           break;
-        case ' ': // Spacebar
+        case " ": // Spacebar
           e.preventDefault();
           handlePlayPause();
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
   }, [handleJump, handlePlayPause, replayer]);
 
+  useEffect(() => {
+    async function fetchPages() {
+      try {
+        const response = await fetch(`/api/sessions/${session.id}/pages`);
+        if (!response.ok) throw new Error('Failed to fetch pages');
+        const data = await response.json();
+        setPages(data);
+      } catch (error) {
+        console.error('Error fetching pages:', error);
+      }
+    }
+    
+    fetchPages();
+  }, [session.id]);
+
+  const handleCopyUrl = () => {
+    if (pages[selectedPageIndex]) {
+      navigator.clipboard.writeText(pages[selectedPageIndex].href);
+      toast({
+        description: "URL copied to clipboard",
+      });
+    }
+  };
+
+  const handleOpenExternal = () => {
+    if (pages[selectedPageIndex]) {
+      window.open(pages[selectedPageIndex].href, '_blank');
+    }
+  };
+
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-screen flex-col bg-background" key={session.id}>
       {/* Top Navigation */}
       <header className="flex items-center border-b px-4 py-2">
         <div className="flex items-center gap-4">
@@ -180,59 +338,33 @@ export default function SessionPlayer({ session }: Props) {
           </Button>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => handleJump(-10)}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onPreviousSession}
+                disabled={!hasPreviousSession}
               >
                 <SkipBack className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              Jump back 10s (←)
-            </TooltipContent>
+            <TooltipContent>Previous session</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => handleJump(10)}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onNextSession}
+                disabled={!hasNextSession}
               >
                 <SkipForward className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              Jump forward 10s (→)
-            </TooltipContent>
+            <TooltipContent>Next session</TooltipContent>
           </Tooltip>
-          <div className="text-sm">2 / 2 sessions</div>
+          <div className="text-sm">{(currentSessionIndex ?? 0) + 1} / {totalSessions} sessions</div>
         </div>
-        <div className="ml-auto flex items-center gap-4">
-          <Button
-            variant="ghost"
-            className={cn(
-              "flex items-center gap-2",
-              activeView === "replay" && "bg-secondary"
-            )}
-            onClick={() => setActiveView("replay")}
-          >
-            <Play className="h-4 w-4" fill="currentColor" />
-            Session replay
-          </Button>
-          <Button
-            variant="ghost"
-            className={cn(
-              "flex items-center gap-2",
-              activeView === "devtools" && "bg-secondary"
-            )}
-            onClick={() => setActiveView("devtools")}
-          >
-            <CodeXml className="h-4 w-4" />
-            DevTools
-          </Button>
-         
-        </div>
+       
       </header>
 
       {/* Main Content */}
@@ -242,17 +374,57 @@ export default function SessionPlayer({ session }: Props) {
           {/* URL Bar */}
           <div className="mb-4 flex items-center gap-2">
             <div className="relative flex-1">
-              <Input value="1/2  www.remeal.xyz" readOnly className="pr-8" />
-              <ChevronDown className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+              <div className="flex items-center">
+                <span className="text-sm text-muted-foreground mr-2">
+                  {selectedPageIndex + 1}/{pages.length}
+                </span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {pages[selectedPageIndex]?.href || 'No pages recorded'}
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                    {pages.map((page, index) => (
+                      <DropdownMenuItem 
+                        key={index}
+                        onClick={() => {
+                          if (!replayer) return;
+                          setSelectedPageIndex(index);
+                          const relativeTime = getRelativeTimestamp(page.timestamp, session.started_at || 0);
+                          replayer.play(relativeTime);
+                          setSliderValue(relativeTime);
+                          setIsPlaying(true);
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            {index + 1}.
+                          </span>
+                          {page.href}
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
-            <Button variant="ghost" size="icon">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleCopyUrl}
+              disabled={!pages.length}
+            >
               <Copy className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleOpenExternal}
+              disabled={!pages.length}
+            >
               <ExternalLink className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Sun className="h-4 w-4" />
             </Button>
           </div>
 
@@ -265,6 +437,8 @@ export default function SessionPlayer({ session }: Props) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              height: "calc(100vh - 300px)",
+              maxHeight: "800px"
             }}
           >
             {/* Play/Pause Overlay */}
@@ -290,31 +464,27 @@ export default function SessionPlayer({ session }: Props) {
               </span>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => handleJump(-10)}
                   >
                     <SkipBack className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  Jump back 10s (←)
-                </TooltipContent>
+                <TooltipContent>Jump back 10s (←)</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => handleJump(10)}
                   >
                     <SkipForward className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  Jump forward 10s (→)
-                </TooltipContent>
+                <TooltipContent>Jump forward 10s (→)</TooltipContent>
               </Tooltip>
               <div className="flex-1">
                 <Slider
@@ -347,12 +517,9 @@ export default function SessionPlayer({ session }: Props) {
                   <span className="text-sm">Skip inactivity</span>
                   <Switch
                     checked={skipInactive}
-                    onCheckedChange={setSkipInactive}
+                    onCheckedChange={handleSkipInactive}
                   />
                 </div>
-                <Button variant="ghost" className="text-blue-600">
-                  Add notes and share
-                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
@@ -360,8 +527,26 @@ export default function SessionPlayer({ session }: Props) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem>Export</DropdownMenuItem>
-                    <DropdownMenuItem>Share</DropdownMenuItem>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                          Delete
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the session
+                            recording and all its data.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -372,14 +557,7 @@ export default function SessionPlayer({ session }: Props) {
         {/* Right Sidebar */}
         <div className="w-96 border-l p-4">
           {/* Feedback Card */}
-          <Card className="mb-4 p-4">
-            <p className="text-sm">
-              We&apos;d love to get your feedback and ideas to make Traftics
-              better.
-            </p>
-            <Button className="mt-4 w-full">Give Feedback</Button>
-          </Card>
-          <SessionInfo session={session} />
+           <SessionInfo session={session} />
         </div>
       </div>
     </div>

@@ -9,7 +9,7 @@ export default function SignupPage() {
         <div className="w-full max-w-sm mx-auto">
           <div className="space-y-4">
             <h1 className="text-3xl font-bold tracking-tight">
-              Get started with Recorder
+              Get started with Traftics
             </h1>
             <p className="text-sm text-muted-foreground">
               Create an account and receive a 30-day free trial with all premium features

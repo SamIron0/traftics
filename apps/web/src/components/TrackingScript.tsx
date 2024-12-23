@@ -20,7 +20,6 @@ export function TrackingScript({
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto p-6 space-y-8">
-        <h1 className="text-3xl font-bold">Project setup</h1>
 
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Install tracking code</h2>

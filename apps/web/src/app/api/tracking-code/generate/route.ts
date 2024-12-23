@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-import { generateScript } from "@/utils/script";
+import { generateScript } from "@/utils/helpers";
 export async function GET() {
   try {
     const supabase = await createClient();
