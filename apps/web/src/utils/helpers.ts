@@ -1,6 +1,13 @@
 import { Session } from "@/types/api";
-import { EventType, eventWithTime, IncrementalSource } from "@rrweb/types";
+import { ErrorType } from "@/types/error";
+import { EventType, eventWithTime, IncrementalSource, MouseInteractions } from "@rrweb/types";
 import * as UAParser from 'ua-parser-js';
+
+
+interface ScrollData {
+  source: IncrementalSource.Scroll;
+  y: number;
+}
 
 export function parseUserAgent(userAgent: string) {
   const parser = new UAParser.UAParser(userAgent);
@@ -9,7 +16,7 @@ export function parseUserAgent(userAgent: string) {
     os: parser.getOS(),
     device: parser.getDevice(),
   };
-} 
+}
 export const toDateTime = (secs: number) => {
   const t = new Date(+0); // Unix epoch start.
   t.setSeconds(secs);
@@ -153,6 +160,7 @@ export function generateScript(websiteId: string) {
 export function isCustomEvent(event: eventWithTime) {
   return event.type === EventType.Custom;
 }
+
 export function calculatePageMetrics(events: eventWithTime[]) {
   const pageMetrics = new Map<string, {
     href: string,
@@ -167,320 +175,147 @@ export function calculatePageMetrics(events: eventWithTime[]) {
   let currentPage: string | null = null;
   let pageStartTime: number | null = null;
   let maxScroll = 0;
+  let currentPageErrors = 0;
 
-  events.forEach(event => {
-    if (event.type === EventType.Meta) {
-      // New page visit
-      if (currentPage) {
-        // Update time spent on previous page
-        const pageData = pageMetrics.get(currentPage);
-        if (pageData && pageStartTime) {
-          const timeSpent = event.timestamp - pageStartTime;
-          pageData.timeSpent = (pageData.timeSpent || 0) + timeSpent; // Accumulate time spent
-          pageMetrics.set(currentPage, pageData);
+  // Process events chronologically
+  events.sort((a, b) => a.timestamp - b.timestamp);
+
+  for (const event of events) {
+    // Handle URL change events (Custom event with url_change tag)
+    if (event.type === EventType.Custom && event.data?.tag === 'url_change') {
+      // If we were tracking a previous page, finalize its metrics
+      if (currentPage && pageStartTime) {
+        const existingMetrics = pageMetrics.get(currentPage);
+        if (existingMetrics) {
+          existingMetrics.timeSpent = event.timestamp - pageStartTime;
+          existingMetrics.scrollDepth = maxScroll;
+          existingMetrics.errorCount = currentPageErrors;
         }
       }
 
-      currentPage = event.data.href;
+      const payload = event.data.payload as { href: string, referrer: string | null };
+      currentPage = payload.href;
       pageStartTime = event.timestamp;
       maxScroll = 0;
+      currentPageErrors = 0;
 
+      // Initialize metrics for new page
       pageMetrics.set(currentPage, {
-        href: currentPage,
+        href: payload.href,
         timestamp: new Date(event.timestamp).toISOString(),
-        referrer: document.referrer || null,
+        referrer: payload.referrer || null,
+        timeSpent: null,
         loadTime: null,
-        timeSpent: 0, // Initialize time spent
         scrollDepth: 0,
         errorCount: 0
       });
     }
-
-    if (currentPage && event.type === EventType.IncrementalSnapshot) {
-      const pageData = pageMetrics.get(currentPage);
-      if (pageData) {
-        if (event.data.source === IncrementalSource.Scroll) {
-          // Update max scroll depth
-          const scrollPercent = (event.data.y / document.documentElement.scrollHeight) * 100;
-          maxScroll = Math.max(maxScroll, scrollPercent);
-          pageData.scrollDepth = maxScroll; // Set max scroll depth
-        }
-
-        if (isCustomEvent(event)) {
-          pageData.errorCount++; // Increment error count for custom events
-        }
-
-        pageMetrics.set(currentPage, pageData);
+    // Handle page load metrics
+    else if (event.type === EventType.Custom &&
+      event.data?.tag === 'page_load_metrics' &&
+      currentPage) {
+      const metrics = pageMetrics.get(currentPage);
+      const payload = event.data.payload as { href: string, loadTime: number };
+      if (metrics && payload.href === currentPage) {
+        metrics.loadTime = payload.loadTime;
       }
     }
-  });
+    // Handle incremental snapshot events
+    else if (event.type === EventType.IncrementalSnapshot && currentPage) {
+      const metrics = pageMetrics.get(currentPage);
+      if (!metrics) continue;
+
+      // Handle scroll events
+      if (event.data.source === IncrementalSource.Scroll) {
+        const scrollPercentage = calculateScrollPercentage(event.data.y);
+        maxScroll = Math.max(maxScroll, scrollPercentage);
+        metrics.scrollDepth = maxScroll;
+      }
+    }
+    // Handle error events
+    else if (event.type === EventType.Custom && currentPage) {
+      const metrics = pageMetrics.get(currentPage);
+      if (!metrics) continue;
+
+      const isErrorEvent = isCustomErrorEvent(event.data);
+      if (isErrorEvent) {
+        currentPageErrors++;
+        metrics.errorCount = currentPageErrors;
+      }
+    }
+  }
+
 
   // Finalize metrics for the last page
   if (currentPage && pageStartTime) {
-    const pageData = pageMetrics.get(currentPage);
-    if (pageData) {
-      const timeSpent = events[events.length - 1].timestamp - pageStartTime; // Calculate time spent on the last page
-      pageData.timeSpent = (pageData.timeSpent || 0) + timeSpent; // Accumulate time spent
-      pageMetrics.set(currentPage, pageData);
+    const lastMetrics = pageMetrics.get(currentPage);
+    if (lastMetrics) {
+      lastMetrics.timeSpent = events[events.length - 1].timestamp - pageStartTime;
+      lastMetrics.scrollDepth = maxScroll;
+      lastMetrics.errorCount = currentPageErrors;
     }
   }
 
   return Array.from(pageMetrics.values());
 }
-export function getCountryNameFromCode(code: string | null): string {
-  if (!code) return "Unknown";
+// Helper to calculate metrics from events
+export function calculateSessionMetrics(events: eventWithTime[]) {
+  let totalClicks = 0;
+  let totalScrollDistance = 0;
+  let totalInputs = 0;
+  let errorCount = 0;
+  let successCount = 0;
 
-  const countryName = countries[code.toUpperCase()];
-  return countryName || "Unknown";
+  events.forEach(event => {
+    if (event.type === EventType.IncrementalSnapshot) {
+      if (event.data.source === IncrementalSource.MouseInteraction) {
+        if (event.data.type === MouseInteractions.Click) {
+          totalClicks++;
+        }
+      } else if (event.data.source === IncrementalSource.Scroll) {
+        const scrollData = event.data as ScrollData;
+        totalScrollDistance += Math.abs(scrollData.y);
+      } else if (event.data.source === IncrementalSource.Input) {
+        totalInputs++;
+      }
+    } else if (isCustomEvent(event)) {
+      if (event.data.tag === 'network_success') {
+        successCount++;
+      } else {
+        const errorTag = event.data.tag as ErrorType;
+        if (['error', 'console_error', 'network_error'].includes(errorTag)) {
+          errorCount++;
+        }
+      }
+    }
+  });
+
+  return {
+    totalClicks,
+    totalScrollDistance,
+    totalInputs,
+    errorCount,
+    successCount
+  };
+}
+// Helper function to calculate scroll percentage
+function calculateScrollPercentage(scrollY: number): number {
+  console.log("scrollY", scrollY);
+  const docHeight = Math.max(
+    document.documentElement.scrollHeight,
+    document.documentElement.offsetHeight,
+    document.documentElement.clientHeight
+  );
+  const windowHeight = window.innerHeight;
+  const scrollPercent = (scrollY + windowHeight) / docHeight * 100;
+  return Math.min(Math.max(scrollPercent, 0), 100);
 }
 
-// ISO 3166-1 alpha-2 country codes
-export const countries: { [key: string]: string } = {
-  AF: "Afghanistan",
-  AL: "Albania",
-  DZ: "Algeria",
-  AS: "American Samoa",
-  AD: "Andorra",
-  AO: "Angola",
-  AI: "Anguilla",
-  AQ: "Antarctica",
-  AG: "Antigua and Barbuda",
-  AR: "Argentina",
-  AM: "Armenia",
-  AW: "Aruba",
-  AU: "Australia",
-  AT: "Austria",
-  AZ: "Azerbaijan",
-  BS: "Bahamas",
-  BH: "Bahrain",
-  BD: "Bangladesh",
-  BB: "Barbados",
-  BY: "Belarus",
-  BE: "Belgium",
-  BZ: "Belize",
-  BJ: "Benin",
-  BM: "Bermuda",
-  BT: "Bhutan",
-  BO: "Bolivia",
-  BA: "Bosnia and Herzegovina",
-  BW: "Botswana",
-  BR: "Brazil",
-  IO: "British Indian Ocean Territory",
-  BN: "Brunei",
-  BG: "Bulgaria",
-  BF: "Burkina Faso",
-  BI: "Burundi",
-  KH: "Cambodia",
-  CM: "Cameroon",
-  CA: "Canada",
-  CV: "Cape Verde",
-  KY: "Cayman Islands",
-  CF: "Central African Republic",
-  TD: "Chad",
-  CL: "Chile",
-  CN: "China",
-  CX: "Christmas Island",
-  CC: "Cocos (Keeling) Islands",
-  CO: "Colombia",
-  KM: "Comoros",
-  CG: "Congo",
-  CD: "Congo, Democratic Republic",
-  CK: "Cook Islands",
-  CR: "Costa Rica",
-  CI: "Côte d'Ivoire",
-  HR: "Croatia",
-  CU: "Cuba",
-  CW: "Curaçao",
-  CY: "Cyprus",
-  CZ: "Czech Republic",
-  DK: "Denmark",
-  DJ: "Djibouti",
-  DM: "Dominica",
-  DO: "Dominican Republic",
-  EC: "Ecuador",
-  EG: "Egypt",
-  SV: "El Salvador",
-  GQ: "Equatorial Guinea",
-  ER: "Eritrea",
-  EE: "Estonia",
-  ET: "Ethiopia",
-  FK: "Falkland Islands",
-  FO: "Faroe Islands",
-  FJ: "Fiji",
-  FI: "Finland",
-  FR: "France",
-  GF: "French Guiana",
-  PF: "French Polynesia",
-  TF: "French Southern Territories",
-  GA: "Gabon",
-  GM: "Gambia",
-  GE: "Georgia",
-  DE: "Germany",
-  GH: "Ghana",
-  GI: "Gibraltar",
-  GR: "Greece",
-  GL: "Greenland",
-  GD: "Grenada",
-  GP: "Guadeloupe",
-  GU: "Guam",
-  GT: "Guatemala",
-  GG: "Guernsey",
-  GN: "Guinea",
-  GW: "Guinea-Bissau",
-  GY: "Guyana",
-  HT: "Haiti",
-  VA: "Holy See",
-  HN: "Honduras",
-  HK: "Hong Kong",
-  HU: "Hungary",
-  IS: "Iceland",
-  IN: "India",
-  ID: "Indonesia",
-  IR: "Iran",
-  IQ: "Iraq",
-  IE: "Ireland",
-  IM: "Isle of Man",
-  IL: "Israel",
-  IT: "Italy",
-  JM: "Jamaica",
-  JP: "Japan",
-  JE: "Jersey",
-  JO: "Jordan",
-  KZ: "Kazakhstan",
-  KE: "Kenya",
-  KI: "Kiribati",
-  KP: "North Korea",
-  KR: "South Korea",
-  KW: "Kuwait",
-  KG: "Kyrgyzstan",
-  LA: "Laos",
-  LV: "Latvia",
-  LB: "Lebanon",
-  LS: "Lesotho",
-  LR: "Liberia",
-  LY: "Libya",
-  LI: "Liechtenstein",
-  LT: "Lithuania",
-  LU: "Luxembourg",
-  MO: "Macao",
-  MG: "Madagascar",
-  MW: "Malawi",
-  MY: "Malaysia",
-  MV: "Maldives",
-  ML: "Mali",
-  MT: "Malta",
-  MH: "Marshall Islands",
-  MQ: "Martinique",
-  MR: "Mauritania",
-  MU: "Mauritius",
-  YT: "Mayotte",
-  MX: "Mexico",
-  FM: "Micronesia",
-  MD: "Moldova",
-  MC: "Monaco",
-  MN: "Mongolia",
-  ME: "Montenegro",
-  MS: "Montserrat",
-  MA: "Morocco",
-  MZ: "Mozambique",
-  MM: "Myanmar",
-  NA: "Namibia",
-  NR: "Nauru",
-  NP: "Nepal",
-  NL: "Netherlands",
-  NC: "New Caledonia",
-  NZ: "New Zealand",
-  NI: "Nicaragua",
-  NE: "Niger",
-  NG: "Nigeria",
-  NU: "Niue",
-  NF: "Norfolk Island",
-  MK: "North Macedonia",
-  MP: "Northern Mariana Islands",
-  NO: "Norway",
-  OM: "Oman",
-  PK: "Pakistan",
-  PW: "Palau",
-  PS: "Palestine",
-  PA: "Panama",
-  PG: "Papua New Guinea",
-  PY: "Paraguay",
-  PE: "Peru",
-  PH: "Philippines",
-  PN: "Pitcairn",
-  PL: "Poland",
-  PT: "Portugal",
-  PR: "Puerto Rico",
-  QA: "Qatar",
-  RE: "Réunion",
-  RO: "Romania",
-  RU: "Russia",
-  RW: "Rwanda",
-  BL: "Saint Barthélemy",
-  SH: "Saint Helena",
-  KN: "Saint Kitts and Nevis",
-  LC: "Saint Lucia",
-  MF: "Saint Martin",
-  PM: "Saint Pierre and Miquelon",
-  VC: "Saint Vincent and the Grenadines",
-  WS: "Samoa",
-  SM: "San Marino",
-  ST: "Sao Tome and Principe",
-  SA: "Saudi Arabia",
-  SN: "Senegal",
-  RS: "Serbia",
-  SC: "Seychelles",
-  SL: "Sierra Leone",
-  SG: "Singapore",
-  SX: "Sint Maarten",
-  SK: "Slovakia",
-  SI: "Slovenia",
-  SB: "Solomon Islands",
-  SO: "Somalia",
-  ZA: "South Africa",
-  GS: "South Georgia",
-  SS: "South Sudan",
-  ES: "Spain",
-  LK: "Sri Lanka",
-  SD: "Sudan",
-  SR: "Suriname",
-  SJ: "Svalbard and Jan Mayen",
-  SE: "Sweden",
-  CH: "Switzerland",
-  SY: "Syria",
-  TW: "Taiwan",
-  TJ: "Tajikistan",
-  TZ: "Tanzania",
-  TH: "Thailand",
-  TL: "Timor-Leste",
-  TG: "Togo",
-  TK: "Tokelau",
-  TO: "Tonga",
-  TT: "Trinidad and Tobago",
-  TN: "Tunisia",
-  TR: "Turkey",
-  TM: "Turkmenistan",
-  TC: "Turks and Caicos Islands",
-  TV: "Tuvalu",
-  UG: "Uganda",
-  UA: "Ukraine",
-  AE: "United Arab Emirates",
-  GB: "United Kingdom",
-  US: "United States",
-  UM: "United States Minor Outlying Islands",
-  UY: "Uruguay",
-  UZ: "Uzbekistan",
-  VU: "Vanuatu",
-  VE: "Venezuela",
-  VN: "Vietnam",
-  VG: "Virgin Islands, British",
-  VI: "Virgin Islands, U.S.",
-  WF: "Wallis and Futuna",
-  EH: "Western Sahara",
-  YE: "Yemen",
-  ZM: "Zambia",
-  ZW: "Zimbabwe"
-};
+// Helper function to check if an event is an error event
+function isCustomErrorEvent(data: {tag: string}): boolean {
+  const errorTags = ['error', 'console_error', 'runtime_error', 'network_error', 'unhandled_promise'];
+  return errorTags.includes(data.tag);
+}
 
 export function formatTime(ms: number): string {
   const seconds = Math.floor(ms / 1000);

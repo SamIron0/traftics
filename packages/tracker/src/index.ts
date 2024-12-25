@@ -4,6 +4,19 @@ import type { eventWithTime } from "@rrweb/types";
 import type { Session, RetryConfig, BatchConfig, SessionConfig } from "./types";
 import { ErrorType } from "./types";
 
+interface NetworkEvent {
+  type: 'xhr' | 'fetch' | 'resource';
+  status?: number;
+  method?: string;
+  url: string;
+  duration?: number;
+  timestamp: number;
+  initiatorType?: string;
+  failed?: boolean;
+  blocked?: boolean;
+  size?: number;
+}
+
 const DEFAULT_BATCH_CONFIG: BatchConfig = {
   maxBatchSize: 1000,
   flushInterval: 10000,
@@ -24,9 +37,12 @@ export class SessionTracker {
   private isFlushInProgress = false;
   private hasFirstBatchBeenSent = false;
   private currentHref: string;
-  private location: string | null = null;
+  private location: { country: string; region: string; city: string; lat: number; lon: number } | null = null;
   private retryConfig: RetryConfig;
   private quotaExceeded = false;
+  private networkEvents: NetworkEvent[] = [];
+  private readonly MAX_NETWORK_EVENTS = 100;
+  private perfObserver: PerformanceObserver | null = null;
 
   constructor(config: SessionConfig) {
     this.batchConfig = {
@@ -136,17 +152,17 @@ export class SessionTracker {
       const batchEvents = this.eventQueue.slice(i, i + maxBatchSize);
       const isFirstBatch = !this.hasFirstBatchBeenSent;
 
-      batches.push({        
+      batches.push({
         id: this.sessionId,
         site_id: this.websiteId,
         ...(isFirstBatch      // add session metadata only to first batch
           ? {
-              started_at: this.startedAt,
-              user_agent: navigator.userAgent,
-              screen_width: window.innerWidth,
-              screen_height: window.innerHeight,
-              location: this.location || undefined,
-            }
+            started_at: this.startedAt,
+            user_agent: navigator.userAgent,
+            screen_width: window.innerWidth,
+            screen_height: window.innerHeight,
+            location: this.location || undefined,
+          }
           : {}),
         duration: this.lastEventTime - this.startedAt,
         events: batchEvents,
@@ -160,27 +176,27 @@ export class SessionTracker {
   private async sendBatch(batch: Session): Promise<void> {
     // If batch contains status update (is_active is set)
     if (batch.is_active !== undefined) {
-        try {
-            await fetch(`${this.collectorUrl}/api/collect`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    sessionId: batch.id,
-                    status: {
-                        is_active: batch.is_active,
-                        end_reason: batch.end_reason,
-                        last_active_at: Date.now()
-                    }
-                })
-            });
-        } catch (error) {
-            console.error('Failed to update session status:', error);
-        }
+      try {
+        await fetch(`${this.collectorUrl}/api/collect`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: batch.id,
+            status: {
+              is_active: batch.is_active,
+              end_reason: batch.end_reason,
+              last_active_at: Date.now()
+            }
+          })
+        });
+      } catch (error) {
+        console.error('Failed to update session status:', error);
+      }
     }
-    
+
     const success = await this.flushWithRetry(batch);
     if (!success) {
-        this.storeFailedEvents(batch);
+      this.storeFailedEvents(batch);
     }
   }
 
@@ -198,6 +214,43 @@ export class SessionTracker {
       maskTextClass: "mask-text",
       collectFonts: true,
     });
+  }
+
+  private storeFailedEvents(payload: Session): void {
+    try {
+      const key = `failed_events_${this.sessionId}`;
+      const existingData = localStorage.getItem(key);
+      const failedEvents = existingData ? JSON.parse(existingData) : [];
+
+      failedEvents.push({
+        payload,
+        timestamp: Date.now(),
+      });
+
+      // Keep only last 50 failed events to prevent localStorage overflow
+      if (failedEvents.length > 50) {
+        failedEvents.shift();
+      }
+
+      localStorage.setItem(key, JSON.stringify(failedEvents));
+    } catch (error) {
+      console.error("Failed to store failed events:", error);
+    }
+  }
+
+  public stop(): void {
+    if (this.flushTimeout) {
+      window.clearTimeout(this.flushTimeout);
+    }
+    const finalBatch: Session = {
+      id: this.sessionId,
+      site_id: this.websiteId,
+      duration: Date.now() - this.startedAt,
+      is_active: false,
+      end_reason: 'manual_stop'
+    };
+
+    this.sendBatch(finalBatch);
   }
 
   private async flushWithRetry(payload: Session): Promise<boolean> {
@@ -247,53 +300,22 @@ export class SessionTracker {
     return false;
   }
 
-  private storeFailedEvents(payload: Session): void {
-    try {
-      const key = `failed_events_${this.sessionId}`;
-      const existingData = localStorage.getItem(key);
-      const failedEvents = existingData ? JSON.parse(existingData) : [];
-
-      failedEvents.push({
-        payload,
-        timestamp: Date.now(),
-      });
-
-      // Keep only last 50 failed events to prevent localStorage overflow
-      if (failedEvents.length > 50) {
-        failedEvents.shift();
-      }
-
-      localStorage.setItem(key, JSON.stringify(failedEvents));
-    } catch (error) {
-      console.error("Failed to store failed events:", error);
-    }
-  }
-
-  public stop(): void {
-    if (this.flushTimeout) {
-      window.clearTimeout(this.flushTimeout);
-    }
-    const finalBatch: Session = {
-      id: this.sessionId,
-      site_id: this.websiteId,
-      duration: Date.now() - this.startedAt,
-      is_active: false,
-      end_reason: 'manual_stop'
-    };
-    
-    this.sendBatch(finalBatch);
-  }
-
   // Fetches location from Cloudflare trace endpoint
-  private async getLocation(): Promise<string | null> {
+  private async getLocation() {
     try {
-      const response = await fetch("https://cloudflare.com/cdn-cgi/trace");
-      const data = await response.text();
-      const loc = data
-        .split("\n")
-        .find((line) => line.startsWith("loc="))
-        ?.split("=")[1];
-      return loc || null;
+      const response = await fetch("https://ipinfo.io/json?token=0d420c2f8c5887");
+      const data = await response.json(); // Parse the JSON response
+
+      // Extract relevant information
+      const locationData = {
+        country: data.country,
+        region: data.region,
+        city: data.city,
+        lat: parseFloat(data.loc.split(',')[0]), // Latitude
+        lon: parseFloat(data.loc.split(',')[1]), // Longitude
+      };
+
+      return locationData;
     } catch (error) {
       console.error("Failed to fetch location:", error);
       return null;
@@ -305,98 +327,205 @@ export class SessionTracker {
     const now = Date.now();
     if (newHref !== this.currentHref) {
       this.currentHref = newHref;
+      const referrer = document.referrer;
       this.queueEvent({
-        type: 4,
+        type: 5,
         timestamp: now,
         data: {
-          href: this.currentHref,
-          width: window.innerWidth,
-          height: window.innerHeight,
+          tag: "url_change",
+          payload: {
+            href: newHref,
+            referrer,
+          },
         },
       });
     }
   }
   private setupCustomEventListeners(): void {
-    // 1. Capture console errors
-    const originalConsoleError = console.error.bind(console);
-    console.error = (...args) => {
+    console.log("Setting up custom event listeners");
+
+    const createEvent = (tag: ErrorType | string, payload: any) => {
+      console.log("Original console error:", tag, payload);
+
       this.queueEvent({
         type: 5,
         timestamp: Date.now(),
-        data: {
-          tag: "console_error" as ErrorType,
-          payload: args,
-        }
+        data: { tag, payload },
       });
+    };
+
+    // 1. Capture console errors
+    const originalConsoleError = console.error.bind(console);
+    console.error = (...args) => {
+      createEvent("console_error", args);
       originalConsoleError(...args);
     };
 
     // 2. Capture unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
-      this.queueEvent({
-        type: 5,
-        timestamp: Date.now(),
-        data: {
-          tag: "unhandled_promise" as ErrorType,
-          payload: event.reason
+    window.addEventListener("unhandledrejection", (event) => {
+      createEvent("unhandled_promise", event.reason);
+    });
+
+    // 3. Capture global runtime errors
+    window.addEventListener("error", (event) => {
+      console.log("Runtime error:", event);
+      if (event.error) {
+        createEvent("runtime_error", {
+          message: event.message,
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno,
+          stack: event.error.stack,
+        });
+      }
+    });
+
+    // 4. Capture blocked scripts (CSP violations)
+    window.addEventListener("securitypolicyviolation", (event) => {
+      console.log("CSP violation:", event);
+      createEvent("script", {
+        url: event.blockedURI,
+        failed: true,
+        blocked: true,
+        initiatorType: "script",
+      });
+    });
+
+    // 5. Capture DNS or offline errors
+    window.addEventListener("offline", () => {
+      createEvent("network_offline", {});
+    });
+
+    // 6. Observe network performance (resource timing)
+    this.perfObserver = new PerformanceObserver((list) => {
+      const entries = list.getEntries() as PerformanceResourceTiming[];
+      entries.forEach((entry) => {
+        if (!entry.name.includes(this.collectorUrl)) {
+          const event: NetworkEvent = {
+            type: "resource",
+            url: entry.name,
+            duration: entry.duration,
+            timestamp: performance.now(),
+            initiatorType: entry.initiatorType,
+            size: entry.transferSize,
+            failed: entry.responseEnd === 0,
+            blocked: entry.responseStart === 0 && entry.responseEnd === 0,
+          };
+          this.addNetworkEvent(event);
         }
       });
     });
 
-    // 3. Capture global errors
-    window.addEventListener('error', (event) => {
-      this.queueEvent({
-        type: 5,
-        timestamp: Date.now(),
-        data: {
-          tag: "runtime_error" as ErrorType,
-          payload: {
-            message: event.message,
-            filename: event.filename,
-            lineno: event.lineno,
-            colno: event.colno,
-            stack: event.error?.stack
-          }
-        }
-      });
-    });
+    this.perfObserver.observe({ entryTypes: ["resource"] });
 
-    // 4. Capture network errors
+    // 7. Patch fetch for tracking
     const originalFetch = window.fetch;
-    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const method = init?.method || 'GET';
+    window.fetch = async (...args) => {
+      const startTime = performance.now();
+      const [resource, config] = args;
+      const url = resource instanceof Request ? resource.url : resource;
+
       try {
-        const response = await originalFetch(input, init);
-        if (!response.ok) {
-          this.queueEvent({
-            type: 5,
-            timestamp: Date.now(),
-            data: {
-              tag: "network_error" as ErrorType,
-              payload: {
-                url: input instanceof Request ? input.url : input instanceof URL ? input.toString() : input,
-                method,
-                status: response.status,
-                statusText: response.statusText
-              }
-            }
-          });
-        }
+        const response = await originalFetch(...args);
+        const duration = performance.now() - startTime;
+
+        this.addNetworkEvent({
+          type: "fetch",
+          url: url.toString(),
+          status: response.status,
+          method: config?.method || "GET",
+          duration,
+          timestamp: startTime,
+          failed: !response.ok,
+        });
+
         return response;
       } catch (error) {
-        this.queueEvent({
-          type: 5,
-          timestamp: Date.now(),
-          data: {
-            tag: "network_error" as ErrorType,
-            payload: {
-              url: input instanceof Request ? input.url : input instanceof URL ? input.toString() : input,
-              method,
-              error: error instanceof Error ? error.message : 'Unknown error'
-            }
-          }
+        this.addNetworkEvent({
+          type: "fetch",
+          url: url.toString(),
+          timestamp: startTime,
+          method: config?.method || "GET",
+          failed: true,
+          blocked: (error as Error).name === "TypeError",
         });
         throw error;
+      }
+    };
+
+    // 8. Patch XMLHttpRequest (XHR) for tracking
+    const XHR = XMLHttpRequest.prototype;
+    const originalOpen = XHR.open;
+    const originalSend = XHR.send;
+
+    XHR.open = function (method: string, url: string) {
+      (this as any)._networkData = { method, url, startTime: performance.now() };
+      return originalOpen.apply(this, arguments as any);
+    };
+
+    XHR.send = function () {
+      const xhr = this;
+      const networkData = (xhr as any)._networkData;
+
+      xhr.addEventListener('load', () => {
+        const duration = performance.now() - networkData.startTime;
+        (window as any)._tracker?.addNetworkEvent?.({
+          type: 'xhr',
+          url: networkData.url,
+          method: networkData.method,
+          status: xhr.status,
+          duration,
+          timestamp: networkData.startTime,
+          failed: xhr.status < 200 || xhr.status >= 300
+        });
+      });
+
+      xhr.addEventListener('error', () => {
+        (window as any)._tracker?.addNetworkEvent?.({
+          type: 'xhr',
+          url: networkData.url,
+          method: networkData.method,
+          timestamp: networkData.startTime,
+          failed: true
+        });
+      });
+
+      return originalSend.apply(this, arguments as any);
+    };
+
+
+    console.log("Custom event listeners setup complete");
+  }
+
+
+  private addNetworkEvent(event: NetworkEvent): void {
+    console.log("Adding network event:", event);
+    if (event.failed || event.blocked || (event.duration && event.duration > 3000)) {
+      this.networkEvents.push(event);
+      if (this.networkEvents.length > this.MAX_NETWORK_EVENTS) {
+        this.networkEvents.shift();
+      }
+      this.queueEvent({
+        type: 5,
+        timestamp: Date.now(),
+        data: {
+          tag: "network",
+          payload: event
+        }
+      });
+    }
+  }
+
+  public getNetworkSummary() {
+    return {
+      totalEvents: this.networkEvents.length,
+      failedEvents: this.networkEvents.filter(e => e.failed).length,
+      blockedEvents: this.networkEvents.filter(e => e.blocked).length,
+      slowEvents: this.networkEvents.filter(e => e.duration && e.duration > 3000).length,
+      byType: {
+        xhr: this.networkEvents.filter(e => e.type === 'xhr').length,
+        fetch: this.networkEvents.filter(e => e.type === 'fetch').length,
+        resource: this.networkEvents.filter(e => e.type === 'resource').length
       }
     };
   }

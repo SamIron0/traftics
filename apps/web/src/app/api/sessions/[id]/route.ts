@@ -24,13 +24,7 @@ export async function GET(
     return NextResponse.json({ error: "Organization not found" }, { status: 404 });
   }
 
-  const session = await SessionService.getSession({
-    user: {
-      id: user.id,
-      email: user.email!,
-      orgId: profile.org_id
-    }
-  }, id);
+  const session = await SessionService.getSession(id);
 
   return NextResponse.json(session);
 }

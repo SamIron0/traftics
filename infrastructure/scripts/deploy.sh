@@ -10,7 +10,7 @@ deploy_tracker() {
   echo "Deploying tracker to Cloudflare Pages..."
   cd packages/tracker
   pnpm build
-  wrangler pages deploy dist --project-name traftics-tracker --branch main
+  wrangler pages deploy dist --project-name session-recorder-tracker --branch main
   cd ../..
 }
 

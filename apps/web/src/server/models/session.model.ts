@@ -27,7 +27,6 @@ export class SessionModel {
   }
 
   static async findOne(
-    req: ServiceRequest,
     id: string
   ): Promise<Session | null> {
     const supabase = await createClient();
@@ -43,7 +42,6 @@ export class SessionModel {
       `
       )
       .eq("id", id)
-      .eq("websites.org_id", req.user?.orgId)
       .single();
 
     if (error) throw error;
@@ -51,32 +49,15 @@ export class SessionModel {
   }
 
   static async create(data: Session): Promise<TablesInsert<"sessions">> {
-    const {
-      id,
-      site_id,
-      started_at,
-      duration,
-      user_agent,
-      location,
-      screen_width,
-      screen_height,
-    } = data;
-
     // Convert milliseconds timestamp to ISO string
-    const startedAtDate = started_at ? new Date(started_at).toISOString() : undefined;
+    const startedAtDate = data.started_at ? new Date(data.started_at).toISOString() : undefined;
 
     const supabase = await createClient();
     const { data: session, error } = await supabase
       .from("sessions")
       .upsert({
-        id,
-        site_id,
+        ...data,
         started_at: startedAtDate,
-        duration,
-        user_agent,
-        location,
-        screen_width,
-        screen_height,
       })
       .select()
       .single();

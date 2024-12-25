@@ -12,10 +12,9 @@ export class SessionService {
   }
 
   static async getSession(
-    req: ServiceRequest,
     id: string
   ): Promise<Session & { events: eventWithTime[] }> {
-    const session = await SessionModel.findOne(req, id);
+    const session = await SessionModel.findOne(id);
     if (!session) {
       throw new Error("Session not found");
     }
@@ -52,7 +51,6 @@ export class SessionService {
     session: Session
   ): Promise<TablesInsert<"sessions">> {
     try {
-      // 1. Create/update session record in database
       const createdSession = await SessionModel.create(session);
       return createdSession;
     } catch (error) {
@@ -132,7 +130,7 @@ export class SessionService {
   }
 
   static async deleteSession(req: ServiceRequest, id: string): Promise<void> {
-    const session = await SessionModel.findOne(req, id);
+    const session = await SessionModel.findOne(id);
     if (!session) {
       throw new Error("Session not found");
     }

@@ -9,7 +9,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatTime } from "@/utils/helpers";
-import { getCountryNameFromCode } from "@/utils/helpers";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Play, ArrowUp, ArrowDown } from "lucide-react";
 import { useState, useMemo } from "react";
@@ -160,8 +159,8 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange }: Prop
             compareB = b.duration || 0;
             break;
           case 'location':
-            compareA = getCountryNameFromCode(a.location || '');
-            compareB = getCountryNameFromCode(b.location || '');
+            compareA = (a.location?.country || '');
+            compareB = (b.location?.country || '');
             break;
           case 'browser':
             compareA = a.browser;
@@ -307,11 +306,11 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange }: Prop
                 <TableCell>{session.duration ? formatTime(session.duration) : "N/A"}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg" role="img" aria-label={`${getCountryNameFromCode(session.location || "")} flag`}>
-                      {session.location ? getCountryFlag(session.location.toUpperCase()) : '🏳️'}
+                    <span className="text-lg" role="img" aria-label={`${(session.location?.country || "")} flag`}>
+                      {session.location ? getCountryFlag(session.location.country.toUpperCase()) : '🏳️'}
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {getCountryNameFromCode(session.location || "")}
+                      {(session.location?.country || "")}
                     </span>
                   </div>
                 </TableCell>

@@ -310,7 +310,7 @@ export type Database = {
           browser: Json | null
           city: string | null
           created_at: string | null
-          device_type: string | null
+          device: Json | null
           duration: number
           end_reason: string | null
           engagement_score: number | null
@@ -318,7 +318,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           isp: string | null
-          location: string | null
+          location: Json | null
           network_speed: string | null
           os: Json | null
           region: string | null
@@ -339,7 +339,7 @@ export type Database = {
           browser?: Json | null
           city?: string | null
           created_at?: string | null
-          device_type?: string | null
+          device?: Json | null
           duration: number
           end_reason?: string | null
           engagement_score?: number | null
@@ -347,7 +347,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           isp?: string | null
-          location?: string | null
+          location?: Json | null
           network_speed?: string | null
           os?: Json | null
           region?: string | null
@@ -368,7 +368,7 @@ export type Database = {
           browser?: Json | null
           city?: string | null
           created_at?: string | null
-          device_type?: string | null
+          device?: Json | null
           duration?: number
           end_reason?: string | null
           engagement_score?: number | null
@@ -376,7 +376,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           isp?: string | null
-          location?: string | null
+          location?: Json | null
           network_speed?: string | null
           os?: Json | null
           region?: string | null
@@ -467,7 +467,6 @@ export type Database = {
       }
       user_events: {
         Row: {
-          element_selector: string | null
           event_data: Json | null
           event_type: string
           id: string
@@ -475,7 +474,6 @@ export type Database = {
           timestamp: string
         }
         Insert: {
-          element_selector?: string | null
           event_data?: Json | null
           event_type: string
           id?: string
@@ -483,7 +481,6 @@ export type Database = {
           timestamp: string
         }
         Update: {
-          element_selector?: string | null
           event_data?: Json | null
           event_type?: string
           id?: string

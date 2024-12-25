@@ -1,4 +1,5 @@
 import type { eventWithTime } from "@rrweb/types";
+import UAParser from "ua-parser-js";
 
 export interface SessionConfig {
   websiteId: string;
@@ -28,16 +29,19 @@ export interface Session {
   screen_width?: number;
   screen_height?: number;
   screenshot?: string | null;
-  location?: string;
+  location?: {
+    country: string;
+    region: string;
+    city: string;
+    lat: number;
+    lon: number;
+  };
   relevance_score?: number;
   frustration_score?: number;
   engagement_score?: number;
-  device_type?: string;
+  device?: UAParser.IDevice;
   os?: UAParser.IOS;
   browser?: UAParser.IBrowser;
-  city?: string;
-  region?: string;
-  timezone?: string;
   total_clicks?: number;
   total_scroll_distance?: number;
   total_inputs?: number;

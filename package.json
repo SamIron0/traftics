@@ -1,20 +1,16 @@
 {
   "name": "traftics",
-  "description": "record and replay the web",
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/rrweb-io/rrweb.git"
-  },
-  "keywords": [
+  "description": "intelligent session replays",
+ "keywords": [
     "rrweb"
   ],
-  "author": "yanzhen@smartx.com",
+  "author": "samuelironkwec@gmail.com",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rrweb-io/rrweb/issues"
+    "url": "https://traftics.com"
   },
   "private": true,
-  "homepage": "https://github.com/rrweb-io/rrweb#readme",
+  "homepage": "https://traftics.com",
   "workspaces": [
     "packages/*",
     "packages/plugins/*"

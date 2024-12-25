@@ -26,7 +26,7 @@ export function SessionInfo({ session }: Props) {
             <div className="space-y-1">
               <p className="text-sm font-medium">Location</p>
               <p className="text-sm text-muted-foreground">
-                {session.location || 'Unknown'}
+                {session.location?.country || 'Unknown'}
               </p>
             </div>
           </div>
