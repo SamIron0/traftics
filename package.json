@@ -1,7 +1,7 @@
 {
   "name": "traftics",
   "description": "intelligent session replays",
- "keywords": [
+  "keywords": [
     "rrweb"
   ],
   "author": "samuelironkwec@gmail.com",
@@ -36,9 +36,7 @@
     "markdownlint-cli": "^0.31.1",
     "prettier": "2.8.4",
     "turbo": "^2.0.4",
-    "typescript": "^5.4.5",
-    "vite": "^5.3.1",
-    "vite-plugin-dts": "^4.3.0"
+    "typescript": "^5.4.5"
   },
   "scripts": {
     "dev": "pnpm -r dev",
@@ -60,7 +58,6 @@
     "test:update": "yarn turbo run test:update",
     "check-types": "yarn turbo run check-types --continue",
     "format:head": "git diff --name-only HEAD^ |grep '\\.ts$\\|\\.md$' |xargs yarn prettier --write",
-    "repl": "cd packages/rrweb && npm run repl",
     "live-stream": "cd packages/rrweb && yarn live-stream",
     "lint:report": "yarn eslint --output-file eslint_report.json --format json packages/*/src --ext .ts,.tsx,.js,.jsx",
     "release": "yarn build:all && changeset publish"

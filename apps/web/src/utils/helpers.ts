@@ -161,6 +161,17 @@ export function isCustomEvent(event: eventWithTime) {
   return event.type === EventType.Custom;
 }
 
+
+interface PageMetrics {
+  href: string;
+  timestamp: string;
+  referrer: string | null;
+  timeSpent: number | null;
+  loadTime: number | null;
+  scrollDepth: number;
+  errorCount: number;
+  interactions: number;
+}
 export function calculatePageMetrics(events: eventWithTime[]) {
   const pageMetrics = new Map<string, {
     href: string,
@@ -172,8 +183,23 @@ export function calculatePageMetrics(events: eventWithTime[]) {
     errorCount: number
   }>();
 
-  let currentPage: string | null = null;
-  let pageStartTime: number | null = null;
+  // Get initial page from meta event
+  const metaEvent = events.find(e => e.type === EventType.Meta);
+  if (metaEvent) {
+    const initialHref = (metaEvent.data as any).href;
+    pageMetrics.set(initialHref, {
+      href: initialHref,
+      timestamp: new Date(metaEvent.timestamp).toISOString(),
+      referrer: document.referrer || null,
+      timeSpent: null,
+      loadTime: null,
+      scrollDepth: 0,
+      errorCount: 0
+    });
+  }
+
+  let currentPage = metaEvent ? (metaEvent.data as any).href : null;
+  let pageStartTime = metaEvent ? metaEvent.timestamp : null;
   let maxScroll = 0;
   let currentPageErrors = 0;
 
@@ -181,8 +207,9 @@ export function calculatePageMetrics(events: eventWithTime[]) {
   events.sort((a, b) => a.timestamp - b.timestamp);
 
   for (const event of events) {
-    // Handle URL change events (Custom event with url_change tag)
-    if (event.type === EventType.Custom && event.data?.tag === 'url_change') {
+    // Handle URL change events
+    if (event.type === EventType.Custom &&
+      event.data?.tag === 'url_change') {
       // If we were tracking a previous page, finalize its metrics
       if (currentPage && pageStartTime) {
         const existingMetrics = pageMetrics.get(currentPage);
@@ -203,48 +230,40 @@ export function calculatePageMetrics(events: eventWithTime[]) {
       pageMetrics.set(currentPage, {
         href: payload.href,
         timestamp: new Date(event.timestamp).toISOString(),
-        referrer: payload.referrer || null,
+        referrer: payload.referrer,
         timeSpent: null,
         loadTime: null,
         scrollDepth: 0,
         errorCount: 0
       });
     }
-    // Handle page load metrics
-    else if (event.type === EventType.Custom &&
-      event.data?.tag === 'page_load_metrics' &&
+    // Handle scroll events safely
+    else if (event.type === EventType.IncrementalSnapshot &&
+      event.data.source === IncrementalSource.Scroll &&
       currentPage) {
       const metrics = pageMetrics.get(currentPage);
-      const payload = event.data.payload as { href: string, loadTime: number };
-      if (metrics && payload.href === currentPage) {
-        metrics.loadTime = payload.loadTime;
-      }
-    }
-    // Handle incremental snapshot events
-    else if (event.type === EventType.IncrementalSnapshot && currentPage) {
-      const metrics = pageMetrics.get(currentPage);
       if (!metrics) continue;
 
-      // Handle scroll events
-      if (event.data.source === IncrementalSource.Scroll) {
-        const scrollPercentage = calculateScrollPercentage(event.data.y);
-        maxScroll = Math.max(maxScroll, scrollPercentage);
-        metrics.scrollDepth = maxScroll;
-      }
+      const scrollData = event.data
+      // Calculate scroll percentage based on event data instead of DOM
+      const scrollPercentage = scrollData.y;
+      maxScroll = Math.max(maxScroll, scrollPercentage);
+      metrics.scrollDepth = maxScroll;
     }
     // Handle error events
-    else if (event.type === EventType.Custom && currentPage) {
+    else if (event.type === EventType.Custom &&
+      (event.data?.tag === 'error' ||
+        event.data?.tag === 'console_error' ||
+        event.data?.tag === 'unhandled_promise' ||
+        event.data?.tag === 'runtime_error') &&
+      currentPage) {
       const metrics = pageMetrics.get(currentPage);
       if (!metrics) continue;
 
-      const isErrorEvent = isCustomErrorEvent(event.data);
-      if (isErrorEvent) {
-        currentPageErrors++;
-        metrics.errorCount = currentPageErrors;
-      }
+      currentPageErrors++;
+      metrics.errorCount = currentPageErrors;
     }
   }
-
 
   // Finalize metrics for the last page
   if (currentPage && pageStartTime) {
@@ -258,6 +277,7 @@ export function calculatePageMetrics(events: eventWithTime[]) {
 
   return Array.from(pageMetrics.values());
 }
+
 // Helper to calculate metrics from events
 export function calculateSessionMetrics(events: eventWithTime[]) {
   let totalClicks = 0;
@@ -298,21 +318,10 @@ export function calculateSessionMetrics(events: eventWithTime[]) {
     successCount
   };
 }
-// Helper function to calculate scroll percentage
-function calculateScrollPercentage(scrollY: number): number {
-  console.log("scrollY", scrollY);
-  const docHeight = Math.max(
-    document.documentElement.scrollHeight,
-    document.documentElement.offsetHeight,
-    document.documentElement.clientHeight
-  );
-  const windowHeight = window.innerHeight;
-  const scrollPercent = (scrollY + windowHeight) / docHeight * 100;
-  return Math.min(Math.max(scrollPercent, 0), 100);
-}
+
 
 // Helper function to check if an event is an error event
-function isCustomErrorEvent(data: {tag: string}): boolean {
+function isCustomErrorEvent(data: { tag: string }): boolean {
   const errorTags = ['error', 'console_error', 'runtime_error', 'network_error', 'unhandled_promise'];
   return errorTags.includes(data.tag);
 }
