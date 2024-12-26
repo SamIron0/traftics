@@ -8,9 +8,10 @@ import { UsageService } from "@/server/services/usage.service";
 import { FrustrationService } from "@/server/services/frustration.service";
 import { calculateEngagement } from "./engagement";
 import { RelevanceService } from "@/server/services/relevance.service";
-import { calculatePageMetrics, isCustomEvent } from "@/utils/helpers";
+import { isCustomEvent } from "@/utils/helpers";
 import { UserEventService } from "@/server/services/userEvent.service";
 import { NetworkEventService } from "@/server/services/networkEvent.service";
+import { PageEventService } from "@/server/services/pageEvent.service";
 
 interface NetworkErrorPayload {
   url: string;
@@ -50,27 +51,32 @@ export async function POST(request: Request) {
     console.log("POST request received");
     const session: Session = await request.json();
     const metrics = calculateSessionMetrics(session.events || []);
-    console.log("session Metrics calculated:", metrics);
-    const pageMetrics = calculatePageMetrics(session.events || []);
-    console.log("Page metrics calculated:", pageMetrics);
+    console.log("Session metrics calculated:", metrics);
+
     if (!session.site_id || !session.id || !session.events) {
-      console.log("Missing required fields in session");
       return corsResponse(
         NextResponse.json({ error: "Missing required fields" }, { status: 400 })
       );
     }
+
     // Check usage quota
     const hasQuota = await UsageService.checkQuota(session.site_id);
     console.log("Usage quota check:", hasQuota);
     if (!hasQuota) {
       return corsResponse(
-        NextResponse.json({ error: 'Usage limit exceeded', code: 'USAGE_LIMIT_EXCEEDED' }, { status: 429 })
+        NextResponse.json(
+          { error: "Usage limit exceeded", code: "USAGE_LIMIT_EXCEEDED" },
+          { status: 429 }
+        )
       );
     }
-    // Only check verification if we haven't seen this site before
+
+    // Check and verify the site
     if (!verifiedSites.has(session.site_id)) {
       try {
-        const verified = await WebsiteService.getVerificationStatus(session.site_id);
+        const verified = await WebsiteService.getVerificationStatus(
+          session.site_id
+        );
         console.log("Verification status for site:", verified);
         if (!verified) {
           const origin = request.headers.get("origin");
@@ -94,11 +100,32 @@ export async function POST(request: Request) {
         console.error("Error verifying website:", error);
       }
     }
+    let allEvents = session.events;
+    let updatedMetrics = metrics;
+    if (!session.user_agent) {// if not first batch of events
+      const existingSession = await SessionService.getSession(session.id);
+      console.log("Existing session found, updating scores");
+      // Combine existing metrics with new metrics
+      updatedMetrics = {
+        totalClicks:
+          existingSession.total_clicks + metrics.totalClicks,
+        totalScrollDistance:
+          existingSession.total_scroll_distance +
+          metrics.totalScrollDistance,
+        totalInputs: existingSession.total_inputs + metrics.totalInputs,
+        errorCount:
+          existingSession.session_error_count + metrics.errorCount,
+      };
 
+      allEvents = [
+        ...(await SessionService.getSession(session.id)).events,
+        ...session.events,
+      ];
 
-    // Only create/update session if metadata is present
-    if (session.started_at) {
-      const userAgentInfo = parseUserAgent(session.user_agent || '');
+    } else {
+      console.log("creating a new session");
+
+      const userAgentInfo = parseUserAgent(session.user_agent || "");
       await SessionService.createSession({
         id: session.id,
         site_id: session.site_id,
@@ -115,26 +142,56 @@ export async function POST(request: Request) {
         total_scroll_distance: metrics.totalScrollDistance,
         total_inputs: metrics.totalInputs,
         session_error_count: metrics.errorCount,
-        is_active: true
+        is_active: true,
       });
+
       console.log("Session created:", session.id);
-    } else {
-      const existingSession = await SessionService.getSession(session.id);
-      if (existingSession) {
-        await SessionService.updateSession(session.id, {
-          duration: session.duration,
-          total_clicks: existingSession.total_clicks + metrics.totalClicks,
-          total_scroll_distance: existingSession.total_scroll_distance + metrics.totalScrollDistance,
-          total_inputs: existingSession.total_inputs + metrics.totalInputs,
-          session_error_count: existingSession.session_error_count + metrics.errorCount
-        });
-      }
     }
 
+    // Calculate page metrics with DB handling
+    const pageMetrics = await PageEventService.calculatePageMetrics(
+      session.id,
+      session.site_id,
+      session.events || []
+    );
+
+    console.log("Page metrics calculated:", pageMetrics);
+    const frustrationScore = await FrustrationService.calculateFrustrationScore(
+      allEvents,
+      allEvents.filter((e) => e.type === 4).map((e) => ({
+        href: e.data.href,
+        timestamp: new Date(e.timestamp).toISOString(),
+      }))
+    );
+    const engagementScore = calculateEngagement({
+      ...session,
+      events: allEvents,
+    });
+    const relevanceScore = RelevanceService.calculateRelevanceScore(
+      frustrationScore,
+      engagementScore.normalizedScore,
+      updatedMetrics.errorCount
+    );
+
+    await SessionService.updateSession(session.id, {
+      duration: session.duration,
+      total_clicks: updatedMetrics.totalClicks,
+      total_scroll_distance: updatedMetrics.totalScrollDistance,
+      total_inputs: updatedMetrics.totalInputs,
+      session_error_count: updatedMetrics.errorCount,
+      frustration_score: frustrationScore,
+      engagement_score: engagementScore.totalScore,
+      relevance_score: relevanceScore,
+    });
+
+    console.log("Scores recomputed and updated for session:", session.id);
+    // Process events
     for (const event of session.events) {
       console.log("Processing event:", event);
-      if (event.type === EventType.IncrementalSnapshot &&
-        USEFUL_INCREMENTAL_DATA_TYPES.has(event.data.source)) {
+      if (
+        event.type === EventType.IncrementalSnapshot &&
+        USEFUL_INCREMENTAL_DATA_TYPES.has(event.data.source)
+      ) {
         await UserEventService.storeUserEvent({
           session_id: session.id,
           event_type: event.type,
@@ -142,16 +199,18 @@ export async function POST(request: Request) {
           event_data: event.data || null,
         });
         console.log("User event stored:", event);
-      }
-      else {
-        if (isCustomEvent(event) && event.data.tag === 'network_error') {
+      } else {
+        if (
+          isCustomEvent(event) &&
+          event.data.tag === "network_error"
+        ) {
           const payload = event.data.payload as NetworkErrorPayload;
           const networkErrorEvent = {
             session_id: session.id,
-            request_url: payload.url || '',
+            request_url: payload.url || "",
             status_code: payload.status || 0,
-            status_text: payload.statusText || '',
-            method: payload.method || 'GET',
+            status_text: payload.statusText || "",
+            method: payload.method || "GET",
             response_time: payload.duration || 0,
             is_successful: false,
             timestamp: new Date(event.timestamp).toISOString(),
@@ -162,37 +221,22 @@ export async function POST(request: Request) {
       }
     }
 
-    await SessionService.storeEvents(session.id, session.site_id, session.events);
-    if (session.events.filter(e => e.type === 4).length > 0) { // store page event if meta event is present
-      await SessionService.storePageEvents(session.id, session.site_id, pageMetrics);
-      console.log("Page events stored for session:", session.id);
-    }
-
-    const frustrationScore = await FrustrationService.calculateFrustrationScore(
-      session.events,
-      session.events.filter(e => e.type === 4)
-        .map(e => ({
-          href: e.data.href,
-          timestamp: new Date(e.timestamp).toISOString()
-        }))
-    );
-    const engagementScore = calculateEngagement(session);
-    const relevanceScore = RelevanceService.calculateRelevanceScore(
-      frustrationScore,
-      engagementScore.normalizedScore,
-      metrics.errorCount
+    // Store all events
+    await SessionService.storeEvents(
+      session.id,
+      session.site_id,
+      session.events
     );
 
-    await Promise.all([
-      SessionService.updateSession(session.id, { frustration_score: frustrationScore, engagement_score: engagementScore.totalScore, relevance_score: relevanceScore }),
-    ]);
-
-    console.log("Scores updated for session:", session.id);
-    return corsResponse(NextResponse.json({ success: true }));
+    console.log("Events stored successfully");
+    return corsResponse(NextResponse.json({ success: true, pageMetrics }));
   } catch (error) {
     console.error("Error in POST request:", error);
     return corsResponse(
-      NextResponse.json({ error: "Internal server error" }, { status: 500 })
+      NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 }
+      )
     );
   }
 }

@@ -4,6 +4,7 @@ import { TablesInsert } from "supabase/types";
 import { ServiceRequest } from "@/types/api";
 import { Session } from "@/types/api";
 import { eventWithTime } from "@rrweb/types";
+import { PageEvent } from "./pageEvent.service";
 const BUCKET_NAME = "sessions";
 
 export class SessionService {
@@ -93,40 +94,21 @@ export class SessionService {
     if (error) throw error;
   }
 
-  static async storePageEvents(
-    sessionId: string, 
-    siteId: string,
-    pageMetrics: Array<{
-      href: string,
-      timestamp: string,
-      referrer: string | null,
-      loadTime: number | null,
-      timeSpent: number | null,
-      scrollDepth: number,
-      errorCount: number
-    }>
-  ): Promise<void> {
+  static async getSessionWithPageEvents(id: string): Promise<Session & { events: eventWithTime[]; pageEvents: PageEvent[] }> {
+    const session = await this.getSession(id);
     const supabase = await createClient();
     
-    const pageEvents = pageMetrics.map(metric => ({
-      session_id: sessionId,
-      site_id: siteId,
-      href: metric.href,
-      timestamp: metric.timestamp,
-      referrer: metric.referrer,
-      page_load_time: metric.loadTime,
-      time_spent: metric.timeSpent,
-      scroll_depth: metric.scrollDepth,
-      error_count: metric.errorCount
-    }));
-
-    if (pageEvents.length === 0) return;
-
-    const { error } = await supabase
+    const { data: pageEvents, error } = await supabase
       .from('page_events')
-      .insert(pageEvents);
+      .select('*')
+      .eq('session_id', id);
 
     if (error) throw error;
+
+    return {
+      ...session,
+      pageEvents: pageEvents || []
+    };
   }
 
   static async deleteSession(req: ServiceRequest, id: string): Promise<void> {

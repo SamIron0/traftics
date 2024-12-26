@@ -37,6 +37,7 @@ export class SessionTracker {
   private isFlushInProgress = false;
   private hasFirstBatchBeenSent = false;
   private currentHref: string;
+  private previousHref: string | null = null;
   private location: { country: string; region: string; city: string; lat: number; lon: number } | null = null;
   private retryConfig: RetryConfig;
   private quotaExceeded = false;
@@ -51,6 +52,7 @@ export class SessionTracker {
     };
 
     this.currentHref = window.location.href;
+    this.previousHref = document.referrer || null;
     this.sessionId = uuidv4();
     this.websiteId = config.websiteId;
     this.collectorUrl = config.collectorUrl || "https://gaha.vercel.app";
@@ -59,19 +61,23 @@ export class SessionTracker {
     this.getLocation().then((location) => {
       this.location = location;
     });
-    window.addEventListener("popstate", () => this.handleUrlChange());
+    window.addEventListener("popstate", () => {
+      this.handleUrlChange('popstate');
+    });
 
     const originalPushState = history.pushState.bind(history);
     const originalReplaceState = history.replaceState.bind(history);
 
     history.pushState = (...args) => {
+      this.previousHref = this.currentHref;
       originalPushState(...args);
-      this.handleUrlChange();
+      this.handleUrlChange('pushState');
     };
 
     history.replaceState = (...args) => {
+      this.previousHref = this.currentHref;
       originalReplaceState(...args);
-      this.handleUrlChange();
+      this.handleUrlChange('replaceState');
     };
 
     this.startRecording();
@@ -322,12 +328,15 @@ export class SessionTracker {
     }
   }
 
-  private handleUrlChange() {
+  private handleUrlChange(source: 'pushState' | 'popstate' | 'replaceState') {
     const newHref = window.location.href;
     const now = Date.now();
+
     if (newHref !== this.currentHref) {
+      const referrer = this.previousHref || document.referrer || '';
+      this.previousHref = this.currentHref;
       this.currentHref = newHref;
-      const referrer = document.referrer;
+
       this.queueEvent({
         type: 5,
         timestamp: now,
@@ -336,17 +345,15 @@ export class SessionTracker {
           payload: {
             href: newHref,
             referrer,
+            navigationSource: source
           },
         },
       });
     }
   }
   private setupCustomEventListeners(): void {
-    console.log("Setting up custom event listeners");
 
     const createEvent = (tag: ErrorType | string, payload: any) => {
-      console.log("Original console error:", tag, payload);
-
       this.queueEvent({
         type: 5,
         timestamp: Date.now(),
@@ -368,7 +375,6 @@ export class SessionTracker {
 
     // 3. Capture global runtime errors
     window.addEventListener("error", (event) => {
-      console.log("Runtime error:", event);
       if (event.error) {
         createEvent("runtime_error", {
           message: event.message,
@@ -382,7 +388,6 @@ export class SessionTracker {
 
     // 4. Capture blocked scripts (CSP violations)
     window.addEventListener("securitypolicyviolation", (event) => {
-      console.log("CSP violation:", event);
       createEvent("script", {
         url: event.blockedURI,
         failed: true,
@@ -493,13 +498,34 @@ export class SessionTracker {
       return originalSend.apply(this, arguments as any);
     };
 
+    // capture page load time
+    window.addEventListener('load', () => {
+      const performanceData = window.performance.timing;
+      const loadTime = performanceData.loadEventEnd - performanceData.navigationStart;
+      const domContentLoadedTime = performanceData.domContentLoadedEventEnd - performanceData.navigationStart;
 
-    console.log("Custom event listeners setup complete");
+      const pageLoadData = {
+        loadTime,
+        domContentLoadedTime,
+        navigationStart: performanceData.navigationStart,
+        responseStart: performanceData.responseStart,
+        domComplete: performanceData.domComplete,
+      };
+
+      this.queueEvent({
+        type: 5,
+        timestamp: Date.now(),
+        data: {
+          tag: 'page_load',
+          payload: pageLoadData,
+        },
+      });
+
+    });
   }
 
 
   private addNetworkEvent(event: NetworkEvent): void {
-    console.log("Adding network event:", event);
     if (event.failed || event.blocked || (event.duration && event.duration > 3000)) {
       this.networkEvents.push(event);
       if (this.networkEvents.length > this.MAX_NETWORK_EVENTS) {
