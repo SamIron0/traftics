@@ -49,12 +49,12 @@ type NavigationItem = {
 export function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { signOut } = useAuthStatus();
+  const {user, signOut} = useAuthStatus();
   const { state } = useSidebar();
   const reset = useAppStore((state) => state.reset);
-  const { defaultDashboardId} = useAppStore();
+  const {full_name, defaultDashboardId} = useAppStore();
   const orgSlug = useAppStore((state) => state.orgSlug);
-  const projectSlug = useAppStore((state) => state.projectSlug);  
+  const projectSlug = useAppStore((state) => state.projectSlug); 
   const handleLogout = async () => {
     try {
       await signOut();
@@ -95,9 +95,9 @@ export function AppSidebar() {
   ];
   const data = {
     user: {
-      name: "Samuel Ironkwe",
-      email: "samironkwe@gmail.com",
-      avatar: "https://github.com/SamIron0.png",
+      name: full_name,
+      email: user?.email,
+      avatar: "/profile-gradient.jpg",
     },
   };
 

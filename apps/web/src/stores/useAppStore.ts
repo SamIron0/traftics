@@ -5,6 +5,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface AppState {
+  full_name: string;
   orgId: string | null;
   orgSlug: string | null;
   projectId: string | null;
@@ -29,6 +30,7 @@ interface AppState {
 export const useAppStore = create<AppState>()(  
   persist(
     (set) => ({
+      full_name: "",
       orgId: null,
       orgSlug: null,
       projectId: null,
@@ -83,6 +85,7 @@ export const useAppStore = create<AppState>()(
                 .from("user_profiles")
                 .select(
                   `
+                  full_name,
                   org_id,
                   active_project_id,
                   organizations!inner(slug),
@@ -119,6 +122,8 @@ export const useAppStore = create<AppState>()(
 
                 set({ isWebsiteVerified: website?.verified || false });
               }
+
+              set({ full_name: profile?.full_name || "" });
             })(),
           ]);
         } catch (error) {
