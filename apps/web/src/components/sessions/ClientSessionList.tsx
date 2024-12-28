@@ -11,7 +11,7 @@ import {
 import { formatTime } from "@/utils/helpers";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Play, ArrowUp, ArrowDown } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import {
   Tooltip,
@@ -31,11 +31,12 @@ interface SortState {
 
 interface Props {
   sessions: Session[];
-  onSelectSession: (sessionId: string, index: number) => void;
+  onSelectSession: (sessionId: string) => void;
   dateRange?: {
     startDate: Date;
     endDate: Date;
   };
+  onSort: (sortedSessions: Session[]) => void;
 }
 
 function getBrowserIcon(browserName: string) {
@@ -135,7 +136,7 @@ function SortHeader({
   );
 }
 
-export function ClientSessionList({ sessions, onSelectSession, dateRange }: Props) {
+export function ClientSessionList({ sessions, onSelectSession, dateRange, onSort }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const [sortState, setSortState] = useState<SortState>({
@@ -163,7 +164,7 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange }: Prop
     const sortSessions = (sessions: Session[]) => {
       if (!sortState.field) return sessions;
   
-      return [...sessions].sort((a, b) => {
+      const sorted = [...sessions].sort((a, b) => {
         let compareA, compareB;
   
         switch (sortState.field) {
@@ -208,12 +209,19 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange }: Prop
         }
         return (compareA ?? 0) < (compareB ?? 0) ? 1 : -1;
       });
+      
+      return sorted;
     };
   
     return sortSessions(filteredSessions);
   }, [filteredSessions, sortState]);
-  const handleSessionClick = (sessionId: string, index: number) => {
-    onSelectSession(sessionId, index);
+
+  useEffect(() => {
+    onSort(sortedAndFilteredSessions);
+  }, [sortedAndFilteredSessions, onSort]);
+
+  const handleSessionClick = (sessionId: string) => {
+    onSelectSession(sessionId);
   };
 
   // Calculate pagination values
@@ -300,7 +308,7 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange }: Prop
                 className="hover:bg-muted/50"
               >
                 <TableCell>
-                  <Button className="px-3" variant="outline" onClick={() => handleSessionClick(session.id, startIndex + index)}>
+                  <Button className="px-3" variant="outline" onClick={() => handleSessionClick(session.id)}>
                     <Play className="h-4 w-4 " />
                     Play
                   </Button>

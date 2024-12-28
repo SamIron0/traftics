@@ -20,7 +20,7 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
   const mode = searchParams.get("mode");
   const sessionId = searchParams.get("sessionId");
   const router = useRouter();
-  const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessionWithEvents, setSessionWithEvents] = useState<
     (Session & { events: eventWithTime[] }) | null
   >(null);
@@ -29,11 +29,14 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
   >();
   const { isLoading } = useAppStore();
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
+  const [sortedSessions, setSortedSessions] =
+    useState<Session[]>(initialSessions);
 
   const callApi = useCallback(async () => {
     const response = await fetch("/api/sessions");
     const newSessions = await response.json();
     setSessions(newSessions);
+    setSortedSessions(newSessions);
   }, []);
 
   useEffect(() => {
@@ -49,7 +52,7 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
   }, [mode, callApi]);
 
   const handleSelectSession = useCallback(
-    async (sessionId: string, index: number) => {
+    async (sessionId: string) => {
       if (sessionId === sessionWithEvents?.id) {
         const params = new URLSearchParams(searchParams.toString());
         params.set("mode", "replay");
@@ -58,10 +61,10 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
         return;
       }
 
-      setCurrentSessionIndex(index);
+      setCurrentSessionId(sessionId);
       try {
-        const sessionEvents = await fetch(`/api/sessions/${sessionId}`);
-        const data = await sessionEvents.json();
+        const response = await fetch(`/api/sessions/${sessionId}`);
+        const data = await response.json();
         setSessionWithEvents(data);
 
         const params = new URLSearchParams(searchParams.toString());
@@ -77,46 +80,53 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
 
   useEffect(() => {
     if (mode === "replay" && sessionId && !sessionWithEvents) {
-      const index = sessions.findIndex((s) => s.id === sessionId);
-      if (index !== -1) {
-        handleSelectSession(sessionId, index);
-      }
+      handleSelectSession(sessionId);
     }
-  }, [mode, sessionId, sessions, handleSelectSession, sessionWithEvents]);
+  }, [mode, sessionId, handleSelectSession, sessionWithEvents]);
+
+  const getCurrentIndex = useCallback(() => {
+    if (!currentSessionId) return -1;
+    return sortedSessions.findIndex(
+      (session) => session.id === currentSessionId
+    );
+  }, [currentSessionId, sortedSessions]);
 
   const handleNextSession = useCallback(() => {
-    if (currentSessionIndex < sessions.length - 1) {
-      handleSelectSession(
-        sessions[currentSessionIndex + 1].id,
-        currentSessionIndex + 1
-      );
+    const currentIndex = getCurrentIndex();
+    if (currentIndex < sortedSessions.length - 1) {
+      const nextSession = sortedSessions[currentIndex + 1];
+      handleSelectSession(nextSession.id);
     }
-  }, [currentSessionIndex, sessions, handleSelectSession]);
+  }, [getCurrentIndex, sortedSessions, handleSelectSession]);
 
   const handlePreviousSession = useCallback(() => {
-    if (currentSessionIndex > 0) {
-      handleSelectSession(
-        sessions[currentSessionIndex - 1].id,
-        currentSessionIndex - 1
-      );
+    const currentIndex = getCurrentIndex();
+    if (currentIndex > 0) {
+      const previousSession = sortedSessions[currentIndex - 1];
+      handleSelectSession(previousSession.id);
     }
-  }, [currentSessionIndex, sessions, handleSelectSession]);
+  }, [getCurrentIndex, sortedSessions, handleSelectSession]);
 
   const handleDateRangeChange = (startDate: Date, endDate: Date) => {
     setDateRange({ startDate, endDate });
   };
 
+  const handleSort = useCallback((sortedSessions: Session[]) => {
+    setSortedSessions(sortedSessions);
+  }, []);
+
   if (mode === "replay") {
     if (!sessionWithEvents) return null;
+    const currentIndex = getCurrentIndex();
     return (
       <SessionPlayer
         session={sessionWithEvents}
         onNextSession={handleNextSession}
         onPreviousSession={handlePreviousSession}
-        hasNextSession={currentSessionIndex < sessions.length - 1}
-        hasPreviousSession={currentSessionIndex > 0}
-        currentSessionIndex={currentSessionIndex}
-        totalSessions={sessions.length}
+        hasNextSession={currentIndex < sortedSessions.length - 1}
+        hasPreviousSession={currentIndex > 0}
+        currentSessionIndex={currentIndex}
+        totalSessions={sortedSessions.length}
         onDeleteSession={callApi}
       />
     );
@@ -125,6 +135,7 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
   if (isLoading) {
     return <SessionsSkeleton />;
   }
+
   if (sessions.length === 0) {
     return (
       <div className="flex-1 flex flex-col p-6">
@@ -144,6 +155,7 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
         sessions={sessions}
         onSelectSession={handleSelectSession}
         dateRange={dateRange}
+        onSort={handleSort}
       />
     </div>
   );
