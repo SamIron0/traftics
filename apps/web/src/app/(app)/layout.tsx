@@ -27,7 +27,6 @@ export default function RootLayout({
   const shouldShowNavbar = !isReplayMode && sessionsPattern.test(pathname);
 
   useEffect(() => {
-    console.log("Initializing state");
     initializeState();
   }, [initializeState]);
 

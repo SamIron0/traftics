@@ -1,4 +1,4 @@
-import { PricingPlan } from "@/types/ppricing";
+import { PricingPlan } from "@/types/pricing";
 
 export const PRICING_PLANS: PricingPlan[] = [
   {
@@ -19,20 +19,20 @@ export const PRICING_PLANS: PricingPlan[] = [
     },
   },
   {
-    id: "price_1QSvE6BwxSl9KXhs2RFlD6xL",
+    id: "price_1QSuZ5BwxSl9KXhsirvklxRu",
     name: "Pro",
     price: 20,
     interval: "month",
-    description: "For larger organizations",
+    description: "For growing businesses",
     features: [
-      "Everything in Growth, plus:",
-      "Unlimited monthly sessions",
-      "Data retention - 1 year",
-      "Dedicated support",
+      "Everything in Free, plus:",
+      "Up to 10,000 monthly sessions",
+      "Custom events tracking",
+      "Priority email support",
     ],
     limits: {
-      sessions: -1, // Unlimited
-      retention: 365,
+      sessions: 10000,
+      retention: 30,
     },
   },
 ];

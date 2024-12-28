@@ -20,8 +20,8 @@ export const PRICING_PLANS: PricingPlan[] = [
   },
   {
     id: "price_1QSuZ5BwxSl9KXhsirvklxRu",
-    name: "Growth",
-    price: 29,
+    name: "Pro",
+    price: 20,
     interval: "month",
     description: "For growing businesses",
     features: [

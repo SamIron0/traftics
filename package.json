@@ -1,24 +1,12 @@
 {
   "name": "traftics",
   "description": "intelligent session replays",
-  "keywords": [
-    "rrweb"
-  ],
-  "author": "samuelironkwec@gmail.com",
   "license": "MIT",
-  "bugs": {
-    "url": "https://traftics.com"
-  },
   "private": true,
   "homepage": "https://traftics.com",
-  "workspaces": [
-    "packages/*",
-    "packages/plugins/*"
-  ],
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.0",
     "@changesets/cli": "^2.27.1",
-    "@monorepo-utils/workspaces-to-typescript-project-references": "^2.8.2",
     "@types/prettier": "2.7.3",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
@@ -40,27 +28,16 @@
   },
   "scripts": {
     "dev": "pnpm -r dev",
-    "build": "pnpm build:tracker && pnpm build:web",
+    "build": "pnpm build:tracker && pnpm build:web && pnpm build:docs && pnpm build:landing",
     "build:tracker": "pnpm --filter @traftics/tracker build",
     "build:web": "pnpm --filter web build",
     "build:docs": "cd docs && pnpm build",
     "install:all": "pnpm install && pnpm install --filter @traftics/tracker && pnpm install --filter web && pnpm install --filter docs",
-    "test": "pnpm -r test",
-    "lint": "pnpm -r lint",
-    "clean": "pnpm -r exec rm -rf dist node_modules pnpm-lock.yaml",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "pnpm -r exec rm -rf dist node_modules pnpm-lock.yaml package-lock.json",
     "deploy:all": "bash infrastructure/scripts/deploy.sh all",
     "deploy:tracker": "bash infrastructure/scripts/deploy.sh tracker",
     "deploy:web": "bash infrastructure/scripts/deploy.sh web",
-    "deploy:docs": "vercel deploy docs --prod",
-    "references:update": "yarn workspaces-to-typescript-project-references",
-    "test:watch": "yarn turbo run test:watch",
-    "test:update": "yarn turbo run test:update",
-    "check-types": "yarn turbo run check-types --continue",
-    "format:head": "git diff --name-only HEAD^ |grep '\\.ts$\\|\\.md$' |xargs yarn prettier --write",
-    "live-stream": "cd packages/rrweb && yarn live-stream",
-    "lint:report": "yarn eslint --output-file eslint_report.json --format json packages/*/src --ext .ts,.tsx,.js,.jsx",
-    "release": "yarn build:all && changeset publish"
+    "deploy:docs": "vercel deploy docs --prod"
   },
   "browserslist": [
     "defaults",

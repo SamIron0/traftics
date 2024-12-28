@@ -3,14 +3,12 @@ import Image from "next/image";
 import { Twitter, Linkedin } from "lucide-react";
 
 const productLinks = [
-  { name: "Features", href: "/features" },
   { name: "Pricing", href: "/pricing" },
   { name: "Documentation", href: "/docs" },
 ];
 
 const companyLinks = [
-  { name: "About", href: "/about" },
-  { name: "Blog", href: "/blog" },
+  { name: "About", href: "https://www.linkedin.com/company/traftics/" },
   { name: "Contact", href: "/contact" },
 ];
 
@@ -48,7 +46,7 @@ export default function Footer() {
                 className="rounded-lg"
               />
             </Link>
-            <p className="text-sm text-muted-foreground max-w-xs">
+            <p className="text-md text-muted-foreground max-w-xs">
               Powerful analytics and user behavior insights to help you make data-driven decisions.
             </p>
             <div className="flex gap-4">
@@ -69,13 +67,13 @@ export default function Footer() {
 
           {/* Product Links */}
           <div>
-            <h3 className="text-sm font-medium mb-4">Product</h3>
+            <h3 className="text-md font-medium mb-4">Product</h3>
             <ul className="space-y-3">
               {productLinks.map((link) => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-md text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -86,13 +84,13 @@ export default function Footer() {
 
           {/* Company Links */}
           <div>
-            <h3 className="text-sm font-medium mb-4">Company</h3>
+            <h3 className="text-md font-medium mb-4">Company</h3>
             <ul className="space-y-3">
               {companyLinks.map((link) => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-md text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -103,13 +101,13 @@ export default function Footer() {
 
           {/* Legal Links */}
           <div>
-            <h3 className="text-sm font-medium mb-4">Legal</h3>
+            <h3 className="text-md font-medium mb-4">Legal</h3>
             <ul className="space-y-3">
               {legalLinks.map((link) => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-md text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -121,7 +119,7 @@ export default function Footer() {
 
         {/* Bottom Section */}
         <div className="mt-12 pt-8 border-t">
-          <p className="text-sm text-muted-foreground text-center">
+          <p className="text-md text-muted-foreground text-center">
             © {new Date().getFullYear()} Traftics. All rights reserved.
           </p>
         </div>

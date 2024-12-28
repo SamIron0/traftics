@@ -1,3 +1,4 @@
+// this file is poorly implemented and needs to be refactored.
 import { createServerClient } from "@supabase/ssr";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";

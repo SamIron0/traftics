@@ -23,7 +23,7 @@ export async function GET(
       total_sessions: metrics.total_sessions,
       avg_duration: metrics.avg_duration,
       pages_per_session: metrics.pages_per_session,
-      bounce_rate: 0, // TODO: Add bounce rate calculation to materialized view
+      bounce_rate: metrics.bounce_rate || 0,
       top_pages: metrics.top_pages || []
     });
 

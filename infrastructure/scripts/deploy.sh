@@ -6,6 +6,7 @@ set -e
 # Load environment variables
 source .env
 
+
 deploy_tracker() {
   echo "Deploying tracker to Cloudflare Pages..."
   cd packages/tracker
@@ -27,6 +28,13 @@ deploy_docs() {
   cd docs
   vercel deploy --prod
   cd ..
+}
+
+deploy_landing() {
+  echo "Deploying landing page to Vercel..."
+  cd apps/landing
+  vercel deploy --prod
+  cd ../..
 }
 
 # Main deployment logic

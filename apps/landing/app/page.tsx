@@ -1,7 +1,6 @@
 import { Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import VideoDemo from "@/components/Homepage/VideoDemo";
-import TestimonialSection from "@/components/Homepage/TestimonialSection";
 import FeaturesSection from "@/components/Homepage/FeaturesSection";
 import ErrorSection from "@/components/Homepage/ErrorSection";
 import CallToActionSection from "@/components/Homepage/CallToAction";
@@ -14,19 +13,21 @@ export default function Home() {
     <>
       <div className="">
         <section className="grid max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-32 lg:grid-cols-[48fr_52fr] gap-12 items-center">
-          {/* Left column - Text content */}
           <div className="text-center order-first lg:text-left">
-            <h1 className="text-3xl sm:text-4xl max-w-2xl mx-auto font-medium tracking-tight mb-4">
-              Record every{" "}
-              <span className="text-primary"> user interaction </span>
-              and replay the ones that matter.
+            <h1 className="text-4xl sm:text-5xl max-w-2xl mx-auto font-medium tracking-tight mb-4">
+              Record and Replay interactions you{" "}
+              <span className="text-primary"> need </span> to see.
             </h1>
-            <p className="text-lg sm:text-2xl max-w-sm sm:max-w-md mx-auto lg:mx-0 text-muted-foreground mb-12">
-              Turn user sessions into actionable insights with powerful analytics
-              and visual replays.
+            <p className="text-lg sm:text-[21px] max-w-sm sm:max-w-md mx-auto lg:mx-0 text-muted-foreground mb-12">
+              Automatically analyze all sessions recordings and surface only
+              those that provide valuable insights.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-              <Button variant="outline" size="sm" className="text-md h-10 px-10">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-md h-10 px-12"
+              >
                 Get started
               </Button>
               <Button
@@ -37,17 +38,13 @@ export default function Home() {
                 View the demo
               </Button>
             </div>
-            <div className="mt-6 sm:mx-auto w-full">
-              <TestimonialSection />
-            </div>
           </div>
 
-          {/* Right column - Video Demo */}
           <div className="relative">
             <VideoDemo />
           </div>
         </section>
-        <section className="mt-24 sm:mt-32 max-w-7xl mx-auto sm:px-8 lg:px-12">
+        <section className="mt-24 sm:mt-32 max-w-7xl mx-auto px-8 lg:px-12">
           <div className="text-center mb-12">
             <h2 className="text-4xl sm:text-5xl font-medium tracking-tight mb-4">
               Powerful features to understand your users
@@ -64,7 +61,7 @@ export default function Home() {
         <section className="mt-12 w-full flex flex-col items-center px-8">
           <div className="w-full mx-auto h-px bg-border/90 px-12 mt-12"></div>
           <IntelligenceSection />
-          <div className="w-full mx-auto h-px bg-border/90 px-12 mt-6"></div>
+          <div className="w-full mx-auto h-px bg-border/90 px-12 mt-6 mb-6"></div>
           <ErrorSection />
         </section>
         <div className="py-12 w-full flex flex-col items-center">
@@ -81,12 +78,10 @@ export default function Home() {
           <div className="text-center mb-12">
             <WhySection />
           </div>
-
         </div>
         <div className="mt-12 w-full bg-muted flex flex-col items-center px-8 py-8">
           <CallToActionSection />
         </div>
-
       </div>
     </>
   );

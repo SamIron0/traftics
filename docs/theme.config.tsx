@@ -1,11 +1,20 @@
-import React from 'react'
-import { DocsThemeConfig } from 'nextra-theme-docs'
+import React from "react";
+import { DocsThemeConfig } from "nextra-theme-docs";
+
 
 const config: DocsThemeConfig = {
-  logo: <span>My Project</span>,
+  logo: (
+    <img
+      src="/dark-text-logo.svg"
+      alt="Traftics Logo"
+      width={120}
+      height={14}
+      className="rounded-lg"
+    />
+  ),
   footer: {
-    content: 'Traftics Docs',
+    content: "Traftics Docs",
   },
-}
+};
 
-export default config
+export default config;

@@ -1,0 +1,26 @@
+# Installation Guide
+
+You're just a few steps from using Traftics on your website! To start collecting user data and recording user sessions, you have to deploy your code.
+
+## Deploying your tracking code:
+
+    1. You can find your tracking code in your Project settings.
+    2. Add the tracking code to your website. An example of a tracking code:
+
+```js filename="demo.js" {3} copy
+    <script>
+    (function(d, w) {
+        w._r = w._r || {
+        websiteId: "${websiteId}"
+        };
+        var s = d.createElement('script');
+        s.async = true;
+        s.src = 'https://493117db.traftics-tracker.pages.dev/tracker.js';
+        d.head.appendChild(s);
+    })(document, window);
+    </script>
+```
+
+And you're all set!
+
+Once deployed on your website, user sessions start to show up in your Traftics project. Allow a few minutes for the tracking code to be processed by Traftics. Your first user sessions Sessions are fully available shortly after a user visits visits your website.

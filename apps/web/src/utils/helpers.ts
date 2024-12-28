@@ -230,3 +230,12 @@ export const getErrorRedirect = (
     disableButton,
     arbitraryParams
   );
+
+
+export function getRelativeTimestamp(eventTime: string | number, sessionStartTime: string | number): number {
+  const eventTimestamp = new Date(eventTime).getTime();
+  const startTimestamp = typeof sessionStartTime === 'string' 
+    ? new Date(sessionStartTime).getTime()
+    : sessionStartTime;
+  return eventTimestamp - startTimestamp;
+}

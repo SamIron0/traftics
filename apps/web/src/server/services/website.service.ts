@@ -76,7 +76,6 @@ export class WebsiteService {
         data.domain = domain;
       } catch (error) {
         console.error("Invalid URL format:", error);
-        // Continue with verification even if URL parsing fails
       }
     }
     

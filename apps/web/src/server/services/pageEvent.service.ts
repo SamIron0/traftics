@@ -20,7 +20,7 @@ export class PageEventService {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("page_events")
-      .insert(pageMetric);
+      .upsert(pageMetric);
 
     if (error) {
       console.error("Error saving page metrics:", error);
@@ -37,16 +37,13 @@ export class PageEventService {
     try {
       const pageEvents = [];
       let lastMetaOrUrlChangeEvent: PageEvent | null = null;
-
       for (const event of events) {
         lastMetaOrUrlChangeEvent = this.handleEvent(event, sessionId, siteId, lastMetaOrUrlChangeEvent);
-        if (lastMetaOrUrlChangeEvent) {
+        if (lastMetaOrUrlChangeEvent !== null) {
           pageEvents.push(lastMetaOrUrlChangeEvent);
         }
       }
-
       for (const pageEvent of pageEvents) {
-        console.log("Saving page metrics:", pageEvent);
         await this.savePageMetrics(pageEvent);
       }
 
@@ -58,13 +55,13 @@ export class PageEventService {
   }
 
   private static handleEvent(event: eventWithTime, sessionId: string, siteId: string, lastEvent: PageEvent | null): PageEvent | null {
-    if (event.type === EventType.Custom && event.data.tag === "url_change") {
+    if (event.type === EventType.Meta || (event.type === EventType.Custom && event.data.tag === "url_change")) {
       return this.createPageEvent(event, sessionId, siteId);
     } else if (event.type === EventType.Custom && event.data.tag === "page_load" && lastEvent) {
       lastEvent.page_load_time = (event.data.payload as { pageLoadTime: number }).pageLoadTime || null;
-      return null; // Return null as we push the lastEvent to pageEvents in the main loop
+      return null;
     }
-    return lastEvent; // Return the last event if no new event is created
+    return null;
   }
 
   private static createPageEvent(event: eventWithTime, sessionId: string, siteId: string): PageEvent {

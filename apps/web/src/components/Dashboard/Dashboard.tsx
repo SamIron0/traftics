@@ -26,7 +26,7 @@ export default function Dashboard({ websiteId }: Props) {
           bounceRate: data.bounce_rate || 0,
           topPages: data.top_pages || [],
           trends: {
-            sessions: [], // We'll need to add trend data from a separate endpoint
+            sessions: [],
             duration: [],
             pages: [],
             bounce: []

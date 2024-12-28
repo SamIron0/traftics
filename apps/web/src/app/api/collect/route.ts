@@ -27,6 +27,7 @@ const verifiedSites = new Set<string>();
 // Define a set of useful incremental data types
 const USEFUL_INCREMENTAL_DATA_TYPES = new Set([
   IncrementalSource.MouseInteraction,
+  IncrementalSource.ViewportResize,
   IncrementalSource.Scroll,
   IncrementalSource.Input,
   IncrementalSource.MediaInteraction,
@@ -48,10 +49,8 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
-    console.log("POST request received");
     const session: Session = await request.json();
     const metrics = calculateSessionMetrics(session.events || []);
-    console.log("Session metrics calculated:", metrics);
 
     if (!session.site_id || !session.id || !session.events) {
       return corsResponse(
@@ -61,7 +60,6 @@ export async function POST(request: Request) {
 
     // Check usage quota
     const hasQuota = await UsageService.checkQuota(session.site_id);
-    console.log("Usage quota check:", hasQuota);
     if (!hasQuota) {
       return corsResponse(
         NextResponse.json(
@@ -77,7 +75,6 @@ export async function POST(request: Request) {
         const verified = await WebsiteService.getVerificationStatus(
           session.site_id
         );
-        console.log("Verification status for site:", verified);
         if (!verified) {
           const origin = request.headers.get("origin");
           let domain: string | undefined;
@@ -93,7 +90,6 @@ export async function POST(request: Request) {
           }
 
           await WebsiteService.verifyWebsite(session.site_id, urlString);
-          console.log("Website verified:", session.site_id);
         }
         verifiedSites.add(session.site_id);
       } catch (error) {
@@ -104,7 +100,6 @@ export async function POST(request: Request) {
     let updatedMetrics = metrics;
     if (!session.user_agent) {// if not first batch of events
       const existingSession = await SessionService.getSession(session.id);
-      console.log("Existing session found, updating scores");
       // Combine existing metrics with new metrics
       updatedMetrics = {
         totalClicks:
@@ -123,8 +118,6 @@ export async function POST(request: Request) {
       ];
 
     } else {
-      console.log("creating a new session");
-
       const userAgentInfo = parseUserAgent(session.user_agent || "");
       await SessionService.createSession({
         id: session.id,
@@ -144,8 +137,6 @@ export async function POST(request: Request) {
         session_error_count: metrics.errorCount,
         is_active: true,
       });
-
-      console.log("Session created:", session.id);
     }
 
     // Calculate page metrics with DB handling
@@ -155,7 +146,6 @@ export async function POST(request: Request) {
       session.events || []
     );
 
-    console.log("Page metrics calculated:", pageMetrics);
     const frustrationScore = await FrustrationService.calculateFrustrationScore(
       allEvents,
       allEvents.filter((e) => e.type === 4).map((e) => ({
@@ -180,14 +170,12 @@ export async function POST(request: Request) {
       total_inputs: updatedMetrics.totalInputs,
       session_error_count: updatedMetrics.errorCount,
       frustration_score: frustrationScore,
-      engagement_score: engagementScore.totalScore,
+      engagement_score: engagementScore.normalizedScore,
       relevance_score: relevanceScore,
     });
 
-    console.log("Scores recomputed and updated for session:", session.id);
     // Process events
     for (const event of session.events) {
-      console.log("Processing event:", event);
       if (
         event.type === EventType.IncrementalSnapshot &&
         USEFUL_INCREMENTAL_DATA_TYPES.has(event.data.source)
@@ -198,7 +186,6 @@ export async function POST(request: Request) {
           timestamp: new Date(event.timestamp).toISOString(),
           event_data: event.data || null,
         });
-        console.log("User event stored:", event);
       } else {
         if (
           isCustomEvent(event) &&
@@ -216,7 +203,6 @@ export async function POST(request: Request) {
             timestamp: new Date(event.timestamp).toISOString(),
           };
           await NetworkEventService.storeNetworkEvent(networkErrorEvent);
-          console.log("Network error event stored:", networkErrorEvent);
         }
       }
     }
@@ -228,7 +214,6 @@ export async function POST(request: Request) {
       session.events
     );
 
-    console.log("Events stored successfully");
     return corsResponse(NextResponse.json({ success: true, pageMetrics }));
   } catch (error) {
     console.error("Error in POST request:", error);

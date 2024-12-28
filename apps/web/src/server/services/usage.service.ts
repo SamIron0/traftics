@@ -43,7 +43,6 @@ export class UsageService {
 
   static async checkQuota(siteId: string): Promise<boolean> {
     const quota = await this.getQuota(siteId);
-    console.log("[DEBUG] Printing quota...", quota);
 
     return quota.remaining > 0;
   }

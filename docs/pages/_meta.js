@@ -1,15 +1,16 @@
 const meta = {
   "index": "Introduction",
-  "webSdk": "Website SDK",
-  "trafticsBasics": "Traftics Basics",
+  "basics": "Project Settings",
   "about": {
     "title": "About",
-    "type": "page"
+    "type": "page",
+    "href": "https://x.com/traftics",
+    "newWindow": true,
   },
   "contact": {
     "title": "Contact ↗",
     "type": "page",
-    "href": "https://twitter.com/csi0x",
+    "href": "https://traftics.com/contact",
     "newWindow": true
   }
 };

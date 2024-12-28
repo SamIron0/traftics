@@ -7,14 +7,14 @@ import Link from "next/link";
 
 export default function PricingPage() {
   return (
-    <div className="w-full space-y-12">
+    <div className="w-full space-y-12 h-[100dvh]">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-24">
         <div className="text-center">
           <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
             Simple, transparent pricing
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            Choose the plan that's right for you
+            Choose the plan that&apos;s right for you
           </p>
         </div>
         <div className="mt-12 space-y-4 sm:mt-16 sm:grid sm:grid-cols-2 sm:gap-6 sm:space-y-0 lg:mx-auto lg:max-w-7xl">
@@ -53,12 +53,12 @@ export default function PricingPage() {
                         : "bg-gray-900 text-white hover:bg-gray-800"
                     }`}
                   >
-                    <Link href="/signup">Get started</Link>
+                    <Link href="/signup">{ plan.name != "Pro" ? "Sign up free" : "Get Started" }</Link>
                   </Button>
                 </div>
                 <div className="px-6 pt-6 pb-8">
                   <h4 className="text-sm font-medium text-gray-900">
-                    What's included
+                    What&apos;s included
                   </h4>
                   <ul role="list" className="mt-6 space-y-4">
                     {plan.features.map((feature) => (

@@ -1,5 +1,4 @@
 import type { eventWithTime } from '@rrweb/types';
-import { UAParser } from 'ua-parser-js';
 
 export interface AuthenticatedRequest {
   user: {

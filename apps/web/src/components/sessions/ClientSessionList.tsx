@@ -88,6 +88,23 @@ function getOSIcon(osName: string) {
   );
 }
 
+function getRelevanceDescription(score: number | undefined): string {
+  switch (score) {
+    case 0:
+      return "Very Low";
+    case 1:
+      return "Low";
+    case 2:
+      return "Medium";
+    case 3:
+      return "High";
+    case 4:
+      return "Very High";
+    default:
+      return "Unknown";
+  }
+}
+
 function SortHeader({
   field,
   label,
@@ -289,8 +306,7 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange }: Prop
                   </Button>
                 </TableCell>
 
-
-                <TableCell>{session.relevance_score}</TableCell>
+                <TableCell>{getRelevanceDescription(session.relevance_score)}</TableCell>
                 <TableCell>
                   <StepIndicator score={session.frustration_score} type="frustration" />
                 </TableCell>

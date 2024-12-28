@@ -3,17 +3,16 @@ import { Check } from "lucide-react";
 
 export default function CallToActionSection() {
   const features = [
-    "Session recordings with advanced analytics",
+    "Session recordings with advanced insights",
     "Real-time user behavior tracking",
     "Customizable dashboards",
-    "Integration with popular platforms",
     "Unlimited team members",
   ];
 
   return (
-    <div className="max-w-7xl mx-auto grid gap-12 lg:grid-cols-[45fr_55fr] items-start">
+    <div className="max-w-7xl w-full grid gap-12 md:grid-cols-[45fr_55fr] items-start md:justify-center">
       {/* Left Column - Text & CTAs */}
-      <div className="flex flex-col items-center text-center lg:items-start lg:text-left space-y-8">
+      <div className="flex flex-col h-full justify-center lg:items-start lg:text-left space-y-8">
         <h2 className="text-3xl sm:text-4xl font-medium tracking-tight">
           Start understanding your users today
         </h2>
@@ -33,7 +32,7 @@ export default function CallToActionSection() {
 
       {/* Right Column - Features */}
       <div className="lg:pl-12">
-        <div className="bg-background rounded-2xl p-8 border">
+        <div className=" rounded-2xl p-8">
           <h3 className="text-xl font-medium mb-8">
             Everything you need to get started
           </h3>

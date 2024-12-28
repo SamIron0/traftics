@@ -65,7 +65,7 @@ export function SignupForm() {
         onClick={handleGithubSignup}
       >
         <Github className="mr-2 h-4 w-4" />
-        Continue with Github
+        Continue with Google
       </Button>
 
       <div className="relative">

@@ -24,7 +24,7 @@ const DEFAULT_BATCH_CONFIG: BatchConfig = {
 };
 
 export class SessionTracker {
-  private readonly INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+  private readonly INACTIVITY_TIMEOUT = 30 * 60 * 1000;
   private inactivityTimer: number | null = null;
   private sessionId: string;
   private readonly websiteId: string;
@@ -146,7 +146,6 @@ export class SessionTracker {
         this.isFlushInProgress = false;
       }
     }
-    // Schedule next flush
     this.scheduleFlush();
   }
 
@@ -161,7 +160,7 @@ export class SessionTracker {
       batches.push({
         id: this.sessionId,
         site_id: this.websiteId,
-        ...(isFirstBatch      // add session metadata only to first batch
+        ...(isFirstBatch
           ? {
             started_at: this.startedAt,
             user_agent: navigator.userAgent,
@@ -180,7 +179,6 @@ export class SessionTracker {
   }
 
   private async sendBatch(batch: Session): Promise<void> {
-    // If batch contains status update (is_active is set)
     if (batch.is_active !== undefined) {
       try {
         await fetch(`${this.collectorUrl}/api/collect`, {
@@ -306,19 +304,17 @@ export class SessionTracker {
     return false;
   }
 
-  // Fetches location from Cloudflare trace endpoint
   private async getLocation() {
     try {
       const response = await fetch("https://ipinfo.io/json?token=0d420c2f8c5887");
       const data = await response.json(); // Parse the JSON response
 
-      // Extract relevant information
       const locationData = {
         country: data.country,
         region: data.region,
         city: data.city,
-        lat: parseFloat(data.loc.split(',')[0]), // Latitude
-        lon: parseFloat(data.loc.split(',')[1]), // Longitude
+        lat: parseFloat(data.loc.split(',')[0]),
+        lon: parseFloat(data.loc.split(',')[1]),
       };
 
       return locationData;
@@ -498,7 +494,7 @@ export class SessionTracker {
       return originalSend.apply(this, arguments as any);
     };
 
-    // capture page load time
+    // capture page load info
     window.addEventListener('load', () => {
       const performanceData = window.performance.timing;
       const loadTime = performanceData.loadEventEnd - performanceData.navigationStart;

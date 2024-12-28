@@ -308,7 +308,6 @@ export type Database = {
       sessions: {
         Row: {
           browser: Json | null
-          city: string | null
           created_at: string | null
           device: Json | null
           duration: number
@@ -317,18 +316,14 @@ export type Database = {
           frustration_score: number | null
           id: string
           is_active: boolean | null
-          isp: string | null
           location: Json | null
-          network_speed: string | null
           os: Json | null
-          region: string | null
           relevance_score: number | null
           screen_height: number | null
           screen_width: number | null
           session_error_count: number | null
           site_id: string
           started_at: string
-          timezone: string | null
           total_clicks: number | null
           total_inputs: number | null
           total_scroll_distance: number | null
@@ -337,7 +332,6 @@ export type Database = {
         }
         Insert: {
           browser?: Json | null
-          city?: string | null
           created_at?: string | null
           device?: Json | null
           duration: number
@@ -346,18 +340,14 @@ export type Database = {
           frustration_score?: number | null
           id?: string
           is_active?: boolean | null
-          isp?: string | null
           location?: Json | null
-          network_speed?: string | null
           os?: Json | null
-          region?: string | null
           relevance_score?: number | null
           screen_height?: number | null
           screen_width?: number | null
           session_error_count?: number | null
           site_id: string
           started_at: string
-          timezone?: string | null
           total_clicks?: number | null
           total_inputs?: number | null
           total_scroll_distance?: number | null
@@ -366,7 +356,6 @@ export type Database = {
         }
         Update: {
           browser?: Json | null
-          city?: string | null
           created_at?: string | null
           device?: Json | null
           duration?: number
@@ -375,18 +364,14 @@ export type Database = {
           frustration_score?: number | null
           id?: string
           is_active?: boolean | null
-          isp?: string | null
           location?: Json | null
-          network_speed?: string | null
           os?: Json | null
-          region?: string | null
           relevance_score?: number | null
           screen_height?: number | null
           screen_width?: number | null
           session_error_count?: number | null
           site_id?: string
           started_at?: string
-          timezone?: string | null
           total_clicks?: number | null
           total_inputs?: number | null
           total_scroll_distance?: number | null
@@ -643,6 +628,7 @@ export type Database = {
       dashboard_metrics: {
         Row: {
           avg_duration: number | null
+          bounce_rate: number | null
           pages_per_session: number | null
           site_id: string | null
           top_pages: Json | null

@@ -16,8 +16,8 @@ import { itemVariants } from "@/lib/animation-variants";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Replayer } from "rrweb";
 import { Session } from "@/types/api";
-import { eventWithTime } from "@rrweb/types";
-import { formatPlayerTime } from "@/utils/helpers";
+import { EventType, eventWithTime, IncrementalSource } from "@rrweb/types";
+import { formatPlayerTime, getRelativeTimestamp } from "@/utils/helpers";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -35,7 +35,17 @@ import {
 } from "@/components/ui/tooltip";
 import { SessionInfo } from "./SessionInfo";
 import { useToast } from "@/hooks/use-toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Props {
   session: Session & { events: eventWithTime[] };
@@ -48,28 +58,15 @@ interface Props {
   onDeleteSession?: () => void;
 }
 
-function getRelativeTimestamp(eventTime: string, sessionStartTime: string | number): number {
-  const eventTimestamp = new Date(eventTime).getTime();
-  const startTimestamp = typeof sessionStartTime === 'string' 
-    ? new Date(sessionStartTime).getTime()
-    : sessionStartTime;
-  return eventTimestamp - startTimestamp;
-}
-
-// function timeStringToSeconds(timeString: string): number {
-//   const [minutes, seconds] = timeString.split(':').map(Number);
-//   return minutes * 60 + seconds;
-// }
-
-export default function SessionPlayer({ 
-  session, 
-  onNextSession, 
+export default function SessionPlayer({
+  session,
+  onNextSession,
   onPreviousSession,
   hasNextSession,
   hasPreviousSession,
   currentSessionIndex,
   totalSessions,
-  onDeleteSession
+  onDeleteSession,
 }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [replayer, setReplayer] = useState<Replayer | null>(null);
@@ -84,18 +81,30 @@ export default function SessionPlayer({
   const [skipInactive, setSkipInactive] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const { toast } = useToast();
-  const [pages, setPages] = useState<Array<{ href: string; timestamp: string }>>([]);
+  const [pages, setPages] = useState<
+    Array<{ href: string; timestamp: string }>
+  >([]);
   const [selectedPageIndex, setSelectedPageIndex] = useState(0);
+  const [viewportResize, setViewportResize] = useState<eventWithTime[]>();
 
   useEffect(() => {
     const currentWrapper = wrapperRef.current; // Copy ref to variable
-
+    // if session.events contains IncrementalSource.ViewportResize, setViewportResize
+    const viewportResizeEvents = session.events.filter(
+      (event) =>
+        event.type === EventType.IncrementalSnapshot &&
+        event.data.source === IncrementalSource.ViewportResize
+    );
+    setViewportResize(viewportResizeEvents);
     if (!currentWrapper || !session.events.length) return;
 
     // Only clear content if there's existing content AND we're switching sessions
-    const existingWrapper = currentWrapper.querySelector('.replayer-wrapper');
-    if (existingWrapper && existingWrapper.getAttribute('data-session-id') !== session.id) {
-      currentWrapper.innerHTML = '';
+    const existingWrapper = currentWrapper.querySelector(".replayer-wrapper");
+    if (
+      existingWrapper &&
+      existingWrapper.getAttribute("data-session-id") !== session.id
+    ) {
+      currentWrapper.innerHTML = "";
     }
 
     const player = new Replayer(session.events, {
@@ -107,13 +116,13 @@ export default function SessionPlayer({
       speed: playbackSpeed,
     });
 
-    const replayerWrapper = currentWrapper.querySelector('.replayer-wrapper');
-    
+    const replayerWrapper = currentWrapper.querySelector(".replayer-wrapper");
+
     if (replayerWrapper) {
       // Add session ID to wrapper for tracking
-      replayerWrapper.setAttribute('data-session-id', session.id);
-      
-      const containerHeight =currentWrapper.clientHeight;
+      replayerWrapper.setAttribute("data-session-id", session.id);
+
+      const containerHeight = currentWrapper.clientHeight;
       const containerWidth = currentWrapper.clientWidth;
       const sessionHeight = session.screen_height || 0;
       const sessionWidth = session.screen_width || 0;
@@ -131,7 +140,7 @@ export default function SessionPlayer({
         alignItems: "center",
         justifyContent: "center",
         borderRadius: "10px",
-         });
+      });
     }
 
     setReplayer(player);
@@ -145,37 +154,113 @@ export default function SessionPlayer({
       setReplayer(null);
       // Only clear content during cleanup if we're unmounting completely
       if (currentWrapper && !currentWrapper.parentElement) {
-        currentWrapper.innerHTML = '';
+        currentWrapper.innerHTML = "";
       }
     };
-  }, [session.events, session.duration, skipInactive, playbackSpeed, session.screen_height, session.screen_width, session.id]);
-  
+  }, [
+    session.events,
+    session.duration,
+    skipInactive,
+    playbackSpeed,
+    session.screen_height,
+    session.screen_width,
+    session.id,
+  ]);
 
   useEffect(() => {
-    if (!replayer || !pages.length) return;
+    if (!replayer || !pages.length || !viewportResize) return;
 
     const updateTime = () => {
+      if (!replayer || !wrapperRef.current) return;
+
       const time = replayer.getCurrentTime();
       setCurrentTime(formatPlayerTime(time > 0 ? time : 0));
       setSliderValue(time);
 
+      // Check for closest resize events
+
+      const closestResizeEvent = viewportResize?.reduce((closest, current) => {
+        // Get relative timestamp for the current resize event
+        const eventTime = getRelativeTimestamp(
+          current.timestamp,
+          session.started_at || 0
+        );
+
+        // If event is after current time, it's not a candidate
+        if (eventTime > time) return closest;
+
+        // If no previous closest, use this one
+        if (!closest) return current;
+
+        // Get relative timestamp for the current closest event
+        const closestTime = getRelativeTimestamp(
+          closest.timestamp,
+          session.started_at || 0
+        );
+
+        // Return the event that's closest to but not exceeding current time
+        return time - eventTime < time - closestTime ? current : closest;
+      }, null as eventWithTime | null);
+
+      if (closestResizeEvent) {
+        const { width, height } = closestResizeEvent.data as {
+          width: number;
+          height: number;
+        };
+        const containerHeight = wrapperRef.current.clientHeight || 0;
+        const containerWidth = wrapperRef.current.clientWidth || 0;
+        const scale = Math.min(
+          containerWidth / width,
+          containerHeight / height
+        );
+
+        const replayerWrapper =
+          wrapperRef.current.querySelector(".replayer-wrapper");
+        if (replayerWrapper) {
+          Object.assign((replayerWrapper as HTMLElement).style, {
+            height: `${height}px`,
+            width: `${width}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: "center center",
+          });
+        }
+      } else {
+        const replayerWrapper =
+          wrapperRef.current.querySelector(".replayer-wrapper");
+        if (replayerWrapper) {
+          const containerHeight = wrapperRef.current.clientHeight || 0;
+          const containerWidth = wrapperRef.current.clientWidth || 0;
+          const sessionHeight = session.screen_height || 0;
+          const sessionWidth = session.screen_width || 0;
+
+          const heightScale = containerHeight / sessionHeight;
+          const widthScale = containerWidth / sessionWidth;
+          const scale = Math.min(heightScale, widthScale);
+
+          Object.assign((replayerWrapper as HTMLElement).style, {
+            height: `${sessionHeight}px`,
+            width: `${sessionWidth}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: "center center",
+          });
+        }
+      }
+
       // Find the last page that was visited before the current time
-      const currentTimeFromStart = time;
       const currentPageIndex = pages.reduce((lastIndex, page, index) => {
-        const pageTime = getRelativeTimestamp(page.timestamp, session.started_at || 0);
-        return pageTime <= currentTimeFromStart ? index : lastIndex;
+        const pageTime = getRelativeTimestamp(
+          page.timestamp,
+          session.started_at || 0
+        );
+        return pageTime <= time ? index : lastIndex;
       }, 0);
 
       setSelectedPageIndex(currentPageIndex);
-
-      if(session.duration && time >= (session.duration)) {
-        setIsPlaying(false);
-      }
     };
 
     const timer = setInterval(updateTime, 100);
     return () => clearInterval(timer);
-  }, [replayer, session.duration, pages, session.started_at]);
+  }, [replayer, session.duration, pages, session.started_at, viewportResize, session.screen_height, session.screen_width]);
 
   const handlePlayPause = useCallback(() => {
     if (!replayer) return;
@@ -193,9 +278,9 @@ export default function SessionPlayer({
   const handleSkipInactive = useCallback(() => {
     if (!replayer) return;
     if (wrapperRef.current) {
-      wrapperRef.current.innerHTML = '';
+      wrapperRef.current.innerHTML = "";
     }
-    replayer.setConfig({ skipInactive: !skipInactive }); 
+    replayer.setConfig({ skipInactive: !skipInactive });
     setSkipInactive(!skipInactive);
   }, [replayer, skipInactive]);
 
@@ -217,7 +302,7 @@ export default function SessionPlayer({
   const handleSpeedChange = (speed: number) => {
     if (!replayer) return;
     if (wrapperRef.current) {
-      wrapperRef.current.innerHTML = '';
+      wrapperRef.current.innerHTML = "";
     }
 
     replayer.setConfig({ speed });
@@ -242,10 +327,10 @@ export default function SessionPlayer({
   const handleDelete = async () => {
     try {
       const response = await fetch(`/api/sessions/${session.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
-      if (!response.ok) throw new Error('Failed to delete session');
+      if (!response.ok) throw new Error("Failed to delete session");
 
       toast({
         title: "Session deleted",
@@ -256,7 +341,7 @@ export default function SessionPlayer({
       handleBack();
       onDeleteSession?.();
     } catch (error) {
-      console.error('Error deleting session:', error);
+      console.error("Error deleting session:", error);
       toast({
         title: "Error",
         description: "Failed to delete session",
@@ -291,14 +376,14 @@ export default function SessionPlayer({
     async function fetchPages() {
       try {
         const response = await fetch(`/api/sessions/${session.id}/pages`);
-        if (!response.ok) throw new Error('Failed to fetch pages');
+        if (!response.ok) throw new Error("Failed to fetch pages");
         const data = await response.json();
         setPages(data);
       } catch (error) {
-        console.error('Error fetching pages:', error);
+        console.error("Error fetching pages:", error);
       }
     }
-    
+
     fetchPages();
   }, [session.id]);
 
@@ -313,7 +398,7 @@ export default function SessionPlayer({
 
   const handleOpenExternal = () => {
     if (pages[selectedPageIndex]) {
-      window.open(pages[selectedPageIndex].href, '_blank');
+      window.open(pages[selectedPageIndex].href, "_blank");
     }
   };
 
@@ -362,9 +447,10 @@ export default function SessionPlayer({
             </TooltipTrigger>
             <TooltipContent>Next session</TooltipContent>
           </Tooltip>
-          <div className="text-sm">{(currentSessionIndex ?? 0) + 1} / {totalSessions} sessions</div>
+          <div className="text-sm">
+            {(currentSessionIndex ?? 0) + 1} / {totalSessions} sessions
+          </div>
         </div>
-       
       </header>
 
       {/* Main Content */}
@@ -380,19 +466,25 @@ export default function SessionPlayer({
                 </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
-                      {pages[selectedPageIndex]?.href || 'No pages recorded'}
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                    >
+                      {pages[selectedPageIndex]?.href || "No pages recorded"}
                       <ChevronDown className="h-4 w-4 ml-2" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
                     {pages.map((page, index) => (
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         key={index}
                         onClick={() => {
                           if (!replayer) return;
                           setSelectedPageIndex(index);
-                          const relativeTime = getRelativeTimestamp(page.timestamp, session.started_at || 0);
+                          const relativeTime = getRelativeTimestamp(
+                            page.timestamp,
+                            session.started_at || 0
+                          );
                           replayer.play(relativeTime);
                           setSliderValue(relativeTime);
                           setIsPlaying(true);
@@ -410,16 +502,16 @@ export default function SessionPlayer({
                 </DropdownMenu>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               onClick={handleCopyUrl}
               disabled={!pages.length}
             >
               <Copy className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               onClick={handleOpenExternal}
               disabled={!pages.length}
@@ -431,14 +523,14 @@ export default function SessionPlayer({
           {/* Video Area */}
           <div
             ref={wrapperRef}
-            className="aspect-video w-full bg-black rounded-lg relative overflow-hidden flex items-center justify-center cursor-pointer"
+            className="aspect-video w-full bg-zinc-200 rounded-lg relative overflow-hidden flex items-center justify-center cursor-pointer"
             onClick={handlePlayPause}
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               height: "calc(100vh - 300px)",
-              maxHeight: "800px"
+              maxHeight: "800px",
             }}
           >
             {/* Play/Pause Overlay */}
@@ -537,13 +629,15 @@ export default function SessionPlayer({
                         <AlertDialogHeader>
                           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the session
-                            recording and all its data.
+                            This action cannot be undone. This will permanently
+                            delete the session recording and all its data.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                          <AlertDialogAction onClick={handleDelete}>
+                            Delete
+                          </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
@@ -557,7 +651,7 @@ export default function SessionPlayer({
         {/* Right Sidebar */}
         <div className="w-96 border-l p-4">
           {/* Feedback Card */}
-           <SessionInfo session={session} />
+          <SessionInfo session={session} />
         </div>
       </div>
     </div>

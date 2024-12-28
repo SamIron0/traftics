@@ -1,5 +1,5 @@
 "use client";
-  
+
 import { useSearchParams } from "next/navigation";
 import { ClientSessionList } from "./ClientSessionList";
 import { Session } from "@/types/api";
@@ -21,13 +21,17 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
   const sessionId = searchParams.get("sessionId");
   const router = useRouter();
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
-  const [sessionWithEvents, setSessionWithEvents] = useState<Session & { events: eventWithTime[] } | null>(null);
-  const [dateRange, setDateRange] = useState<{ startDate: Date; endDate: Date } | undefined>();
-  const {isLoading} = useAppStore();
+  const [sessionWithEvents, setSessionWithEvents] = useState<
+    (Session & { events: eventWithTime[] }) | null
+  >(null);
+  const [dateRange, setDateRange] = useState<
+    { startDate: Date; endDate: Date } | undefined
+  >();
+  const { isLoading } = useAppStore();
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
 
   const callApi = useCallback(async () => {
-    const response = await fetch('/api/sessions');
+    const response = await fetch("/api/sessions");
     const newSessions = await response.json();
     setSessions(newSessions);
   }, []);
@@ -44,27 +48,36 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
     return () => clearInterval(interval);
   }, [mode, callApi]);
 
-  const handleSelectSession = useCallback(async (sessionId: string, index: number) => {
-    if (sessionId === sessionWithEvents?.id) return;
-    
-    setCurrentSessionIndex(index);
-    try {
-      const sessionEvents = await fetch(`/api/sessions/${sessionId}`);
-      const data = await sessionEvents.json();
-      setSessionWithEvents(data);
-      
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("mode", "replay");
-      params.set("sessionId", sessionId);
-      router.push(`?${params.toString()}`);
-    } catch (error) {
-      console.error('Failed to fetch session events:', error);
-    }
-  }, [searchParams, router, sessionWithEvents]);
+  const handleSelectSession = useCallback(
+    async (sessionId: string, index: number) => {
+      if (sessionId === sessionWithEvents?.id) {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("mode", "replay");
+        params.set("sessionId", sessionId);
+        router.push(`?${params.toString()}`);
+        return;
+      }
+
+      setCurrentSessionIndex(index);
+      try {
+        const sessionEvents = await fetch(`/api/sessions/${sessionId}`);
+        const data = await sessionEvents.json();
+        setSessionWithEvents(data);
+
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("mode", "replay");
+        params.set("sessionId", sessionId);
+        router.push(`?${params.toString()}`);
+      } catch (error) {
+        console.error("Failed to fetch session events:", error);
+      }
+    },
+    [searchParams, router, sessionWithEvents]
+  );
 
   useEffect(() => {
     if (mode === "replay" && sessionId && !sessionWithEvents) {
-      const index = sessions.findIndex(s => s.id === sessionId);
+      const index = sessions.findIndex((s) => s.id === sessionId);
       if (index !== -1) {
         handleSelectSession(sessionId, index);
       }
@@ -73,13 +86,19 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
 
   const handleNextSession = useCallback(() => {
     if (currentSessionIndex < sessions.length - 1) {
-      handleSelectSession(sessions[currentSessionIndex + 1].id, currentSessionIndex + 1);
+      handleSelectSession(
+        sessions[currentSessionIndex + 1].id,
+        currentSessionIndex + 1
+      );
     }
   }, [currentSessionIndex, sessions, handleSelectSession]);
 
   const handlePreviousSession = useCallback(() => {
     if (currentSessionIndex > 0) {
-      handleSelectSession(sessions[currentSessionIndex - 1].id, currentSessionIndex - 1);
+      handleSelectSession(
+        sessions[currentSessionIndex - 1].id,
+        currentSessionIndex - 1
+      );
     }
   }, [currentSessionIndex, sessions, handleSelectSession]);
 
@@ -90,7 +109,7 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
   if (mode === "replay") {
     if (!sessionWithEvents) return null;
     return (
-      <SessionPlayer 
+      <SessionPlayer
         session={sessionWithEvents}
         onNextSession={handleNextSession}
         onPreviousSession={handlePreviousSession}
@@ -102,15 +121,18 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
       />
     );
   }
-  
-  
-    if(isLoading) {
-      return <SessionsSkeleton />
-    }
-  if(sessions.length === 0) {
-    return <div className="flex-1 flex flex-col p-6">
-      <p className="text-sm text-muted-foreground">No sessions found{isLoading ? "" : "..."}</p>
-    </div>
+
+  if (isLoading) {
+    return <SessionsSkeleton />;
+  }
+  if (sessions.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col p-6">
+        <p className="text-sm text-muted-foreground">
+          No sessions found{isLoading ? "" : "..."}
+        </p>
+      </div>
+    );
   }
 
   return (
