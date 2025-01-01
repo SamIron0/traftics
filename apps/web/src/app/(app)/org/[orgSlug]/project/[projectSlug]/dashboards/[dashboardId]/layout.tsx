@@ -3,10 +3,10 @@ import { notFound } from "next/navigation";
 
 interface ProjectLayoutProps {
   children: React.ReactNode;
-  params: Promise<{ 
+  params: Promise<{
     orgSlug: string;
     projectSlug: string;
-    dashboardId: string 
+    dashboardId: string;
   }>;
 }
 
@@ -17,12 +17,11 @@ export default async function ProjectLayout({
   const supabase = await createClient();
   const { data: user } = await supabase.auth.getUser();
   const { orgSlug, projectSlug, dashboardId } = await params;
-
   // Fetch organization ID using slug
   const { data: org } = await supabase
-    .from('organizations')
-    .select('id')
-    .eq('slug', orgSlug)
+    .from("organizations")
+    .select("id")
+    .eq("slug", orgSlug)
     .single();
 
   if (!org) {
@@ -31,10 +30,10 @@ export default async function ProjectLayout({
 
   // Fetch project ID using slug
   const { data: project } = await supabase
-    .from('websites')
-    .select('id')
-    .eq('slug', projectSlug)
-    .eq('org_id', org.id)
+    .from("websites")
+    .select("id")
+    .eq("slug", projectSlug)
+    .eq("org_id", org.id)
     .single();
 
   if (!project) {
@@ -45,14 +44,17 @@ export default async function ProjectLayout({
   const { data: userProfile } = await supabase
     .from("user_profiles")
     .select("org_id, active_project_id")
-    .eq("user_id", user?.user?.id)
+    .eq("user_id", user?.user?.id || "22acab5b-c6fd-4eef-b456-29d7fd4753a7")
     .single();
 
   if (!userProfile) {
     notFound();
   }
 
-  if (userProfile.org_id !== org.id || userProfile.active_project_id !== project.id) {
+  if (
+    userProfile.org_id !== org.id ||
+    userProfile.active_project_id !== project.id
+  ) {
     notFound();
   }
 

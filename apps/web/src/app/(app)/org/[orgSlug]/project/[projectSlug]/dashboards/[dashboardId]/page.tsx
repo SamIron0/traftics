@@ -7,7 +7,6 @@ import { useAppStore } from "@/stores/useAppStore";
 
 export default function DashboardPage() {
   const { isWebsiteVerified, projectId } = useAppStore();
-
   if (!isWebsiteVerified && projectId) {
     const script = generateScript(projectId );
     return <UnverifiedView script={script} />;

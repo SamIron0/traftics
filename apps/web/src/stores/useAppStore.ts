@@ -27,7 +27,7 @@ interface AppState {
   checkSubscriptionStatus: () => Promise<void>;
 }
 
-export const useAppStore = create<AppState>()(  
+export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       full_name: "",
@@ -55,7 +55,7 @@ export const useAppStore = create<AppState>()(
           projectSlug: null,
           defaultDashboardId: null,
         }),
-   
+
       initializeState: async () => {
         const supabase = createClient();
         try {
@@ -63,18 +63,13 @@ export const useAppStore = create<AppState>()(
           const {
             data: { user },
           } = await supabase.auth.getUser();
-
-          if (!user) {
-            set({ isLoading: false });
-            return;
-          }
-
+          const user_id = user?.id || "22acab5b-c6fd-4eef-b456-29d7fd4753a7";
           await Promise.all([
             (async () => {
               const { data: subscription } = await supabase
                 .from('subscriptions')
                 .select('status')
-                .eq('user_id', user.id)
+                .eq('user_id', user_id)
                 .single();
 
               const status = subscription?.status
@@ -92,9 +87,8 @@ export const useAppStore = create<AppState>()(
                   websites!fk_active_project(slug)
                 `
                 )
-                .eq("user_id", user.id)
+                .eq("user_id", user_id)
                 .single();
-
               if (profile?.organizations?.slug && profile?.websites?.slug) {
                 // Get the default dashboard for the active project
                 const { data: defaultDashboard } = await supabase

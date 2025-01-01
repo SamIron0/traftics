@@ -83,23 +83,16 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  // If no user and trying to access protected route, redirect to login
+  let user_id = user?.id;
+  // If no user and trying to access protected route, redirect to demo project
   if (!user) {
-    if (!isAuthRoute) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
-    } else {
-      return supabaseResponse;
-    }
+    user_id = "22acab5b-c6fd-4eef-b456-29d7fd4753a7"
   }
-
   const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("is_onboarded, org_id, active_project_id")
-    .eq("user_id", user.id)
-    .single();
+  .from("user_profiles")
+  .select("is_onboarded, org_id, active_project_id")
+  .eq("user_id", user_id)
+  .single();
 
   // Get organization and project slugs
   const { data: org } = await supabase
@@ -147,7 +140,7 @@ export async function updateSession(request: NextRequest) {
   const { data: setupStatus } = await supabase
     .from("user_profiles")
     .select("setup_completed")
-    .eq("user_id", user.id)
+    .eq("user_id", user_id)
     .single();
 
   if (setupStatus?.setup_completed) {

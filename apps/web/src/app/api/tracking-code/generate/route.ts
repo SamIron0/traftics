@@ -36,7 +36,6 @@ export async function GET() {
     });
 
     if (websiteError) {
-      console.log("websiteError", websiteError);
       return NextResponse.json(
         { error: "Failed to create website" },
         { status: 500 }
