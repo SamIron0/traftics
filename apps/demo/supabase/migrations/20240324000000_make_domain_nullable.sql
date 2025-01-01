@@ -1,2 +1,0 @@
-ALTER TABLE websites
-ALTER COLUMN domain DROP NOT NULL; 
