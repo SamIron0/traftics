@@ -24,7 +24,7 @@ export default function RootLayout({
   const dashboardsPattern = /^\/org\/[^/]+\/project\/[^/]+\/dashboards(?:\/[^/]+)?$/;
   const sessionsPattern = /^\/org\/[^/]+\/project\/[^/]+\/sessions(?:\/[^/]+)?$/;
   const shouldShowPanel = dashboardsPattern.test(pathname);
-  const shouldShowNavbar = !isReplayMode && sessionsPattern.test(pathname);
+  const shouldShowNavbar = !isReplayMode && (sessionsPattern.test(pathname) || dashboardsPattern.test(pathname)); ;
 
   useEffect(() => {
     initializeState();

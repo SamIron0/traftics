@@ -10,6 +10,7 @@ interface AppState {
   orgSlug: string | null;
   projectId: string | null;
   projectSlug: string | null;
+  allProjects: Partial<Tables<'websites'>>[];
   isLoading: boolean;
   sessions: Session[];
   isWebsiteVerified: boolean;
@@ -35,6 +36,7 @@ export const useAppStore = create<AppState>()(
       orgSlug: null,
       projectId: null,
       projectSlug: null,
+      allProjects: [],
       defaultDashboardId: null,
       isLoading: true,
       sessions: [],
@@ -54,6 +56,7 @@ export const useAppStore = create<AppState>()(
           projectId: null,
           projectSlug: null,
           defaultDashboardId: null,
+          allProjects: [],
         }),
 
       initializeState: async () => {
@@ -89,7 +92,7 @@ export const useAppStore = create<AppState>()(
                 )
                 .eq("user_id", user_id)
                 .single();
-              if (profile?.organizations?.slug && profile?.websites?.slug) {
+              if (profile?.organizations?.slug && profile?.websites?.slug && profile?.org_id) {
                 // Get the default dashboard for the active project
                 const { data: defaultDashboard } = await supabase
                   .from("dashboards")
@@ -98,11 +101,19 @@ export const useAppStore = create<AppState>()(
                   .order("created_at", { ascending: true })
                   .limit(1)
                   .single();
+
+                const { data: allProjects } = await supabase
+                  .from("websites")
+                  .select("id, name")
+                  .eq("org_id", profile.org_id)
+                  .order("created_at", { ascending: true });
+
                 set({
                   orgId: profile.org_id,
                   orgSlug: profile.organizations.slug,
                   projectId: profile.active_project_id,
                   projectSlug: profile.websites.slug,
+                  allProjects: allProjects || [],
                   defaultDashboardId: defaultDashboard?.id || null,
                 });
               }

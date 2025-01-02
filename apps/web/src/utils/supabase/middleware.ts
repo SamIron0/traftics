@@ -108,7 +108,7 @@ export async function updateSession(request: NextRequest) {
     .single();
 
   // If user exists and trying to access auth routes, redirect to dashboard
-  if (isAuthRoute) {
+  if (isAuthRoute && user?.id) {
     const defaultDashboard = await getDefaultDashboard(supabase, project?.slug);
 
     const url = request.nextUrl.clone();

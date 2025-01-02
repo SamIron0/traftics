@@ -8,32 +8,36 @@ import { Label } from "@/components/ui/label";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { createClient } from "@/utils/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 export default function AccountPage() {
   const { user } = useAuthStatus();
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState("");
   const { toast } = useToast();
-
+  const user_id = user?.id || "22acab5b-c6fd-4eef-b456-29d7fd4753a7";
+  const router = useRouter();
   useEffect(() => {
     async function fetchUserProfile() {
-      if (!user) return;
-      
       const supabase = createClient();
       const { data: profile } = await supabase
         .from("user_profiles")
         .select("full_name")
-        .eq("user_id", user.id)
+        .eq("user_id", user_id)
         .single();
-      
+
       if (profile) {
         setFullName(profile.full_name);
       }
     }
-    
+
     fetchUserProfile();
   }, [user]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
+    if (!user?.id) {
+      router.push("/signup");
+      return;
+    }
     e.preventDefault();
     setLoading(true);
     toast({
@@ -63,7 +67,7 @@ export default function AccountPage() {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-semibold mb-6">Account Settings</h1>
-      
+
       <div className="max-w-2xl space-y-6">
         <Card>
           <CardHeader>
@@ -92,7 +96,14 @@ export default function AccountPage() {
             <CardTitle>Password</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" onClick={() => window.location.href = "/forgot-password"}>
+            <Button
+              variant="outline"
+              onClick={() =>
+                user?.id
+                  ? (window.location.href = "/forgot-password")
+                  : router.push("/signup")
+              }
+            >
               Change Password
             </Button>
           </CardContent>

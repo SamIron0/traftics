@@ -1,7 +1,6 @@
 import React from "react";
 import { DocsThemeConfig } from "nextra-theme-docs";
 
-
 const config: DocsThemeConfig = {
   logo: (
     <img
@@ -14,6 +13,13 @@ const config: DocsThemeConfig = {
   ),
   footer: {
     content: "Traftics Docs",
+  },
+  feedback: {
+    content: "",
+    labels: "",
+  },
+  editLink: {
+    content: "",
   },
 };
 

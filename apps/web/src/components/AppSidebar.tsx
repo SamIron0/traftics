@@ -10,6 +10,7 @@ import {
   Settings,
   BadgeCheck,
   LucideIcon,
+  FileText,
 } from "lucide-react";
 import {
   Sidebar,
@@ -49,13 +50,17 @@ type NavigationItem = {
 export function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const {user, signOut} = useAuthStatus();
+  const { user, signOut } = useAuthStatus();
   const { state } = useSidebar();
   const reset = useAppStore((state) => state.reset);
-  const {full_name, defaultDashboardId} = useAppStore();
+  const { full_name, defaultDashboardId } = useAppStore();
   const orgSlug = useAppStore((state) => state.orgSlug);
-  const projectSlug = useAppStore((state) => state.projectSlug); 
+  const projectSlug = useAppStore((state) => state.projectSlug);
   const handleLogout = async () => {
+    if (!user?.id) {
+      router.push("/signup");
+      return;
+    }
     try {
       await signOut();
       reset();
@@ -79,7 +84,7 @@ export function AppSidebar() {
           icon: BarChart3,
           path: `/org/${orgSlug}/project/${projectSlug}/sessions`,
         },
-       ],
+      ],
     },
     {
       group: "Settings",
@@ -90,13 +95,20 @@ export function AppSidebar() {
           path: `/org/${orgSlug}/settings`,
           exact: true,
         },
+        {
+          label: "Docs",
+          icon: FileText,
+          path: `https://traftics-docs.ironkwe.site`,
+          exact: true,
+        },
       ],
     },
   ];
+
   const data = {
     user: {
       name: full_name,
-      email: user?.email || 'samuelironkwec@gmail.com',
+      email: user?.email || "samuelironkwec@gmail.com",
       avatar: "/profile-gradient.jpg",
     },
   };
@@ -130,7 +142,11 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     key={item.path}
                     tooltip={item.label}
-                    isActive={item.exact ? pathname === item.path : pathname.includes(item.path)}
+                    isActive={
+                      item.exact
+                        ? pathname === item.path
+                        : pathname.includes(item.path)
+                    }
                     onClick={() => router.push(item.path)}
                   >
                     <item.icon />
@@ -147,8 +163,15 @@ export function AppSidebar() {
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-purple-500/20 backdrop-blur-xl rounded-lg group-data-[collapsible=icon]:opacity-0 transition-opacity duration-300" />
             <div className="absolute inset-0 bg-gradient-to-tr from-blue-400/10 to-purple-400/10 rounded-lg group-data-[collapsible=icon]:opacity-0 transition-opacity duration-300" />
             <div className="absolute inset-0 rounded-lg border border-white/5 group-data-[collapsible=icon]:opacity-0 transition-opacity duration-300" />
-            <div className={`relative z-1 flex gap-2 justify-center w-full ${state === "collapsed" ? "" : "flex-col "}`}>
-              <SidebarMembershipSection state={state} handleUpgradeClick={handleUpgradeClick}/>
+            <div
+              className={`relative z-1 flex gap-2 justify-center w-full ${
+                state === "collapsed" ? "" : "flex-col "
+              }`}
+            >
+              <SidebarMembershipSection
+                state={state}
+                handleUpgradeClick={handleUpgradeClick}
+              />
             </div>
           </div>
           <SidebarTrigger />
@@ -207,7 +230,11 @@ export function AppSidebar() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={() => router.push(`/org/${orgSlug}/settings/account`)}>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        router.push(`/org/${orgSlug}/settings/account`)
+                      }
+                    >
                       <BadgeCheck />
                       Account
                     </DropdownMenuItem>

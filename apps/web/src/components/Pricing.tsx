@@ -31,16 +31,16 @@ interface Props {
   user: User | null;
 }
 
-const features = PRICING_PLANS.map(plan => ({
+const features = PRICING_PLANS.map((plan) => ({
   tier: plan.name.toLowerCase(),
-  features: plan.features
+  features: plan.features,
 }));
 
 export default function Pricing({ products, user }: Props) {
   const { subscriptionStatus } = useAppStore();
   const router = useRouter();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  
+
   const currentPath = usePathname();
 
   const handleStripeCheckout = async (price: Price) => {
@@ -85,6 +85,11 @@ export default function Pricing({ products, user }: Props) {
   const proTier = products[0];
 
   const handleCancelSubscription = async () => {
+    if (user == null) {
+      console.log("User is not authenticated");
+      router.push("/signup");
+      return;
+    }
     try {
       const response = await fetch("/api/cancel-subscription", {
         method: "POST",
@@ -111,15 +116,13 @@ export default function Pricing({ products, user }: Props) {
             Simple, transparent pricing
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            {subscriptionStatus === "active" ? (
-              "Manage your subscription and usage"
-            ) : subscriptionStatus === "canceled" ? (
-              "Reactivate your subscription to access premium features"
-            ) : subscriptionStatus === "past_due" ? (
-              "Please update your payment method to continue accessing premium features"
-            ) : (
-              "Choose the plan that's right for you"
-            )}
+            {subscriptionStatus === "active"
+              ? "Manage your subscription and usage"
+              : subscriptionStatus === "canceled"
+              ? "Reactivate your subscription to access premium features"
+              : subscriptionStatus === "past_due"
+              ? "Please update your payment method to continue accessing premium features"
+              : "Choose the plan that's right for you"}
           </p>
         </div>
         <div className="mt-12 space-y-4 sm:mt-16 sm:grid sm:grid-cols-2 sm:gap-6 sm:space-y-0 lg:mx-auto lg:max-w-7xl">
@@ -150,7 +153,9 @@ export default function Pricing({ products, user }: Props) {
                 buttonAction = handleManageSubscription;
               } else {
                 buttonText = "Downgrade";
-                buttonAction = () => { handleCancelSubscription() };
+                buttonAction = () => {
+                  handleCancelSubscription();
+                };
               }
             } else {
               if (isFreeTier) {
@@ -199,7 +204,8 @@ export default function Pricing({ products, user }: Props) {
                         isProTier
                           ? "bg-primary text-white hover:bg-primary/90"
                           : "bg-gray-900 text-white hover:bg-gray-800",
-                        buttonText === "Current Plan" && "opacity-50 cursor-not-allowed"
+                        buttonText === "Current Plan" &&
+                          "opacity-50 cursor-not-allowed"
                       )}
                     >
                       {buttonText}
@@ -212,14 +218,9 @@ export default function Pricing({ products, user }: Props) {
                   </h4>
                   <ul role="list" className="mt-6 space-y-4">
                     {features[index].features.map((feature) => (
-                      <li
-                        key={feature}
-                        className="flex items-center space-x-3"
-                      >
+                      <li key={feature} className="flex items-center space-x-3">
                         <Check className="h-5 w-5 flex-shrink-0 text-green-500" />
-                        <span className="text-sm text-gray-600">
-                          {feature}
-                        </span>
+                        <span className="text-sm text-gray-600">{feature}</span>
                       </li>
                     ))}
                   </ul>
