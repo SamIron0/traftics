@@ -13,7 +13,7 @@ dist
 !.yarn/versions
 
 # testing
-/coverage
+coverage
 
 # next.js
 /.next/
