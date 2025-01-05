@@ -58,7 +58,7 @@ export default function HomePage() {
     }
 
     redirectToDashboard();
-  }, []);
+  }, [user?.id]);
 
   return null;
 } 

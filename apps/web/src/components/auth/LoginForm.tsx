@@ -35,13 +35,13 @@ export function LoginForm() {
           org_id, 
           active_project_id,
           organizations!inner(slug),
-          websites!inner(slug)
+          websites!active_project_id(slug)
         `)
         .eq("user_id", user?.user?.id)
         .single();
 
       if (profile?.organizations?.slug && profile?.websites?.slug) {
-        router.push(
+        router.push(  
           `/org/${profile.organizations.slug}/project/${profile.websites.slug}/dashboards`
         );
       } else {

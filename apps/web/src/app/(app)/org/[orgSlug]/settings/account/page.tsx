@@ -31,7 +31,7 @@ export default function AccountPage() {
     }
 
     fetchUserProfile();
-  }, [user]);
+  }, [user_id]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     if (!user?.id) {

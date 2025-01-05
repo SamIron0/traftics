@@ -17,8 +17,7 @@
     "@rrweb/types": "^2.0.0-alpha.4",
     "rrweb": "2.0.0-alpha.4",
     "ua-parser-js": "^2.0.0",
-    "uuid": "^11.0.3",
-    "vitest": "^2.1.8"
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "eslint": "^8.0.0",
