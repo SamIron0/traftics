@@ -1,56 +1,41 @@
-"use client";
-
-import React, { useEffect, useCallback, useState} from "react";
 import { SessionsPage } from "@/components/sessions/SessionsPage";
-import { notFound } from "next/navigation";
-import { useAppStore } from "@/stores/useAppStore";
 import { UnverifiedView } from "@/components/Dashboard/UnverifiedView";
 import { generateScript } from "@/utils/helpers";
-import { SessionsSkeleton } from "@/components/sessions/SessionsSkeleton";
+import { createClient } from "@/utils/supabase/server";
+import { notFound } from "next/navigation";
 
-export default function Sessions() {
-  const { orgId, projectId, sessions, setSessions, isWebsiteVerified } = useAppStore();
-  const [isLoading, setLoading] = useState(true);
+export default async function Sessions({
+  params,
+}: {
+  params: { projectSlug: string };
+}) {
+  const supabase = await createClient();
+  const {projectSlug} = await params;
+  const { data: website } = await supabase
+    .from("websites")
+    .select("id,verified")
+    .eq("slug", projectSlug)
+    .single();
 
-  const fetchSessions = useCallback(async () => {
-    if (!orgId || !projectId) return;
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/sessions`);
-      if (!response.ok) throw new Error('Failed to fetch sessions');
-      const data = await response.json();
-      setSessions(data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching sessions:', error);
-    }
-  }, [orgId, projectId, setSessions]);
-
-  useEffect(() => {
-    if (!orgId || !projectId || !isWebsiteVerified) return;
-
-    // Initial fetch
-    fetchSessions();
-
-  }, [orgId, projectId, isWebsiteVerified, fetchSessions]);
-
-  if (!orgId || !projectId) {
+  if (!website) {
     notFound();
   }
 
-  if (!isWebsiteVerified && projectId) {
-    const script = generateScript(projectId);
+  if (!website.verified) {
+    const script = generateScript(website.id);
     return <UnverifiedView script={script} />;
   }
 
-  if(isLoading) {
-    return    <div className="p-6">
-      <SessionsSkeleton />
-    </div>
-  }
+  // Fetch sessions data server-side
+  const { data: sessions } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("site_id", website.id)
+    .order("started_at", { ascending: false });
+
   return (
     <div className="flex flex-col">
-        <SessionsPage sessions={sessions} />
+      <SessionsPage sessions={sessions || []} />
     </div>
   );
 }
