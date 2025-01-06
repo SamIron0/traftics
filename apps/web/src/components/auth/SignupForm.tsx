@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Github } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { useState } from "react";
@@ -64,7 +64,13 @@ export function SignupForm() {
         className="w-full"
         onClick={handleGithubSignup}
       >
-        <Github className="mr-2 h-4 w-4" />
+        <Image
+          alt="google icon"
+          src="/google-icon.svg"
+          width={16}
+          height={16}
+          className="mr-2 "
+        />
         Continue with Google
       </Button>
 

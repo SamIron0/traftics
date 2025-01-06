@@ -2,12 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Github } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-
+import Image from "next/image";
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -80,7 +79,7 @@ export function LoginForm() {
         className="w-full"
         onClick={handleGithubLogin}
       >
-        <Github className="mr-2 h-4 w-4" />
+        <Image alt="google icon" src="/google-icon.svg" width={16} height={16} className="mr-2 " />
         Continue with Google
       </Button>
 
