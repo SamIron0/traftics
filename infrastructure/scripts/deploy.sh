@@ -3,10 +3,6 @@
 # Exit on error
 set -e
 
-# Load environment variables
-source .env
-
-
 deploy_tracker() {
   echo "Deploying tracker to Cloudflare Pages..."
   cd packages/tracker

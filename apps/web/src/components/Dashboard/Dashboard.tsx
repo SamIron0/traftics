@@ -12,39 +12,29 @@ interface Props {
 
 export default function Dashboard({ websiteId }: Props) {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
+
   useEffect(() => {
-    const fetchMetrics = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const response = await fetch(`/api/websites/${websiteId}/metrics`)
+        const response = await fetch(`/api/websites/${websiteId}/dashboard`)
         const data = await response.json()
         
-        // Transform the data to match our DashboardMetrics interface
         const transformedMetrics: DashboardMetrics = {
-          totalSessions: data.total_sessions,
-          avgSessionDuration: data.avg_duration,
-          pagesPerSession: data.pages_per_session,
-          bounceRate: data.bounce_rate || 0,
-          topPages: data.top_pages || [],
-          trends: {
-            sessions: [],
-            duration: [],
-            pages: [],
-            bounce: []
-          }
+          totalSessions: data.metrics.total_sessions,
+          avgSessionDuration: data.metrics.avg_duration,
+          pagesPerSession: data.metrics.pages_per_session,
+          bounceRate: data.metrics.bounce_rate || 0,
+          topPages: data.metrics.top_pages || [],
+          trends: data.trends
         }
-
-        // Fetch trend data for the last 7 days
-        const trendResponse = await fetch(`/api/websites/${websiteId}/trends`)
-        const trendData = await trendResponse.json()
-        transformedMetrics.trends = trendData
+        
         setMetrics(transformedMetrics)
       } catch (error) {
-        console.error('Failed to fetch metrics:', error)
+        console.error('Failed to fetch dashboard data:', error)
       }
-      
     }
 
-    fetchMetrics()
+    fetchDashboardData()
   }, [websiteId])
 
   if (!metrics) return <DashboardSkeleton />
@@ -74,9 +64,7 @@ export default function Dashboard({ websiteId }: Props) {
           showInfo
         />
       </div>
-      <TopPages 
-        pages={metrics.topPages} 
-      />
+      <TopPages pages={metrics.topPages} />
     </div>
   )
 }
