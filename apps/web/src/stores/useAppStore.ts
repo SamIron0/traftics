@@ -62,78 +62,84 @@ export const useAppStore = create<AppState>()(
       initializeState: async () => {
         const supabase = createClient();
         try {
-          set({ isLoading: true });
           const {
             data: { user },
           } = await supabase.auth.getUser();
           const user_id = user?.id || "22acab5b-c6fd-4eef-b456-29d7fd4753a7";
-          await Promise.all([
-            (async () => {
-              const { data: subscription } = await supabase
-                .from('subscriptions')
-                .select('status')
-                .eq('user_id', user_id)
+
+          const { data: profile } = await supabase
+            .from("user_profiles")
+            .select(
+              `
+              full_name,
+              org_id,
+              active_project_id,
+              organizations!inner(slug),
+              websites!fk_active_project(slug)
+              `
+            )
+            .eq("user_id", user_id)
+            .single();
+
+          if (profile?.organizations?.slug && profile?.websites?.slug && profile?.org_id) {
+            // Get all projects first
+            const { data: allProjects } = await supabase
+              .from("websites")
+              .select("id, name")
+              .eq("org_id", profile.org_id)
+              .order("created_at", { ascending: true });
+
+            // Set projects and projectId immediately
+            set({
+              allProjects: allProjects || [],
+              projectId: profile.active_project_id,
+            });
+
+            // Set isLoading to false before continuing with other state updates
+            set({ isLoading: false });
+
+            // Get the default dashboard for the active project
+            const { data: defaultDashboard } = await supabase
+              .from("dashboards")
+              .select("id")
+              .eq("website_id", profile.active_project_id || "")
+              .order("created_at", { ascending: true })
+              .limit(1)
+              .single();
+
+            // Set remaining state values
+            set({
+              orgId: profile.org_id,
+              orgSlug: profile.organizations.slug,
+              projectSlug: profile.websites.slug,
+              defaultDashboardId: defaultDashboard?.id || null,
+              full_name: profile?.full_name || "",
+            });
+
+            if (profile?.active_project_id) {
+              const { data: website } = await supabase
+                .from("websites")
+                .select("verified")
+                .eq("id", profile.active_project_id)
                 .single();
 
-              const status = subscription?.status
-              set({ subscriptionStatus: status });
-            })(),
-            (async () => {
-              const { data: profile } = await supabase
-                .from("user_profiles")
-                .select(
-                  `
-                  full_name,
-                  org_id,
-                  active_project_id,
-                  organizations!inner(slug),
-                  websites!fk_active_project(slug)
-                `
-                )
-                .eq("user_id", user_id)
-                .single();
-              if (profile?.organizations?.slug && profile?.websites?.slug && profile?.org_id) {
-                // Get the default dashboard for the active project
-                const { data: defaultDashboard } = await supabase
-                  .from("dashboards")
-                  .select("id")
-                  .eq("website_id", profile.active_project_id || "")
-                  .order("created_at", { ascending: true })
-                  .limit(1)
-                  .single();
+              set({ isWebsiteVerified: website?.verified || false });
+            }
+          } else {
+            set({ isLoading: false });
+          }
 
-                const { data: allProjects } = await supabase
-                  .from("websites")
-                  .select("id, name")
-                  .eq("org_id", profile.org_id)
-                  .order("created_at", { ascending: true });
+          // Handle subscription status separately
+          const { data: subscription } = await supabase
+            .from('subscriptions')
+            .select('status')
+            .eq('user_id', user_id)
+            .single();
 
-                set({
-                  orgId: profile.org_id,
-                  orgSlug: profile.organizations.slug,
-                  projectId: profile.active_project_id,
-                  projectSlug: profile.websites.slug,
-                  allProjects: allProjects || [],
-                  defaultDashboardId: defaultDashboard?.id || null,
-                });
-              }
+          set({ subscriptionStatus: subscription?.status || null });
 
-              if (profile?.active_project_id) {
-                const { data: website } = await supabase
-                  .from("websites")
-                  .select("verified")
-                  .eq("id", profile.active_project_id)
-                  .single();
-
-                set({ isWebsiteVerified: website?.verified || false });
-              }
-
-              set({ full_name: profile?.full_name || "" });
-            })(),
-          ]);
         } catch (error) {
           console.error("Error initializing state:", error);
-        } finally {
           set({ isLoading: false });
         }
       },

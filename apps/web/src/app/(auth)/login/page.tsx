@@ -7,6 +7,13 @@ export default function LoginPage() {
       {/* Left Column - Form */}
       <div className="flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24">
         <div className="w-full max-w-sm mx-auto">
+          <img
+            src="/logo-text.svg"
+            alt="Traftics Logo"
+            width={120}
+            height={14}
+            className="mb-8"
+          />
           <div className="space-y-4">
             <h1 className="text-3xl font-bold tracking-tight">
               Welcome back
