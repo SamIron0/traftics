@@ -1,44 +1,15 @@
 'use client'
+
 import { AnalyticsCard } from "./AnalyticsCard"
-import { useEffect, useState } from "react"
 import { formatPlayerTime } from "@/utils/helpers"
 import { TopPages } from "./TopPages"
 import { DashboardMetrics } from "@/services/metrics"
-import { DashboardSkeleton } from "./DashboardSkeleton"
 
 interface Props {
-  websiteId: string
+  metrics: DashboardMetrics
 }
 
-export default function Dashboard({ websiteId }: Props) {
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
-
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const response = await fetch(`/api/websites/${websiteId}/dashboard`)
-        const data = await response.json()
-        
-        const transformedMetrics: DashboardMetrics = {
-          totalSessions: data.metrics.total_sessions,
-          avgSessionDuration: data.metrics.avg_duration,
-          pagesPerSession: data.metrics.pages_per_session,
-          bounceRate: data.metrics.bounce_rate || 0,
-          topPages: data.metrics.top_pages || [],
-          trends: data.trends
-        }
-        
-        setMetrics(transformedMetrics)
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error)
-      }
-    }
-
-    fetchDashboardData()
-  }, [websiteId])
-
-  if (!metrics) return <DashboardSkeleton />
-
+export default function Dashboard({ metrics }: Props) {
   return (
     <div className="space-y-8 p-8">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
