@@ -49,6 +49,23 @@ export const getDashboardDataCached = unstable_cache(
     }
 );
 
+export const getSessionsCached = unstable_cache(
+    async (websiteId: string, supabase: SupabaseClient) => {
+        const { data: sessions } = await supabase
+            .from("sessions")
+            .select("*")
+            .eq("site_id", websiteId)
+            .order("started_at", { ascending: false });
+
+        return sessions || [];
+    },
+    ['sessions-list'],
+    {
+        revalidate: 60, // Cache for 30 seconds
+        tags: ['sessions']
+    }
+);
+
 interface DailyMetric {
     sessions: number;
     duration: number;
