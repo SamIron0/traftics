@@ -44,7 +44,7 @@ export const getDashboardDataCached = unstable_cache(
     },
     ['dashboard-data'],
     {
-        revalidate: 60, // Cache for 1 minute
+        revalidate: 300, // Cache for 5 minutes instead of 1 minute
         tags: ['dashboard-metrics']
     }
 );
