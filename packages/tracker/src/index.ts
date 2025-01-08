@@ -2,7 +2,6 @@ import * as rrweb from "rrweb";
 import { v4 as uuidv4 } from "uuid";
 import type { eventWithTime } from "@rrweb/types";
 import type { Session, RetryConfig, BatchConfig, SessionConfig } from "./types";
-import { ErrorType } from "./types";
 
 interface NetworkEvent {
   type: 'xhr' | 'fetch' | 'resource';
@@ -42,8 +41,6 @@ export class SessionTracker {
   private retryConfig: RetryConfig;
   private quotaExceeded = false;
   private networkEvents: NetworkEvent[] = [];
-  private readonly MAX_NETWORK_EVENTS = 100;
-  private perfObserver: PerformanceObserver | null = null;
 
   constructor(config: SessionConfig) {
     this.batchConfig = {
@@ -347,153 +344,8 @@ export class SessionTracker {
       });
     }
   }
+
   private setupCustomEventListeners(): void {
-
-    const createEvent = (tag: ErrorType | string, payload: any) => {
-      this.queueEvent({
-        type: 5,
-        timestamp: Date.now(),
-        data: { tag, payload },
-      });
-    };
-
-    // 1. Capture console errors
-    const originalConsoleError = console.error.bind(console);
-    console.error = (...args) => {
-      createEvent("console_error", args);
-      originalConsoleError(...args);
-    };
-
-    // 2. Capture unhandled promise rejections
-    window.addEventListener("unhandledrejection", (event) => {
-      createEvent("unhandled_promise", event.reason);
-    });
-
-    // 3. Capture global runtime errors
-    window.addEventListener("error", (event) => {
-      if (event.error) {
-        createEvent("runtime_error", {
-          message: event.message,
-          filename: event.filename,
-          lineno: event.lineno,
-          colno: event.colno,
-          stack: event.error.stack,
-        });
-      }
-    });
-
-    // 4. Capture blocked scripts (CSP violations)
-    window.addEventListener("securitypolicyviolation", (event) => {
-      createEvent("script", {
-        url: event.blockedURI,
-        failed: true,
-        blocked: true,
-        initiatorType: "script",
-      });
-    });
-
-    // 5. Capture DNS or offline errors
-    window.addEventListener("offline", () => {
-      createEvent("network_offline", {});
-    });
-
-    // 6. Observe network performance (resource timing)
-    this.perfObserver = new PerformanceObserver((list) => {
-      const entries = list.getEntries() as PerformanceResourceTiming[];
-      entries.forEach((entry) => {
-        if (!entry.name.includes(this.collectorUrl)) {
-          const event: NetworkEvent = {
-            type: "resource",
-            url: entry.name,
-            duration: entry.duration,
-            timestamp: performance.now(),
-            initiatorType: entry.initiatorType,
-            size: entry.transferSize,
-            failed: entry.responseEnd === 0,
-            blocked: entry.responseStart === 0 && entry.responseEnd === 0,
-          };
-          this.addNetworkEvent(event);
-        }
-      });
-    });
-
-    this.perfObserver.observe({ entryTypes: ["resource"] });
-
-    // 7. Patch fetch for tracking
-    const originalFetch = window.fetch;
-    window.fetch = async (...args) => {
-      const startTime = performance.now();
-      const [resource, config] = args;
-      const url = resource instanceof Request ? resource.url : resource;
-
-      try {
-        const response = await originalFetch(...args);
-        const duration = performance.now() - startTime;
-
-        this.addNetworkEvent({
-          type: "fetch",
-          url: url.toString(),
-          status: response.status,
-          method: config?.method || "GET",
-          duration,
-          timestamp: startTime,
-          failed: !response.ok,
-        });
-
-        return response;
-      } catch (error) {
-        this.addNetworkEvent({
-          type: "fetch",
-          url: url.toString(),
-          timestamp: startTime,
-          method: config?.method || "GET",
-          failed: true,
-          blocked: (error as Error).name === "TypeError",
-        });
-        throw error;
-      }
-    };
-
-    // 8. Patch XMLHttpRequest (XHR) for tracking
-    const XHR = XMLHttpRequest.prototype;
-    const originalOpen = XHR.open;
-    const originalSend = XHR.send;
-
-    XHR.open = function (method: string, url: string) {
-      (this as any)._networkData = { method, url, startTime: performance.now() };
-      return originalOpen.apply(this, arguments as any);
-    };
-
-    XHR.send = function () {
-      const xhr = this;
-      const networkData = (xhr as any)._networkData;
-
-      xhr.addEventListener('load', () => {
-        const duration = performance.now() - networkData.startTime;
-        (window as any)._tracker?.addNetworkEvent?.({
-          type: 'xhr',
-          url: networkData.url,
-          method: networkData.method,
-          status: xhr.status,
-          duration,
-          timestamp: networkData.startTime,
-          failed: xhr.status < 200 || xhr.status >= 300
-        });
-      });
-
-      xhr.addEventListener('error', () => {
-        (window as any)._tracker?.addNetworkEvent?.({
-          type: 'xhr',
-          url: networkData.url,
-          method: networkData.method,
-          timestamp: networkData.startTime,
-          failed: true
-        });
-      });
-
-      return originalSend.apply(this, arguments as any);
-    };
-
     // capture page load info
     window.addEventListener('load', () => {
       const performanceData = window.performance.timing;
@@ -518,24 +370,6 @@ export class SessionTracker {
       });
 
     });
-  }
-
-
-  private addNetworkEvent(event: NetworkEvent): void {
-    if (event.failed || event.blocked || (event.duration && event.duration > 3000)) {
-      this.networkEvents.push(event);
-      if (this.networkEvents.length > this.MAX_NETWORK_EVENTS) {
-        this.networkEvents.shift();
-      }
-      this.queueEvent({
-        type: 5,
-        timestamp: Date.now(),
-        data: {
-          tag: "network",
-          payload: event
-        }
-      });
-    }
   }
 
   public getNetworkSummary() {

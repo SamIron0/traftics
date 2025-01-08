@@ -151,7 +151,7 @@ export function generateScript(websiteId: string) {
     };
     var s = d.createElement('script');
     s.async = true;
-    s.src = 'https://493117db.traftics-tracker.pages.dev/tracker.js';
+    s.src = 'https://c6fcd000.session-recorder-tracker.pages.dev/tracker.js';
     d.head.appendChild(s);
   })(document, window);
   </script>`;

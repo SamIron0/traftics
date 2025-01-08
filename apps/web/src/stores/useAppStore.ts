@@ -16,6 +16,7 @@ interface AppState {
   isWebsiteVerified: boolean;
   defaultDashboardId: string | null;
   subscriptionStatus: Tables<'subscriptions'>['status'] | null;
+  cancelAtPeriodEnd: Tables<'subscriptions'>['cancel_at_period_end'] | false;
   setOrg: (orgId: string, orgSlug: string) => void;
   setProject: (projectId: string, projectSlug: string) => void;
   setDefaultDashboard: (dashboardId: string) => void;
@@ -42,6 +43,7 @@ export const useAppStore = create<AppState>()(
       sessions: [],
       isWebsiteVerified: false,
       subscriptionStatus: null,
+      cancelAtPeriodEnd: false,
       setOrg: (orgId: string, orgSlug: string) => set({ orgId, orgSlug }),
       setProject: (projectId: string, projectSlug: string) =>
         set({ projectId, projectSlug }),
@@ -132,11 +134,14 @@ export const useAppStore = create<AppState>()(
           // Handle subscription status separately
           const { data: subscription } = await supabase
             .from('subscriptions')
-            .select('status')
+            .select('status,cancel_at_period_end')
             .eq('user_id', user_id)
             .single();
 
-          set({ subscriptionStatus: subscription?.status || null });
+          set({
+            subscriptionStatus: subscription?.status || null,
+            cancelAtPeriodEnd: subscription?.cancel_at_period_end || false,
+          });
 
         } catch (error) {
           console.error("Error initializing state:", error);

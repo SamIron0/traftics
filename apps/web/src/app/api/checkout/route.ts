@@ -56,7 +56,7 @@ export async function POST(request: Request) {
         },
       ],
       cancel_url: getURL(),
-      success_url: "https://remeal.vercel.app/search",
+      success_url: "https://traftics.ironkwe.site",
     };
 
   

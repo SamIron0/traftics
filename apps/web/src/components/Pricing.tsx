@@ -15,11 +15,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 import { useAppStore } from "@/stores/useAppStore";
 import { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 import { PRICING_PLANS } from "@/config/pricing";
+import { useToast } from "@/hooks/use-toast";
 
 type Product = Tables<"products">;
 type Price = Tables<"prices">;
@@ -37,15 +37,17 @@ const features = PRICING_PLANS.map((plan) => ({
 }));
 
 export default function Pricing({ products, user }: Props) {
-  const { subscriptionStatus } = useAppStore();
+  const { subscriptionStatus, cancelAtPeriodEnd } = useAppStore();
   const router = useRouter();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const { toast } = useToast();
 
   const currentPath = usePathname();
 
   const handleStripeCheckout = async (price: Price) => {
     if (!user) {
       router.push("/signup");
+      return;
     }
 
     const response = await fetch("/api/checkout", {
@@ -66,7 +68,11 @@ export default function Pricing({ products, user }: Props) {
         router.push(result.errorRedirect);
       }
     } else {
-      console.error("Checkout error:", result.error);
+      toast({
+        title: "Error",
+        description: "Failed to process checkout. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -86,7 +92,6 @@ export default function Pricing({ products, user }: Props) {
 
   const handleCancelSubscription = async () => {
     if (user == null) {
-      console.log("User is not authenticated");
       router.push("/signup");
       return;
     }
@@ -96,14 +101,24 @@ export default function Pricing({ products, user }: Props) {
       });
       const result = await response.json();
       if (response.ok) {
-        toast.success("Your subscription has been cancelled successfully.");
-        router.push("/account");
+        useAppStore.setState({ cancelAtPeriodEnd: true });
+        toast({
+          description: "Your subscription has been cancelled successfully.",
+        });
       } else {
-        toast.error("Failed to cancel subscription: " + result.error);
+        toast({
+          title: "Error",
+          description: "Failed to cancel subscription: " + result.error,
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error("Error cancelling subscription:", error);
-      toast.error("An error occurred while cancelling your subscription.");
+      toast({
+        title: "Error",
+        description: "An error occurred while cancelling your subscription.",
+        variant: "destructive"
+      });
     }
     setShowCancelDialog(false);
   };
@@ -117,7 +132,9 @@ export default function Pricing({ products, user }: Props) {
           </h2>
           <p className="mt-4 text-lg text-gray-600">
             {subscriptionStatus === "active"
-              ? "Manage your subscription and usage"
+              ? cancelAtPeriodEnd
+                ? "Your subscription will cancel at the end of the billing period"
+                : "Manage your subscription and usage"
               : subscriptionStatus === "canceled"
               ? "Reactivate your subscription to access premium features"
               : subscriptionStatus === "past_due"
@@ -149,13 +166,22 @@ export default function Pricing({ products, user }: Props) {
 
             if (hasActiveSubscription) {
               if (isProTier) {
-                buttonText = "Current Plan";
-                buttonAction = handleManageSubscription;
+                buttonText = cancelAtPeriodEnd
+                  ? "Renew Subscription"
+                  : "Current Plan";
+                buttonAction = cancelAtPeriodEnd
+                  ? () => handleStripeCheckout(price as Price)
+                  : handleManageSubscription;
               } else {
-                buttonText = "Downgrade";
-                buttonAction = () => {
-                  handleCancelSubscription();
-                };
+                buttonText = cancelAtPeriodEnd
+                  ? "Cancelling Soon"
+                  : "Downgrade";
+                buttonAction = cancelAtPeriodEnd
+                  ? () => {} // No action when cancellation is pending
+                  : () => {
+                      setShowCancelDialog(true);
+                    };
+                showButton = true;
               }
             } else {
               if (isFreeTier) {
