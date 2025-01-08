@@ -35,7 +35,7 @@ export function LoginForm() {
             org_id, 
             active_project_id,
             organizations!inner(slug),
-            websites!active_project_id(slug)
+            websites!fk_active_project(slug)
           `
         )
         .eq("user_id", user?.user?.id)
@@ -43,7 +43,7 @@ export function LoginForm() {
 
       if (profile?.organizations?.slug && profile?.websites?.slug) {
         router.push(
-          `/org/${profile.organizations.slug}/project/${profile.websites.slug}/dashboards`
+          `/org/${profile.organizations.slug}/project/${profile.websites.slug}/sessions`
         );
       } else {
         // If no profile/project found, redirect to onboarding

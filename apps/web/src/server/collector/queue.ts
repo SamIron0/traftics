@@ -1,9 +1,12 @@
 import { Session } from "@/types/api";
 import { SessionService } from "../services/session.service";
+import { revalidateTag } from 'next/cache';
 
 export async function addToQueue(session: Session): Promise<void> {
   try {
     await processQueue(session);
+    // Revalidate the sessions cache after processing new session
+    revalidateTag('sessions');
   } catch (error) {
     console.error('Error adding to queue:', error);
     throw error;

@@ -1,6 +1,7 @@
 import { SessionService } from "@/server/services/session.service";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { revalidateTag } from 'next/cache';
 
 export async function GET() {
   try {
@@ -29,6 +30,9 @@ export async function GET() {
         { status: 404 }
       );
     }
+
+    // Revalidate the sessions cache
+    revalidateTag('sessions');
 
     const sessions = await SessionService.getAllSessions({
       user: {
