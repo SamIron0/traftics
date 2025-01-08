@@ -107,7 +107,7 @@ export async function updateSession(request: NextRequest) {
     .eq("id", profile?.active_project_id)
     .single();
 
-  // If user exists and trying to access auth routes, redirect to default dashboard
+  // If user exists and trying to access auth routes, redirect to dashboard
   if (isAuthRoute && user?.id) {
     const defaultDashboard = await getDefaultDashboard(supabase, project?.slug);
 

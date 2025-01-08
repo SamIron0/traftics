@@ -25,7 +25,30 @@ export function LoginForm() {
       });
 
       if (error) throw error;
-      router.push(`/`);
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user?.id) throw new Error("User not found");
+      // Get user profile to redirect to correct org/project
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select(
+          `
+            org_id, 
+            active_project_id,
+            organizations!inner(slug),
+            websites!active_project_id(slug)
+          `
+        )
+        .eq("user_id", user?.user?.id)
+        .single();
+
+      if (profile?.organizations?.slug && profile?.websites?.slug) {
+        router.push(
+          `/org/${profile.organizations.slug}/project/${profile.websites.slug}/dashboards`
+        );
+      } else {
+        // If no profile/project found, redirect to onboarding
+        router.push("/onboarding");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sign in");
     } finally {
@@ -58,7 +81,7 @@ export function LoginForm() {
         className="w-full"
         onClick={handleGithubLogin}
       >
-        <Image
+         <Image
           alt="google icon"
           src="/google-icon.svg"
           width={16}
@@ -66,7 +89,7 @@ export function LoginForm() {
           className="mr-2 "
         />
         Continue with Google
-      </Button>
+   </Button>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
