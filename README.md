@@ -1,57 +1,112 @@
 # Traftics
 
-Traftics is the open source user behavioural analysis tool for modern teams.
+Traftics is the open source user behavioral analysis tool for modern teams.
 
-## Getting Started
+## Project Structure
 
-### Prerequisites
+- `apps/web` - Main web application
+- `apps/landing` - Landing page
+- `apps/docs` - Documentation site
+- `packages/tracker` - Session recording tracker script
+
+## Prerequisites
 
 - Node.js (version 18 or later)
-- pnpm (version 8.15.4 or later)
+- pnpm (version 8.15.4)
 - Supabase account and CLI
 - PostgreSQL (version 15)
+- Vercel account
+- Cloudflare account
 - Git
 
-### Development Environment
+## Required Services Setup
 
-1. **Node.js**: Required for running the application and its build tools
-2. **pnpm**: The package manager used for managing dependencies
-3. **Supabase**: Used for:
-   - Authentication
-   - Database
-   - Storage
-   - Edge Functions
-4. **PostgreSQL**: Required for local development with Supabase
+1. **Supabase Project**
+   - Create a new project
+   - Set up the database tables using migrations in `apps/web/supabase/migrations`
+   - Configure storage buckets for session recordings
 
-### Required Services
+2. **Vercel Account**
+   - For deploying the web app, landing page, and docs
+   - Configure environment variables
 
-1. **Vercel Account**: For deployment and hosting
-2. **Supabase Project**: For backend services
-3. **Cloudflare Account**: For hosting the tracker script
+3. **Cloudflare Account**
+   - For hosting the tracker script
+   - Set up Cloudflare Pages project
 
-### Installation
+## Local Development
 
-1. Clone the repository
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/traftics.git
+cd traftics
+```
+
 2. Install dependencies:
-
 ```bash
 pnpm install:all
 ```
 
-3. Setup your Supabase instance (refer to `apps/web/supabase/types` for table definitions)
+3. Set up environment variables:
+   - Copy `.env.example` to `.env.local` in the `apps/web` directory
+   - Configure the following variables:
+     - Supabase credentials
+     - Stripe keys (if using payments)
+     - Other service configurations
 
-4. Set up environment variables:
-   Create a `.env.local` file in the apps/web directory and add the necessary environment
-   variables (refer to `.env.example`)
+4. Start development servers:
+```bash
+pnpm dev
+```
 
-5. Build the project:
+This will start:
+- Web app on port 3000
+- Landing page on port 3001
+- Documentation on port 3002
+- Tracker development server
+
+## Building for Production
+
+1. Build all packages:
 ```bash
 pnpm build
 ```
 
-6. Start the development servers:
+This builds:
+- Tracker script
+- Web application
+- Documentation site
+- Landing page
+
+## Deployment
+
+### Deploy Web App
 ```bash
-pnpm dev
+pnpm deploy:web
+```
+
+### Deploy Tracker
+```bash
+pnpm deploy:tracker
+```
+
+### Deploy Documentation
+```bash
+pnpm deploy:docs
+```
+
+### Deploy All
+```bash
+pnpm deploy:all
+```
+
+## Testing
+
+Run tests for the web application:
+```bash
+cd apps/web
+pnpm test
 ```
 
 ## License
