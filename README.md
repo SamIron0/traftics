@@ -39,7 +39,7 @@ Traftics is the open source user behavioral analysis tool for modern teams.
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/traftics.git
+git clone https://github.com/SamIron0/traftics.git
 cd traftics
 ```
 
