@@ -52,7 +52,7 @@ export class SessionTracker {
     this.previousHref = document.referrer || null;
     this.sessionId = uuidv4();
     this.websiteId = config.websiteId;
-    this.collectorUrl = config.collectorUrl || "https://gaha.vercel.app";
+    this.collectorUrl = config.collectorUrl || "https://traftics.ironkwe.site";
     this.startedAt = Date.now();
     this.lastEventTime = this.startedAt;
     this.getLocation().then((location) => {
@@ -205,11 +205,6 @@ export class SessionTracker {
     rrweb.record({
       emit: (event: eventWithTime) => {
         this.queueEvent(event);
-      },
-      sampling: {
-        mousemove: 50,
-        scroll: 150,
-        input: "last",
       },
       blockClass: "privacy",
       maskTextClass: "mask-text",

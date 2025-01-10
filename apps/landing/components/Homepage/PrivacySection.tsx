@@ -17,8 +17,8 @@ export default function PrivacySection() {
             </div>
             <h3 className="text-xl font-semibold">Data Masking</h3>
             <p className="text-gray-500 text-left max-w-xs">
-              We do not record any sensiive data like passwords, credit card
-              numbers, or any other personal information during recording.
+              We do not record sensitive data like passwords, credit card
+              numbers, or any other personal identifiable information during recording.
             </p>
           </div>
           <div className="flex flex-col items-start space-y-4">

@@ -177,28 +177,27 @@ export default function SessionPlayer({
       setCurrentTime(formatPlayerTime(time > 0 ? time : 0));
       setSliderValue(time);
 
-      // Check for closest resize events
+      // Check if we've reached the end of the session
+      if (time >= (session.duration || 0)) {
+        replayer.pause();
+        setIsPlaying(false);
+      }
 
+      // Check for closest resize events
       const closestResizeEvent = viewportResize?.reduce((closest, current) => {
-        // Get relative timestamp for the current resize event
         const eventTime = getRelativeTimestamp(
           current.timestamp,
           session.started_at || 0
         );
 
-        // If event is after current time, it's not a candidate
         if (eventTime > time) return closest;
-
-        // If no previous closest, use this one
         if (!closest) return current;
 
-        // Get relative timestamp for the current closest event
         const closestTime = getRelativeTimestamp(
           closest.timestamp,
           session.started_at || 0
         );
 
-        // Return the event that's closest to but not exceeding current time
         return time - eventTime < time - closestTime ? current : closest;
       }, null as eventWithTime | null);
 

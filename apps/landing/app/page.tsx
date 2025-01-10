@@ -1,14 +1,15 @@
-import { Rocket } from "lucide-react";
+"use client";
+import { Rocket, Router } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import VideoDemo from "@/components/Homepage/VideoDemo";
 import FeaturesSection from "@/components/Homepage/FeaturesSection";
-import ErrorSection from "@/components/Homepage/ErrorSection";
 import CallToActionSection from "@/components/Homepage/CallToAction";
-import IntelligenceSection from "@/components/Homepage/IntelligenceSection";
 import PrivacySection from "@/components/Homepage/PrivacySection";
 import WhySection from "@/components/Homepage/WhySection";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
   return (
     <>
       <div className="">
@@ -27,12 +28,20 @@ export default function Home() {
                 variant="outline"
                 size="sm"
                 className="text-md h-10 px-12"
+                onClick={() =>
+                  router.push("https://traftics.ironkwe.site/signup")
+                }
               >
                 Get started
               </Button>
               <Button
                 size="sm"
                 className="text-md h-10 px-5 bg-zinc-900 text-zinc-50"
+                onClick={() =>
+                  router.push(
+                    "https://traftics.ironkwe.site/org/remeal/project/project-4fd62621/dashboards/89ddb53f-f040-4c64-9bfe-52930fac6fd7"
+                  )
+                }
               >
                 <Rocket className="mr-1 h-4 w-4" />
                 View the demo
@@ -58,18 +67,16 @@ export default function Home() {
             <FeaturesSection />
           </div>
         </section>
-        <section className="mt-12 w-full flex flex-col items-center px-8">
-          <div className="w-full mx-auto h-px bg-border/90 px-12 mt-12"></div>
-          <IntelligenceSection />
-          <div className="w-full mx-auto h-px bg-border/90 px-12 mt-6 mb-6"></div>
-          <ErrorSection />
-        </section>
-        <div className="py-12 w-full flex flex-col items-center">
-          <Button variant="secondary" className="px-8 py-5  text-lg">
+        <div className="py-20 w-full flex flex-col items-center">
+          <Button
+            onClick={() => router.push("https://traftics.ironkwe.site/login")}
+            variant="secondary"
+            className="px-8 py-7 text-lg"
+          >
             Get started for free
           </Button>
         </div>
-        <div className="mt-12 w-full flex flex-col items-center px-8 py-8">
+        <div className="w-full flex flex-col items-center px-8 py-8">
           <div className="text-center mb-12">
             <PrivacySection />
           </div>

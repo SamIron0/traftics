@@ -1,11 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function CallToActionSection() {
+  const router = useRouter();
   const features = [
     "Session recordings with advanced insights",
     "Real-time user behavior tracking",
-    "Customizable dashboards",
+    "Detailed dashboards",
     "Unlimited team members",
   ];
 
@@ -24,7 +26,11 @@ export default function CallToActionSection() {
           <Button variant="outline" size="lg" className="text-md h-11">
             View pricing
           </Button>
-          <Button size="lg" className="text-md h-11 bg-zinc-900 text-zinc-50">
+          <Button
+            onClick={() => router.push("https://traftics.ironkwe.site/login")}
+            size="lg"
+            className="text-md h-11 bg-zinc-900 text-zinc-50"
+          >
             Start for free
           </Button>
         </div>

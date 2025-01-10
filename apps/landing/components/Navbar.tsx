@@ -1,8 +1,10 @@
+'use client'
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-
+import { useRouter } from "next/navigation";
 export default function Navbar() {
+  const router = useRouter();
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto max-w-7xl px-6 sm:px-8">
@@ -28,7 +30,7 @@ export default function Navbar() {
                 Pricing
               </Link>
               <Link
-                href="/docs"
+                href="https://traftics-docs.ironkwe.site/"
                 className=" text-muted-foreground hover:text-foreground transition-colors"
               >
                 Documentation
@@ -38,16 +40,16 @@ export default function Navbar() {
               variant="ghost"
               className="text-md h-9 px-4"
               size="sm"
-              asChild
+              onClick={() => router.push("https://traftics.ironkwe.site/login")}
             >
-              <Link href="/login">Sign in</Link>
+              Sign in
             </Button>
             <Button
               size="sm"
               className="bg-zinc-900 text-zinc-50 text-md h-9 px-4"
-              asChild
+              onClick={() => router.push("https://traftics.ironkwe.site/login")}
             >
-              <Link href="/signup">Get Started</Link>
+              Get Started
             </Button>
           </div>
         </div>
