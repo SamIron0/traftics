@@ -1,20 +1,8 @@
 import * as rrweb from "rrweb";
 import { v4 as uuidv4 } from "uuid";
 import type { eventWithTime } from "@rrweb/types";
-import type { Session, RetryConfig, BatchConfig, SessionConfig } from "./types";
-
-interface NetworkEvent {
-  type: 'xhr' | 'fetch' | 'resource';
-  status?: number;
-  method?: string;
-  url: string;
-  duration?: number;
-  timestamp: number;
-  initiatorType?: string;
-  failed?: boolean;
-  blocked?: boolean;
-  size?: number;
-}
+import type { Session, RetryConfig, BatchConfig, SessionConfig, PerformanceMetrics } from "./types";
+import { onCLS, onFID, onLCP, onFCP } from 'web-vitals';
 
 const DEFAULT_BATCH_CONFIG: BatchConfig = {
   maxBatchSize: 1000,
@@ -40,7 +28,16 @@ export class SessionTracker {
   private location: { country: string; region: string; city: string; lat: number; lon: number } | null = null;
   private retryConfig: RetryConfig;
   private quotaExceeded = false;
-  private networkEvents: NetworkEvent[] = [];
+  private performanceData: PerformanceMetrics = {
+    fcp: 0,
+    lcp: 0,
+    fid: 0,
+    cls: 0,
+    ttfb: 0,
+    resourceLoading: [],
+    jsErrors: [],
+    apiCalls: [],
+  };
 
   constructor(config: SessionConfig) {
     this.batchConfig = {
@@ -87,6 +84,7 @@ export class SessionTracker {
     };
 
     this.setupCustomEventListeners();
+    this.collectPerformanceMetrics();
   }
 
   private resetInactivityTimer() {
@@ -367,18 +365,122 @@ export class SessionTracker {
     });
   }
 
-  public getNetworkSummary() {
-    return {
-      totalEvents: this.networkEvents.length,
-      failedEvents: this.networkEvents.filter(e => e.failed).length,
-      blockedEvents: this.networkEvents.filter(e => e.blocked).length,
-      slowEvents: this.networkEvents.filter(e => e.duration && e.duration > 3000).length,
-      byType: {
-        xhr: this.networkEvents.filter(e => e.type === 'xhr').length,
-        fetch: this.networkEvents.filter(e => e.type === 'fetch').length,
-        resource: this.networkEvents.filter(e => e.type === 'resource').length
+  private collectPerformanceMetrics(): void {
+    // 1. Web Vitals Collection
+    this.collectWebVitals();
+    
+    // 2. Resource Loading Performance
+    this.observeResourceTiming();
+    
+    // 3. JavaScript Error Monitoring
+    this.setupErrorListener();
+    
+    // 4. Network/API Call Tracking
+    this.setupNetworkMonitoring();
+  }
+
+  private collectWebVitals(): void {
+    onFCP(metric => {
+      this.performanceData.fcp = metric.value;
+    });
+    
+    onLCP(metric => {
+      this.performanceData.lcp = metric.value;
+    });
+    
+    onFID(metric => {
+      this.performanceData.fid = metric.value;
+    });
+    
+    onCLS(metric => {
+      this.performanceData.cls = metric.value;
+    });
+    
+    // using Navigation Timing API
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    if (navigation) {
+      this.performanceData.ttfb = navigation.responseStart - navigation.requestStart;
+    }
+  }
+
+  private observeResourceTiming(): void {
+    const observer = new PerformanceObserver((list) => {
+      const entries = list.getEntries();
+      entries.forEach(entry => {
+        if (entry.entryType === 'resource') {
+          const resourceEntry = entry as PerformanceResourceTiming;
+          this.performanceData.resourceLoading.push({
+            url: resourceEntry.name,
+            duration: resourceEntry.duration,
+            size: resourceEntry.transferSize,
+            type: resourceEntry.initiatorType
+          });
+        }
+      });
+    });
+
+    observer.observe({ entryTypes: ['resource'] });
+  }
+
+  private setupErrorListener(): void {
+    window.addEventListener('error', (event) => {
+      this.performanceData.jsErrors.push({
+        message: event.error?.message || 'Unknown error',
+        stack: event.error?.stack || '',
+        timestamp: Date.now()
+      });
+    });
+
+    // Unhandled promise rejections
+    window.addEventListener('unhandledrejection', (event) => {
+      this.performanceData.jsErrors.push({
+        message: event.reason?.message || 'Unhandled Promise Rejection',
+        stack: event.reason?.stack || '',
+        timestamp: Date.now()
+      });
+    });
+  }
+
+  private setupNetworkMonitoring(): void {
+    const originalFetch = window.fetch;
+    window.fetch = (async (
+      input: URL | RequestInfo,
+      init?: RequestInit
+    ): Promise<Response> => {
+      const startTime = Date.now();
+      try {
+        const response = await originalFetch.call(window, input, init);
+        const duration = Date.now() - startTime;
+        
+        const url = input instanceof URL ? input.href : 
+                    typeof input === 'string' ? input : 
+                    input instanceof Request ? input.url : '';
+        
+        this.performanceData.apiCalls.push({
+          url,
+          method: init?.method || 'GET',
+          duration,
+          status: response.status,
+          timestamp: startTime
+        });
+        
+        return response;
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        const url = input instanceof URL ? input.href : 
+                    typeof input === 'string' ? input : 
+                    input instanceof Request ? input.url : '';
+                    
+        this.performanceData.apiCalls.push({
+          url,
+          method: init?.method || 'GET',
+          duration,
+          status: 0,
+          timestamp: startTime
+        });
+        throw error;
       }
-    };
+    });
   }
 }
 

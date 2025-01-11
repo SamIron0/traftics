@@ -16,12 +16,11 @@ export default function Home() {
         <section className="grid max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-32 lg:grid-cols-[48fr_52fr] gap-12 items-center">
           <div className="text-center order-first lg:text-left">
             <h1 className="text-4xl sm:text-5xl max-w-2xl mx-auto font-medium tracking-tight mb-4">
-              Record and Replay interactions you{" "}
-              <span className="text-primary"> need </span> to see.
+              Stop watching endless replays.{" "}
+              <span className="text-primary">Let AI find what matters.</span>
             </h1>
             <p className="text-lg sm:text-[21px] max-w-sm sm:max-w-md mx-auto lg:mx-0 text-muted-foreground mb-12">
-              Automatically analyze all sessions recordings and surface only
-              those that provide valuable insights.
+              The first session replay tool that automatically surfaces your most critical user interactions using intelligent prioritization.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
               <Button
