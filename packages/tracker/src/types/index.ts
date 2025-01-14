@@ -19,6 +19,34 @@ export interface BatchConfig {
   flushInterval: number;
   maxQueueSize: number;
 }
+
+export interface PerformanceMetrics {
+  url: string;
+  timestamp: number;
+  fcp: number;
+  lcp: number;
+  fid: number;
+  cls: number;
+  ttfb: number;
+  resourceLoading: {
+    url: string;
+    duration: number;
+    size: number;
+    type: string;
+  }[];
+  jsErrors: {
+    message: string;
+    stack: string;
+    timestamp: number;
+  }[];
+  apiCalls: {
+    url: string;
+    method: string;
+    duration: number;
+    status: number;
+    timestamp: number;
+  }[];
+}
 export interface Session {
   id: string;
   site_id: string;
@@ -50,4 +78,35 @@ export interface Session {
   isp?: string;
   is_active?: boolean;
   end_reason?: string;
+  performance_metrics?: {
+    pages: Array<{
+      url: string;
+      timestamp: number;
+      webVitals: {
+        fcp: number;
+        lcp: number;
+        fid: number;
+        cls: number;
+        ttfb: number;
+      };
+      resources: {
+        url: string;
+        duration: number;
+        size: number;
+        type: string;
+      }[];
+      errors: {
+        message: string;
+        stack: string;
+        timestamp: number;
+      }[];
+      apiCalls: {
+        url: string;
+        method: string;
+        duration: number;
+        status: number;
+        timestamp: number;
+      }[];
+    }>;
+  };
 }

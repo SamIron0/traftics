@@ -2,6 +2,7 @@ import * as rrweb from "rrweb";
 import { v4 as uuidv4 } from "uuid";
 import type { eventWithTime } from "@rrweb/types";
 import type { Session, RetryConfig, BatchConfig, SessionConfig } from "./types";
+import { PerformanceService } from './services/PerformanceService';
 
 interface NetworkEvent {
   type: 'xhr' | 'fetch' | 'resource';
@@ -40,7 +41,7 @@ export class SessionTracker {
   private location: { country: string; region: string; city: string; lat: number; lon: number } | null = null;
   private retryConfig: RetryConfig;
   private quotaExceeded = false;
-  private networkEvents: NetworkEvent[] = [];
+  private performanceService: PerformanceService;
 
   constructor(config: SessionConfig) {
     this.batchConfig = {
@@ -85,6 +86,9 @@ export class SessionTracker {
       backoffMs: 1000,
       maxBackoffMs: 10000,
     };
+
+    this.performanceService = new PerformanceService();
+    this.performanceService.setupMonitoring();
 
     this.setupCustomEventListeners();
   }
@@ -149,6 +153,7 @@ export class SessionTracker {
   private createBatches(): Session[] {
     const batches: Session[] = [];
     const { maxBatchSize } = this.batchConfig;
+    const performanceData = this.performanceService.getPerformanceData();
 
     for (let i = 0; i < this.eventQueue.length; i += maxBatchSize) {
       const batchEvents = this.eventQueue.slice(i, i + maxBatchSize);
@@ -164,6 +169,22 @@ export class SessionTracker {
             screen_width: window.innerWidth,
             screen_height: window.innerHeight,
             location: this.location || undefined,
+            performance_metrics: {
+              pages: performanceData.map(metrics => ({
+                url: metrics.url,
+                timestamp: metrics.timestamp,
+                webVitals: {
+                  fcp: metrics.fcp,
+                  lcp: metrics.lcp,
+                  fid: metrics.fid,
+                  cls: metrics.cls,
+                  ttfb: metrics.ttfb,
+                },
+                resources: metrics.resourceLoading,
+                errors: metrics.jsErrors,
+                apiCalls: metrics.apiCalls
+              }))
+            }
           }
           : {}),
         duration: this.lastEventTime - this.startedAt,
@@ -341,44 +362,35 @@ export class SessionTracker {
   }
 
   private setupCustomEventListeners(): void {
-    // capture page load info
-    window.addEventListener('load', () => {
-      const performanceData = window.performance.timing;
-      const loadTime = performanceData.loadEventEnd - performanceData.navigationStart;
-      const domContentLoadedTime = performanceData.domContentLoadedEventEnd - performanceData.navigationStart;
-
-      const pageLoadData = {
-        loadTime,
-        domContentLoadedTime,
-        navigationStart: performanceData.navigationStart,
-        responseStart: performanceData.responseStart,
-        domComplete: performanceData.domComplete,
-      };
-
+    // Monitor performance after each navigation
+    const observer = new PerformanceObserver((list) => {
+      const performanceData = this.performanceService.getPerformanceData();
+      const latestMetrics = performanceData[0]; // Current page metrics
+      
       this.queueEvent({
         type: 5,
         timestamp: Date.now(),
         data: {
-          tag: 'page_load',
-          payload: pageLoadData,
+          tag: 'performance_metrics',
+          payload: {
+            url: latestMetrics.url,
+            timestamp: latestMetrics.timestamp,
+            webVitals: {
+              fcp: latestMetrics.fcp,
+              lcp: latestMetrics.lcp,
+              fid: latestMetrics.fid,
+              cls: latestMetrics.cls,
+              ttfb: latestMetrics.ttfb,
+            },
+            resources: latestMetrics.resourceLoading,
+            errors: latestMetrics.jsErrors,
+            apiCalls: latestMetrics.apiCalls
+          },
         },
       });
-
     });
-  }
 
-  public getNetworkSummary() {
-    return {
-      totalEvents: this.networkEvents.length,
-      failedEvents: this.networkEvents.filter(e => e.failed).length,
-      blockedEvents: this.networkEvents.filter(e => e.blocked).length,
-      slowEvents: this.networkEvents.filter(e => e.duration && e.duration > 3000).length,
-      byType: {
-        xhr: this.networkEvents.filter(e => e.type === 'xhr').length,
-        fetch: this.networkEvents.filter(e => e.type === 'fetch').length,
-        resource: this.networkEvents.filter(e => e.type === 'resource').length
-      }
-    };
+    observer.observe({ entryTypes: ['navigation', 'resource'] });
   }
 }
 
