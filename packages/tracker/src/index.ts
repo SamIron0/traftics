@@ -2,10 +2,10 @@ import * as rrweb from "rrweb";
 import { v4 as uuidv4 } from "uuid";
 import type { eventWithTime } from "@rrweb/types";
 import type { Session, RetryConfig, BatchConfig, SessionConfig } from "./types";
-import { PerformanceService } from './services/PerformanceService';
+import { PerformanceService } from "./services/PerformanceService";
 
 interface NetworkEvent {
-  type: 'xhr' | 'fetch' | 'resource';
+  type: "xhr" | "fetch" | "resource" | "refresh";
   status?: number;
   method?: string;
   url: string;
@@ -15,6 +15,7 @@ interface NetworkEvent {
   failed?: boolean;
   blocked?: boolean;
   size?: number;
+  refreshType?: "reload" | "back_forward" | "navigate";
 }
 
 const DEFAULT_BATCH_CONFIG: BatchConfig = {
@@ -38,12 +39,21 @@ export class SessionTracker {
   private hasFirstBatchBeenSent = false;
   private currentHref: string;
   private previousHref: string | null = null;
-  private location: { country: string; region: string; city: string; lat: number; lon: number } | null = null;
+  private location: {
+    country: string;
+    region: string;
+    city: string;
+    lat: number;
+    lon: number;
+  } | null = null;
   private retryConfig: RetryConfig;
   private quotaExceeded = false;
   private performanceService: PerformanceService;
 
   constructor(config: SessionConfig) {
+    this.performanceService = new PerformanceService();
+    this.performanceService.setupMonitoring();
+
     this.batchConfig = {
       ...DEFAULT_BATCH_CONFIG,
       ...config.batchConfig,
@@ -60,7 +70,7 @@ export class SessionTracker {
       this.location = location;
     });
     window.addEventListener("popstate", () => {
-      this.handleUrlChange('popstate');
+      this.handleUrlChange("popstate");
     });
 
     const originalPushState = history.pushState.bind(history);
@@ -69,13 +79,13 @@ export class SessionTracker {
     history.pushState = (...args) => {
       this.previousHref = this.currentHref;
       originalPushState(...args);
-      this.handleUrlChange('pushState');
+      this.handleUrlChange("pushState");
     };
 
     history.replaceState = (...args) => {
       this.previousHref = this.currentHref;
       originalReplaceState(...args);
-      this.handleUrlChange('replaceState');
+      this.handleUrlChange("replaceState");
     };
 
     this.startRecording();
@@ -86,9 +96,6 @@ export class SessionTracker {
       backoffMs: 1000,
       maxBackoffMs: 10000,
     };
-
-    this.performanceService = new PerformanceService();
-    this.performanceService.setupMonitoring();
 
     this.setupCustomEventListeners();
   }
@@ -104,7 +111,7 @@ export class SessionTracker {
         site_id: this.websiteId,
         duration: Date.now() - this.startedAt,
         is_active: false,
-        end_reason: 'inactivity_timeout'
+        end_reason: "inactivity_timeout",
       });
     }, this.INACTIVITY_TIMEOUT);
   }
@@ -125,7 +132,9 @@ export class SessionTracker {
       window.clearTimeout(this.flushTimeout);
     }
 
-    const timeout = immediate ? 0 : (customTimeout || this.batchConfig.flushInterval);
+    const timeout = immediate
+      ? 0
+      : customTimeout || this.batchConfig.flushInterval;
     this.flushTimeout = window.setTimeout(() => this.flush(), timeout);
   }
 
@@ -164,28 +173,28 @@ export class SessionTracker {
         site_id: this.websiteId,
         ...(isFirstBatch
           ? {
-            started_at: this.startedAt,
-            user_agent: navigator.userAgent,
-            screen_width: window.innerWidth,
-            screen_height: window.innerHeight,
-            location: this.location || undefined,
-            performance_metrics: {
-              pages: performanceData.map(metrics => ({
-                url: metrics.url,
-                timestamp: metrics.timestamp,
-                webVitals: {
-                  fcp: metrics.fcp,
-                  lcp: metrics.lcp,
-                  fid: metrics.fid,
-                  cls: metrics.cls,
-                  ttfb: metrics.ttfb,
-                },
-                resources: metrics.resourceLoading,
-                errors: metrics.jsErrors,
-                apiCalls: metrics.apiCalls
-              }))
+              started_at: this.startedAt,
+              user_agent: navigator.userAgent,
+              screen_width: window.innerWidth,
+              screen_height: window.innerHeight,
+              location: this.location || undefined,
+              performance_metrics: {
+                pages: performanceData.map((metrics) => ({
+                  url: metrics.url,
+                  timestamp: metrics.timestamp,
+                  webVitals: {
+                    fcp: metrics.fcp,
+                    lcp: metrics.lcp,
+                    fid: metrics.fid,
+                    cls: metrics.cls,
+                    ttfb: metrics.ttfb,
+                  },
+                  resources: metrics.resourceLoading,
+                  errors: metrics.jsErrors,
+                  apiCalls: metrics.apiCalls,
+                })),
+              },
             }
-          }
           : {}),
         duration: this.lastEventTime - this.startedAt,
         events: batchEvents,
@@ -200,19 +209,19 @@ export class SessionTracker {
     if (batch.is_active !== undefined) {
       try {
         await fetch(`${this.collectorUrl}/api/collect`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             sessionId: batch.id,
             status: {
               is_active: batch.is_active,
               end_reason: batch.end_reason,
-              last_active_at: Date.now()
-            }
-          })
+              last_active_at: Date.now(),
+            },
+          }),
         });
       } catch (error) {
-        console.error('Failed to update session status:', error);
+        console.error("Failed to update session status:", error);
       }
     }
 
@@ -223,6 +232,9 @@ export class SessionTracker {
   }
 
   private startRecording(): void {
+    // Add performance navigation monitoring
+    this.setupNavigationMonitoring();
+
     rrweb.record({
       emit: (event: eventWithTime) => {
         this.queueEvent(event);
@@ -231,6 +243,49 @@ export class SessionTracker {
       maskTextClass: "mask-text",
       collectFonts: true,
     });
+  }
+
+  private setupNavigationMonitoring(): void {
+    let hasQueuedRefreshEvent = false; // Flag to track if the event has been queued
+
+    const handleNavigation = () => {
+        const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming;
+        if (navigation) {
+            const type = navigation.type;
+
+            // Only handle refresh/reload events
+            if ((type === "reload" || type === "back_forward") && !hasQueuedRefreshEvent) {
+                hasQueuedRefreshEvent = true; // Set the flag to true
+                this.queueEvent({
+                    type: 5, // Custom event type
+                    timestamp: Date.now(),
+                    data: {
+                        tag: "page_refresh",
+                        payload: {
+                            type,
+                            url: window.location.href,
+                            referrer: document.referrer || null,
+                            navigationSource: type === "reload" ? "refresh" : "back_forward"
+                        }
+                    }
+                });
+            }
+        }
+    };
+
+    // Listen for the load event to capture initial navigation type
+    window.addEventListener('load', handleNavigation);
+
+    // Create a PerformanceObserver to monitor navigation timing
+    const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+            if (entry.entryType === "navigation") {
+                handleNavigation();
+            }
+        }
+    });
+
+    observer.observe({ entryTypes: ["navigation"] });
   }
 
   private storeFailedEvents(payload: Session): void {
@@ -264,7 +319,7 @@ export class SessionTracker {
       site_id: this.websiteId,
       duration: Date.now() - this.startedAt,
       is_active: false,
-      end_reason: 'manual_stop'
+      end_reason: "manual_stop",
     };
 
     this.sendBatch(finalBatch);
@@ -274,7 +329,7 @@ export class SessionTracker {
     if (this.quotaExceeded) {
       // Set session as inactive when quota exceeded
       payload.is_active = false;
-      payload.end_reason = 'quota_exceeded';
+      payload.end_reason = "quota_exceeded";
       return false;
     }
 
@@ -319,15 +374,17 @@ export class SessionTracker {
 
   private async getLocation() {
     try {
-      const response = await fetch("https://ipinfo.io/json?token=0d420c2f8c5887");
+      const response = await fetch(
+        "https://ipinfo.io/json?token=0d420c2f8c5887"
+      );
       const data = await response.json(); // Parse the JSON response
 
       const locationData = {
         country: data.country,
         region: data.region,
         city: data.city,
-        lat: parseFloat(data.loc.split(',')[0]),
-        lon: parseFloat(data.loc.split(',')[1]),
+        lat: parseFloat(data.loc.split(",")[0]),
+        lon: parseFloat(data.loc.split(",")[1]),
       };
 
       return locationData;
@@ -337,12 +394,12 @@ export class SessionTracker {
     }
   }
 
-  private handleUrlChange(source: 'pushState' | 'popstate' | 'replaceState') {
+  private handleUrlChange(source: "pushState" | "popstate" | "replaceState") {
     const newHref = window.location.href;
     const now = Date.now();
 
     if (newHref !== this.currentHref) {
-      const referrer = this.previousHref || document.referrer || '';
+      const referrer = this.previousHref || document.referrer || "";
       this.previousHref = this.currentHref;
       this.currentHref = newHref;
 
@@ -354,7 +411,7 @@ export class SessionTracker {
           payload: {
             href: newHref,
             referrer,
-            navigationSource: source
+            navigationSource: source,
           },
         },
       });
@@ -362,35 +419,47 @@ export class SessionTracker {
   }
 
   private setupCustomEventListeners(): void {
-    // Monitor performance after each navigation
-    const observer = new PerformanceObserver((list) => {
+    let lastEventTime = 0;
+    const COOLDOWN_PERIOD = 2000; // 2 seconds cooldown
+
+    const observer = new PerformanceObserver(() => {
+      const now = Date.now();
+      if (now - lastEventTime < COOLDOWN_PERIOD) {
+        return; // Skip if within cooldown period
+      }
+
       const performanceData = this.performanceService.getPerformanceData();
-      const latestMetrics = performanceData[0]; // Current page metrics
-      
-      this.queueEvent({
-        type: 5,
-        timestamp: Date.now(),
-        data: {
-          tag: 'performance_metrics',
-          payload: {
-            url: latestMetrics.url,
-            timestamp: latestMetrics.timestamp,
-            webVitals: {
-              fcp: latestMetrics.fcp,
-              lcp: latestMetrics.lcp,
-              fid: latestMetrics.fid,
-              cls: latestMetrics.cls,
-              ttfb: latestMetrics.ttfb,
+
+      // Only emit if we have new data
+      if (performanceData.length > 0) {
+        lastEventTime = now;
+        const latestMetrics = performanceData[0];
+
+        this.queueEvent({
+          type: 5,
+          timestamp: now,
+          data: {
+            tag: "performance_metrics",
+            payload: {
+              url: latestMetrics.url,
+              timestamp: latestMetrics.timestamp,
+              webVitals: {
+                fcp: latestMetrics.fcp,
+                lcp: latestMetrics.lcp,
+                fid: latestMetrics.fid,
+                cls: latestMetrics.cls,
+                ttfb: latestMetrics.ttfb,
+              },
+              resources: latestMetrics.resourceLoading,
+              errors: latestMetrics.jsErrors,
+              apiCalls: latestMetrics.apiCalls,
             },
-            resources: latestMetrics.resourceLoading,
-            errors: latestMetrics.jsErrors,
-            apiCalls: latestMetrics.apiCalls
           },
-        },
-      });
+        });
+      }
     });
 
-    observer.observe({ entryTypes: ['navigation', 'resource'] });
+    observer.observe({ entryTypes: ["navigation", "resource"] });
   }
 }
 
@@ -400,6 +469,7 @@ declare global {
       websiteId: string;
       collectorUrl?: string;
     };
+    _tracker?: SessionTracker;
   }
 }
 
@@ -408,6 +478,9 @@ if (typeof window !== "undefined" && window._r) {
     websiteId: window._r.websiteId,
     collectorUrl: window._r.collectorUrl,
   });
+
+  // Make tracker accessible for error boundary
+  (window as any)._tracker = tracker;
 
   window.addEventListener("unload", () => {
     tracker.stop();

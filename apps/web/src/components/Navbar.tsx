@@ -14,7 +14,7 @@ export function Navbar() {
   return (
     <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center px-4">
-        <div className="flex flex-1 justify-start">
+        <div className="flex flex-1 justify-start px-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -26,7 +26,7 @@ export function Navbar() {
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[280px] p-0">
+            <PopoverContent className="w-[250px] p-0">
               {allProjects.map((project) => {
                 return (
                   <div
@@ -43,7 +43,7 @@ export function Navbar() {
                 );
               })}
               <Button
-                className="w-full rounded-none border-0 border-t"
+                className="w-full rounded-t-none border-0 border-t"
                 onClick={() => {
                   router.push("/signup");
                 }}

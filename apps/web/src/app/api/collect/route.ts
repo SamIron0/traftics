@@ -34,6 +34,7 @@ const USEFUL_INCREMENTAL_DATA_TYPES = new Set([
   IncrementalSource.CanvasMutation,
   IncrementalSource.StyleSheetRule,
   IncrementalSource.CustomElement,
+  IncrementalSource.Selection,
 ]);
 
 function corsResponse(response: NextResponse) {

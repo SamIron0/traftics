@@ -4,6 +4,7 @@ import type { PerformanceMetrics } from "../types";
 export class PerformanceService {
   private currentPageMetrics: PerformanceMetrics;
   private pageMetricsHistory: Map<string, PerformanceMetrics>;
+  private lastReportedMetrics: string = '';
 
   constructor() {
     this.pageMetricsHistory = new Map();
@@ -104,7 +105,10 @@ export class PerformanceService {
     const observer = new PerformanceObserver((list) => {
       const entries = list.getEntries();
       entries.forEach((entry) => {
-        if (entry.entryType === "resource") {
+        if (
+          entry.entryType === "resource" && 
+          !entry.name.includes("/api/collect")
+        ) {
           const resourceEntry = entry as PerformanceResourceTiming;
           this.currentPageMetrics.resourceLoading.push({
             url: resourceEntry.name,
@@ -120,21 +124,36 @@ export class PerformanceService {
   }
 
   private setupErrorListener(): void {
-    window.addEventListener("error", (event) => {
+    // Capture console errors
+    const originalConsoleError = console.error;
+    console.error = (...args) => {
       this.currentPageMetrics.jsErrors.push({
-        message: event.error?.message || "Unknown error",
-        stack: event.error?.stack || "",
+        message: args.map(arg => 
+          arg instanceof Error ? arg.message : String(arg)
+        ).join(' '),
+        stack: args.find(arg => arg instanceof Error)?.stack || new Error().stack || '',
         timestamp: Date.now(),
       });
-    });
+      originalConsoleError.apply(console, args);
+    };
 
+    // Capture runtime errors
+    window.addEventListener("error", (event) => {
+      this.currentPageMetrics.jsErrors.push({
+        message: event.error?.message || event.message || "Unknown error",
+        stack: event.error?.stack || new Error().stack || '',
+        timestamp: Date.now(),
+      });
+    }, true);
+
+    // Capture unhandled promise rejections
     window.addEventListener("unhandledrejection", (event) => {
       this.currentPageMetrics.jsErrors.push({
         message: event.reason?.message || "Unhandled Promise Rejection",
-        stack: event.reason?.stack || "",
+        stack: event.reason?.stack || new Error().stack || '',
         timestamp: Date.now(),
       });
-    });
+    }, true);
   }
 
   private setupNetworkMonitoring(): void {
@@ -204,10 +223,15 @@ export class PerformanceService {
   }
 
   getPerformanceData(): PerformanceMetrics[] {
-    // Return all collected metrics
-    return [
-      this.currentPageMetrics,
-      ...Array.from(this.pageMetricsHistory.values()),
-    ];
+    const currentMetricsString = JSON.stringify(this.currentPageMetrics);
+    const hasChanges = currentMetricsString !== this.lastReportedMetrics;
+    
+    if (hasChanges) {
+      this.lastReportedMetrics = currentMetricsString;
+      return [this.currentPageMetrics, ...Array.from(this.pageMetricsHistory.values())];
+    }
+    
+    return [];
   }
 }
+

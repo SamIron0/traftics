@@ -1,10 +1,13 @@
 import { X } from "lucide-react";
 import { useState } from "react";
+import { useAppStore } from "@/stores/useAppStore";
 
 export default function DemoBanner() {
   const [isVisible, setIsVisible] = useState(true);
+  const { projectSlug } = useAppStore();
 
-  if (!isVisible) return null;
+  // Only show banner for demo project
+  if (!isVisible || projectSlug !== "project-4fd62621") return null;
 
   return (
     <div className="relative bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-blue-200 rounded-lg p-4 mb-6">
