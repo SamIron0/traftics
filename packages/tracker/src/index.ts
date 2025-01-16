@@ -2,6 +2,7 @@ import * as rrweb from "rrweb";
 import { v4 as uuidv4 } from "uuid";
 import type { eventWithTime } from "@rrweb/types";
 import type { Session, RetryConfig, BatchConfig, SessionConfig } from "./types";
+import { ErrorDetectionService } from "./services/ErrorDetection.service";
 
 const DEFAULT_BATCH_CONFIG: BatchConfig = {
   maxBatchSize: 1000,
@@ -34,6 +35,7 @@ export class SessionTracker {
   } | null = null;
   private retryConfig: RetryConfig;
   private quotaExceeded = false;
+  private errorDetection: ErrorDetectionService;
 
   constructor(config: SessionConfig) {
     this.sessionId = this.getExistingSessionId() || uuidv4();
@@ -80,6 +82,8 @@ export class SessionTracker {
       backoffMs: 1000,
       maxBackoffMs: 10000,
     };
+
+    this.errorDetection = new ErrorDetectionService(this.queueEvent.bind(this));
   }
 
   private getExistingSessionId(): string | null {
@@ -368,7 +372,7 @@ export class SessionTracker {
       const response = await fetch(
         "https://ipinfo.io/json?token=0d420c2f8c5887"
       );
-      const data = await response.json(); // Parse the JSON response
+      const data = await response.json();
 
       const locationData = {
         country: data.country,
@@ -380,7 +384,8 @@ export class SessionTracker {
 
       return locationData;
     } catch (error) {
-      console.error("Failed to fetch location:", error);
+      // Silently handle the error without logging
+      // This is likely due to an ad blocker or network issue
       return null;
     }
   }

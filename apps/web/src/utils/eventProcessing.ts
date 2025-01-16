@@ -5,6 +5,8 @@ import {
   MouseInteractions,
 } from "@rrweb/types";
 import { SessionEventService } from "@/server/services/sessionEvent.service";
+import { ErrorEventService } from "@/server/services/errorEvent.service";
+import { ErrorType } from "@/types/error";
 
 const RAGE_CLICK_THRESHOLD = 3;
 const RAGE_CLICK_TIMEFRAME = 1000;
@@ -169,6 +171,40 @@ export async function processAndStoreEvents(
           navigationSource: payload.navigationSource,
         },
       });
+    }
+
+    if (event.type === EventType.Custom && event.data?.tag) {
+      const errorTags = ['error', 'console_error', 'network_error', 'unhandled_promise', 'resource_error'];
+      
+      if (errorTags.includes(event.data.tag)) {
+        const payload = event.data.payload as {
+          type: ErrorType;
+          message: string;
+          stack?: string;
+          lineNumber?: number;
+          columnNumber?: number;
+          fileName?: string;
+          resourceType?: string;
+          url?: string;
+          status?: number;
+        };
+
+        await ErrorEventService.storeErrorEvent({
+          session_id: sessionId,
+          error_type: payload.type,
+          message: payload.message,
+          stack: payload.stack,
+          metadata: {
+            lineNumber: payload.lineNumber,
+            columnNumber: payload.columnNumber,
+            fileName: payload.fileName,
+            resourceType: payload.resourceType,
+            url: payload.url,
+            status: payload.status
+          },
+          timestamp: new Date(event.timestamp).toISOString()
+        });
+      }
     }
   }
 }
