@@ -3,12 +3,14 @@ import { formatDistanceToNow, format} from "date-fns";
 import { Monitor, Globe, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatPlayerTime } from "@/utils/helpers";
+import { eventWithTime } from "@rrweb/types";
 
 interface Props {
   session: Session;
+  events: eventWithTime[]
 }
 
-export function SessionInfo({ session }: Props) {
+export function SessionInfo({events, session }: Props) {
   
   return (
     <Card>
@@ -54,6 +56,7 @@ export function SessionInfo({ session }: Props) {
               <p className="text-sm text-muted-foreground">
                 Duration: {formatPlayerTime(session.duration || 0)}
               </p>
+              {events[0].timestamp}
             </div>
           </div>
         </div>

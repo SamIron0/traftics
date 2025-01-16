@@ -3,16 +3,18 @@ import { SessionEventService } from "@/server/services/sessionEvent.service";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const events = await SessionEventService.getSessionEvents(params.id);
+    const { id } = await params;
+
+    const events = await SessionEventService.getSessionEvents(id);
     return NextResponse.json(events);
   } catch (error) {
-    console.error('Error fetching session events:', error);
+    console.error("Error fetching session events:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch session events' },
+      { error: "Failed to fetch session events" },
       { status: 500 }
     );
   }
-} 
+}

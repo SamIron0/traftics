@@ -1,25 +1,14 @@
 import { NextResponse } from "next/server";
 import { Session } from "@/types/api";
 import { calculateSessionMetrics, parseUserAgent } from "@/utils/helpers";
-import { EventType, IncrementalSource } from "@rrweb/types";
 import { SessionService } from "@/server/services/session.service";
 import { WebsiteService } from "@/server/services/website.service";
 import { UsageService } from "@/server/services/usage.service";
 import { FrustrationService } from "@/server/services/frustration.service";
 import { calculateEngagement } from "./engagement";
 import { RelevanceService } from "@/server/services/relevance.service";
-import { isCustomEvent } from "@/utils/helpers";
 import { PageEventService } from "@/server/services/pageEvent.service";
-import { SessionEventService } from "@/server/services/sessionEvent.service";
 import { processAndStoreEvents } from "@/utils/eventProcessing";
-
-interface NetworkErrorPayload {
-  url: string;
-  method: string;
-  status: number;
-  statusText: string;
-  duration: number;
-}
 
 // Cache verification check results in memory
 const verifiedSites = new Set<string>();

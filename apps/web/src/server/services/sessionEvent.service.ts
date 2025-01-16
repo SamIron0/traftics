@@ -1,29 +1,27 @@
 import { createClient } from "@/utils/supabase/server";
 
-export type SessionEventType = 
-  | 'rage_click'
-  | 'refresh'
-  | 'selection'
-  | 'uturn'
-  | 'window_resize'
-  | 'click'
-  | 'input'
-  | 'page_view'
-  | 'error';
-
+export type SessionEventType =
+  | "rage_click"
+  | "refresh"
+  | "selection"
+  | "uturn"
+  | "window_resize"
+  | "click"
+  | "input"
+  | "page_view"
+  | "error";
 interface SessionEvent {
   session_id: string;
   event_type: SessionEventType;
   timestamp: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: Record<string, any>;
 }
 
 export class SessionEventService {
   static async storeEvent(event: SessionEvent): Promise<void> {
     const supabase = await createClient();
-    const { error } = await supabase
-      .from("session_events")
-      .insert([event]);
+    const { error } = await supabase.from("session_events").insert([event]);
 
     if (error) throw error;
   }
@@ -39,4 +37,4 @@ export class SessionEventService {
     if (error) throw error;
     return data;
   }
-} 
+}

@@ -662,7 +662,7 @@ export default function SessionPlayer({
         {/* Right Sidebar */}
         <div className="w-96 border-l p-4">
           {/* Feedback Card */}
-          <SessionInfo session={session} />
+          <SessionInfo session={session} events={sessionEvents}/>
         </div>
       </div>
     </div>

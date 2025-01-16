@@ -1,10 +1,15 @@
 import { EventType, eventWithTime, IncrementalSource, MouseInteractions } from "@rrweb/types";
-import { SessionEventService, SessionEventType } from "@/server/services/sessionEvent.service";
+import { SessionEventService} from "@/server/services/sessionEvent.service";
+
+const RAGE_CLICK_THRESHOLD = 3;
+const RAGE_CLICK_TIMEFRAME = 1000;
 
 export async function processAndStoreEvents(
   sessionId: string,
   events: eventWithTime[]
 ): Promise<void> {
+  let clickSequence: number[] = [];
+
   for (const event of events) {
     // Handle clicks and rage clicks
     if (
@@ -12,6 +17,7 @@ export async function processAndStoreEvents(
       event.data.source === IncrementalSource.MouseInteraction &&
       event.data.type === MouseInteractions.Click
     ) {
+      // Store regular click
       await SessionEventService.storeEvent({
         session_id: sessionId,
         event_type: 'click',
@@ -21,6 +27,27 @@ export async function processAndStoreEvents(
           y: event.data.y
         }
       });
+
+      // Process potential rage click
+      const timestamp = event.timestamp;
+      clickSequence = clickSequence.filter(
+        t => timestamp - t < RAGE_CLICK_TIMEFRAME
+      );
+      clickSequence.push(timestamp);
+
+      if (clickSequence.length >= RAGE_CLICK_THRESHOLD) {
+        await SessionEventService.storeEvent({
+          session_id: sessionId,
+          event_type: 'rage_click',
+          timestamp: new Date(timestamp).toISOString(),
+          data: {
+            x: event.data.x,
+            y: event.data.y,
+            clickCount: clickSequence.length
+          }
+        });
+        clickSequence = []; // Reset after detecting rage click
+      }
     }
 
     // Handle inputs
