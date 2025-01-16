@@ -4,16 +4,17 @@ import { MouseInteractions, EventType, IncrementalSource } from "@rrweb/types";
 export class FrustrationService {
   private static RAGE_CLICK_THRESHOLD = 3;
   private static RAGE_CLICK_TIMEFRAME = 1000;
+  private static UTURN_THRESHOLD = 5000; // 5 seconds threshold for U-turn detection
 
   public static async calculateFrustrationScore(
     events: eventWithTime[],
     pageEvents: { href: string; timestamp: string }[]
   ): Promise<number> {
     const rageClickScore = this.detectRageClicks(events);
-    const uturnScore = 0; // TODO: implement uturn detection
-    console.log(pageEvents)
-    // Apply weights (2:1 ratio)
-    const weightedScore = (rageClickScore * 2 + uturnScore) / 3;
+    const uturnScore = this.detectUturns(events);
+    
+    // Apply weights (1:1 ratio)
+    const weightedScore = (rageClickScore + uturnScore) / 2;
 
     // Normalize to 0-3 scale
     return this.normalizeScore(weightedScore);
@@ -26,8 +27,8 @@ export class FrustrationService {
     events.forEach(event => {
       if (
         event.type === EventType.IncrementalSnapshot &&
-        event.data?.source === IncrementalSource.MouseInteraction && // Check source type
-        event.data?.type === MouseInteractions.Click // Check for Click interaction
+        event.data?.source === IncrementalSource.MouseInteraction &&
+        event.data?.type === MouseInteractions.Click
       ) {
         const timestamp = event.timestamp;
         
@@ -47,6 +48,43 @@ export class FrustrationService {
 
     // Normalize rage clicks (0-1 scale)
     return Math.min(rageClickCount / 5, 1);
+  }
+
+  private static detectUturns(events: eventWithTime[]): number {
+    let uturnCount = 0;
+    const navigationEvents: {
+      url: string;
+      timestamp: number;
+      referrer: string;
+    }[] = [];
+
+    events.forEach(event => {
+      if (event.type === EventType.Custom && event.data?.tag === "url_change") {
+        const payload = event.data.payload as { href: string; referrer: string };
+        const currentUrl = payload.href;
+        const currentTimestamp = event.timestamp;
+        const referrer = payload.referrer;
+
+        navigationEvents.push({
+          url: currentUrl,
+          timestamp: currentTimestamp,
+          referrer: referrer,
+        });
+
+        if (navigationEvents.length >= 2) {
+          const currentNav = navigationEvents[navigationEvents.length - 1];
+          const prevNav = navigationEvents[navigationEvents.length - 2];
+          const timeDifference = currentNav.timestamp - prevNav.timestamp;
+
+          if (timeDifference <= this.UTURN_THRESHOLD && currentUrl === prevNav.referrer) {
+            uturnCount++;
+          }
+        }
+      }
+    });
+
+    // Normalize U-turns (0-1 scale)
+    return Math.min(uturnCount / 3, 1);
   }
 
   private static normalizeScore(score: number): number {
