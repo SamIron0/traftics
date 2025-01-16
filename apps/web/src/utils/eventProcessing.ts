@@ -50,18 +50,6 @@ export async function processAndStoreEvents(
       event.data.source === IncrementalSource.MouseInteraction &&
       event.data.type === MouseInteractions.Click
     ) {
-      // Store regular click
-      await SessionEventService.storeEvent({
-        session_id: sessionId,
-        event_type: "click",
-        timestamp: new Date(event.timestamp).toISOString(),
-        data: {
-          x: event.data.x,
-          y: event.data.y,
-        },
-      });
-
-      // Process potential rage click
       const timestamp = event.timestamp;
       clickSequence = clickSequence.filter(
         (t) => timestamp - t < RAGE_CLICK_TIMEFRAME
@@ -69,6 +57,7 @@ export async function processAndStoreEvents(
       clickSequence.push(timestamp);
 
       if (clickSequence.length >= RAGE_CLICK_THRESHOLD) {
+        // Store rage click instead of individual clicks
         await SessionEventService.storeEvent({
           session_id: sessionId,
           event_type: "rage_click",
@@ -80,6 +69,17 @@ export async function processAndStoreEvents(
           },
         });
         clickSequence = []; // Reset after detecting rage click
+      } else {
+        // Only store regular click if not part of a rage click
+        await SessionEventService.storeEvent({
+          session_id: sessionId,
+          event_type: "click",
+          timestamp: new Date(event.timestamp).toISOString(),
+          data: {
+            x: event.data.x,
+            y: event.data.y,
+          },
+        });
       }
     }
 
