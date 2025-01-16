@@ -1,670 +1,172 @@
 "use client";
 
-import {
-  ArrowLeft,
-  ChevronDown,
-  Copy,
-  ExternalLink,
-  MoreVertical,
-  Play,
-  SkipBack,
-  SkipForward,
-  Pause,
-} from "lucide-react";
-import { motion } from "framer-motion";
-import { itemVariants } from "@/lib/animation-variants";
-import { useEffect, useRef, useState, useCallback } from "react";
-import { Replayer } from "rrweb";
-import { Session } from "@/types/api";
-import { EventType, eventWithTime, IncrementalSource } from "@rrweb/types";
-import { formatPlayerTime, getRelativeTimestamp } from "@/utils/helpers";
+import React, { useState } from "react";
+import { CustomSlider } from "./CustomSlider";
+import { X, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { SessionInfo } from "./SessionInfo";
-import { useToast } from "@/hooks/use-toast";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
-interface Props {
-  session: Session & { events: eventWithTime[] };
-  onNextSession?: () => void;
-  onPreviousSession?: () => void;
-  hasNextSession?: boolean;
-  hasPreviousSession?: boolean;
-  currentSessionIndex?: number;
-  totalSessions?: number;
-  onDeleteSession?: () => void;
-}
+const sampleEvents = [
+  { id: "1", timestamp: 1000, type: "click" as const },
+  { id: "2", timestamp: 3000, type: "refresh" as const },
+  { id: "3", startTime: 5000, endTime: 6000, type: "input" as const },
+  { id: "4", timestamp: 7000, type: "rageClick" as const },
+  { id: "5", timestamp: 9000, type: "refresh" as const },
+  { id: "6", timestamp: 11000, type: "selection" as const },
+  { id: "7", timestamp: 13000, type: "uturn" as const },
+  { id: "8", timestamp: 14000, type: "windowResize" as const },
+  { id: "9", timestamp: 15000, type: "scroll" as const },
+];
 
-export default function SessionPlayer({
-  session,
-  onNextSession,
-  onPreviousSession,
-  hasNextSession,
-  hasPreviousSession,
-  currentSessionIndex,
-  totalSessions,
-  onDeleteSession,
-}: Props) {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const [replayer, setReplayer] = useState<Replayer | null>(null);
-  const [currentTime, setCurrentTime] = useState("00:00");
-  const [duration, setDuration] = useState<string>(
-    formatPlayerTime(session.duration || 0)
-  );
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [sliderValue, setSliderValue] = useState(0);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [skipInactive, setSkipInactive] = useState(true);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const { toast } = useToast();
-  const [pages, setPages] = useState<
-    Array<{ href: string; timestamp: string }>
-  >([]);
-  const [selectedPageIndex, setSelectedPageIndex] = useState(0);
-  const [viewportResize, setViewportResize] = useState<eventWithTime[]>();
-  const [sessionEvents, setSessionEvents] = useState<eventWithTime[]>([]);
+const sampleErrors = [
+  {
+    id: 1,
+    timestamp: 4500,
+    message: "GET https://ipinfo.io/json?token=0d420c2f8c5887",
+    subMessage: "net::ERR_BLOCKED_BY_CLIENT",
+    stack: `Failed to fetch location: TypeError: Failed to fetch
+    at t.PerformanceService.<anonymous> (tracker.js:2:10845)
+    at Generator.next (<anonymous>)
+    at tracker.js:2:7798
+    at new Promise (<anonymous>)
+    at r (tracker.js:2:7543)
+    at window.fetch (tracker.js:2:10633)
+    at d.<anonymous> (tracker.js:2:6194)
+    at Generator.next (<anonymous>)
+    at tracker.js:2:1228
+    at new Promise (<anonymous>)`,
+  },
+  {
+    id: 2,
+    timestamp: 10500,
+    message:
+      "Uncaught TypeError: Cannot read properties of undefined (reading 'length')",
+    stack: `TypeError: Cannot read properties of undefined (reading 'length')
+    at getArrayLength (app.js:10:20)
+    at processArray (app.js:15:22)
+    at handleUserInput (app.js:25:10)
+    at HTMLButtonElement.onclick (index.html:30:75)`,
+  },
+];
 
-  useEffect(() => {
-    const currentWrapper = wrapperRef.current; // Copy ref to variable
-    // if session.events contains IncrementalSource.ViewportResize, setViewportResize
-    const viewportResizeEvents = session.events.filter(
-      (event) =>
-        event.type === EventType.IncrementalSnapshot &&
-        event.data.source === IncrementalSource.ViewportResize
+const EmptyConsole = () => (
+  <div className="flex flex-col items-center justify-center h-full text-gray-400">
+    <p className="text-sm">No errors to display</p>
+    <p className="text-xs">Errors will appear here when they occur</p>
+  </div>
+);
+
+export default function Home() {
+  const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+  const [expandedErrors, setExpandedErrors] = useState<number[]>([]);
+
+  const toggleConsole = () => {
+    setIsConsoleOpen((prev) => !prev);
+  };
+
+  const toggleError = (errorId: number) => {
+    setExpandedErrors((prev) =>
+      prev.includes(errorId)
+        ? prev.filter((id) => id !== errorId)
+        : [...prev, errorId]
     );
-    setViewportResize(viewportResizeEvents);
-    if (!currentWrapper || !session.events.length) return;
-
-    // Only clear content if there's existing content AND we're switching sessions
-    const existingWrapper = currentWrapper.querySelector(".replayer-wrapper");
-    if (
-      existingWrapper &&
-      existingWrapper.getAttribute("data-session-id") !== session.id
-    ) {
-      currentWrapper.innerHTML = "";
-    }
-
-    const player = new Replayer(session.events, {
-      root: currentWrapper,
-      skipInactive: skipInactive,
-      showWarning: false,
-      blockClass: "privacy",
-      liveMode: false,
-      speed: playbackSpeed,
-    });
-
-    const replayerWrapper = currentWrapper.querySelector(".replayer-wrapper");
-
-    if (replayerWrapper) {
-      // Add session ID to wrapper for tracking
-      replayerWrapper.setAttribute("data-session-id", session.id);
-
-      const containerHeight = currentWrapper.clientHeight;
-      const containerWidth = currentWrapper.clientWidth;
-      const sessionHeight = session.screen_height || 0;
-      const sessionWidth = session.screen_width || 0;
-
-      const heightScale = containerHeight / sessionHeight;
-      const widthScale = containerWidth / sessionWidth;
-      const scale = Math.min(heightScale, widthScale);
-
-      Object.assign((replayerWrapper as HTMLElement).style, {
-        position: "absolute",
-        height: `${sessionHeight}px`,
-        width: `${sessionWidth}px`,
-        transform: `scale(${scale})`,
-        transformOrigin: "center center",
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: "10px",
-      });
-    }
-
-    setReplayer(player);
-    setDuration(formatPlayerTime(session.duration || 0));
-    setCurrentTime("00:00");
-    setSliderValue(0);
-    setIsPlaying(false);
-
-    return () => {
-      player.pause();
-      setReplayer(null);
-      // Only clear content during cleanup if we're unmounting completely
-      if (currentWrapper && !currentWrapper.parentElement) {
-        currentWrapper.innerHTML = "";
-      }
-    };
-  }, [
-    session.events,
-    session.duration,
-    skipInactive,
-    playbackSpeed,
-    session.screen_height,
-    session.screen_width,
-    session.id,
-  ]);
-
-  useEffect(() => {
-    if (!replayer || !pages.length || !viewportResize) return;
-
-    const updateTime = () => {
-      if (!replayer || !wrapperRef.current) return;
-
-      const time = replayer.getCurrentTime();
-      setCurrentTime(formatPlayerTime(time > 0 ? time : 0));
-      setSliderValue(time);
-
-      // Check if we've reached the end of the session
-      if (time >= (session.duration || 0)) {
-        replayer.pause();
-        setIsPlaying(false);
-      }
-
-      // Check for closest resize events
-      const closestResizeEvent = viewportResize?.reduce((closest, current) => {
-        const eventTime = getRelativeTimestamp(
-          current.timestamp,
-          session.started_at || 0
-        );
-
-        if (eventTime > time) return closest;
-        if (!closest) return current;
-
-        const closestTime = getRelativeTimestamp(
-          closest.timestamp,
-          session.started_at || 0
-        );
-
-        return time - eventTime < time - closestTime ? current : closest;
-      }, null as eventWithTime | null);
-
-      if (closestResizeEvent) {
-        const { width, height } = closestResizeEvent.data as {
-          width: number;
-          height: number;
-        };
-        const containerHeight = wrapperRef.current.clientHeight || 0;
-        const containerWidth = wrapperRef.current.clientWidth || 0;
-        const scale = Math.min(
-          containerWidth / width,
-          containerHeight / height
-        );
-
-        const replayerWrapper =
-          wrapperRef.current.querySelector(".replayer-wrapper");
-        if (replayerWrapper) {
-          Object.assign((replayerWrapper as HTMLElement).style, {
-            height: `${height}px`,
-            width: `${width}px`,
-            transform: `scale(${scale})`,
-            transformOrigin: "center center",
-          });
-        }
-      } else {
-        const replayerWrapper =
-          wrapperRef.current.querySelector(".replayer-wrapper");
-        if (replayerWrapper) {
-          const containerHeight = wrapperRef.current.clientHeight || 0;
-          const containerWidth = wrapperRef.current.clientWidth || 0;
-          const sessionHeight = session.screen_height || 0;
-          const sessionWidth = session.screen_width || 0;
-
-          const heightScale = containerHeight / sessionHeight;
-          const widthScale = containerWidth / sessionWidth;
-          const scale = Math.min(heightScale, widthScale);
-
-          Object.assign((replayerWrapper as HTMLElement).style, {
-            height: `${sessionHeight}px`,
-            width: `${sessionWidth}px`,
-            transform: `scale(${scale})`,
-            transformOrigin: "center center",
-          });
-        }
-      }
-
-      // Find the last page that was visited before the current time
-      const currentPageIndex = pages.reduce((lastIndex, page, index) => {
-        const pageTime = getRelativeTimestamp(
-          page.timestamp,
-          session.started_at || 0
-        );
-        return pageTime <= time ? index : lastIndex;
-      }, 0);
-
-      setSelectedPageIndex(currentPageIndex);
-    };
-
-    const timer = setInterval(updateTime, 100);
-    return () => clearInterval(timer);
-  }, [replayer, session.duration, pages, session.started_at, viewportResize, session.screen_height, session.screen_width]);
-
-  const handlePlayPause = useCallback(() => {
-    if (!replayer) return;
-    const currentTime = replayer.getCurrentTime();
-    if (isPlaying) {
-      replayer.pause();
-    } else {
-      replayer.play(
-        currentTime < 0 || currentTime >= session.duration ? 0 : currentTime
-      );
-    }
-    setIsPlaying(!isPlaying);
-  }, [replayer, isPlaying, session.duration]);
-
-  const handleSkipInactive = useCallback(() => {
-    if (!replayer) return;
-    if (wrapperRef.current) {
-      wrapperRef.current.innerHTML = "";
-    }
-    replayer.setConfig({ skipInactive: !skipInactive });
-    setSkipInactive(!skipInactive);
-  }, [replayer, skipInactive]);
-
-  const handleSliderChange = (value: number[]) => {
-    if (!replayer) return;
-    replayer.pause();
-    setSliderValue(value[0]);
-    replayer.play(value[0]);
-    setIsPlaying(true);
   };
 
-  const handleBack = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("mode");
-    params.delete("sessionId");
-    router.push(`?${params.toString()}`);
-  };
-
-  const handleSpeedChange = (speed: number) => {
-    if (!replayer) return;
-    if (wrapperRef.current) {
-      wrapperRef.current.innerHTML = "";
-    }
-
-    replayer.setConfig({ speed });
-    setPlaybackSpeed(speed);
-  };
-
-  const handleJump = useCallback(
-    (seconds: number) => {
-      if (!replayer) return;
-      const currentTime = replayer.getCurrentTime();
-      const newTime = Math.max(
-        0,
-        Math.min(currentTime + seconds * 1000, session.duration || 0)
-      );
-      replayer.play(newTime);
-      setSliderValue(newTime);
-      setIsPlaying(true);
-    },
-    [replayer, session.duration]
-  );
-
-  const handleDelete = async () => {
-    try {
-      const response = await fetch(`/api/sessions/${session.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) throw new Error("Failed to delete session");
-
-      toast({
-        title: "Session deleted",
-        description: "The session has been successfully deleted",
-      });
-
-      // Go back to sessions list
-      handleBack();
-      onDeleteSession?.();
-    } catch (error) {
-      console.error("Error deleting session:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete session",
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return; // Don't trigger when typing in inputs
-
-      switch (e.key) {
-        case "ArrowLeft":
-          handleJump(-10);
-          break;
-        case "ArrowRight":
-          handleJump(10);
-          break;
-        case " ": // Spacebar
-          e.preventDefault();
-          handlePlayPause();
-          break;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [handleJump, handlePlayPause, replayer]);
-
-  useEffect(() => {
-    async function fetchSessionData() {
-      try {
-        const [pagesRes, eventsRes] = await Promise.all([
-          fetch(`/api/sessions/${session.id}/pages`),
-          fetch(`/api/sessions/${session.id}/events`)
-        ]);
-        
-        if (!pagesRes.ok || !eventsRes.ok) 
-          throw new Error("Failed to fetch session data");
-        
-        const [pagesData, eventsData] = await Promise.all([
-          pagesRes.json(),
-          eventsRes.json()
-        ]);
-        
-        setPages(pagesData);
-        setSessionEvents(eventsData);
-      } catch (error) {
-        console.error("Error fetching session data:", error);
-      }
-    }
-
-    fetchSessionData();
-  }, [session.id]);
-
-  const handleCopyUrl = () => {
-    if (pages[selectedPageIndex]) {
-      navigator.clipboard.writeText(pages[selectedPageIndex].href);
-      toast({
-        description: "URL copied to clipboard",
-      });
-    }
-  };
-
-  const handleOpenExternal = () => {
-    if (pages[selectedPageIndex]) {
-      window.open(pages[selectedPageIndex].href, "_blank");
-    }
+  const formatTime = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
   return (
-    <div className="flex h-screen flex-col bg-background" key={session.id}>
-      {/* Top Navigation */}
-      <header className="flex items-center border-b px-4 py-2">
-        <div className="flex items-center gap-4">
-          <motion.img
-            src="/logo.svg"
-            alt="logo"
-            className="mx-auto h-10 w-10"
-            variants={itemVariants}
-          />
-          <Button
-            variant="ghost"
-            className="flex items-center gap-2"
-            onClick={handleBack}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onPreviousSession}
-                disabled={!hasPreviousSession}
-              >
-                <SkipBack className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Previous session</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onNextSession}
-                disabled={!hasNextSession}
-              >
-                <SkipForward className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Next session</TooltipContent>
-          </Tooltip>
-          <div className="text-sm">
-            {(currentSessionIndex ?? 0) + 1} / {totalSessions} sessions
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      <div className="flex-grow p-4">
+        <h1 className="text-2xl font-bold mb-4">Custom Slider Demo</h1>
+        <p>Interact with the slider at the bottom of the page.</p>
+      </div>
 
-      {/* Main Content */}
-      <div className="flex flex-1">
-        {/* Left Content */}
-        <div className="flex-1 p-4">
-          {/* URL Bar */}
-          <div className="mb-4 flex items-center gap-2">
-            <div className="relative flex-1">
-              <div className="flex items-center">
-                <span className="text-sm text-muted-foreground mr-2">
-                  {selectedPageIndex + 1}/{pages.length}
-                </span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-between"
+      {isConsoleOpen && (
+        <div className="fixed bottom-20 left-0 right-0 bg-[#242424] text-white h-72 overflow-y-auto">
+          <div className="flex justify-between items-center mb-2 border-b border-gray-700 px-4 py-2">
+            <h2 className="text-sm font-semibold text-gray-300">Console</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleConsole}
+              className="text-gray-400 hover:text-white"
+              aria-label="Close console"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="font-mono text-[13px] space-y-2 px-4 pb-4">
+            {sampleErrors.length === 0 ? (
+              <EmptyConsole />
+            ) : (
+              sampleErrors.map((error) => (
+                <div key={error.id} className="group">
+                  <div
+                    className="flex items-start gap-2 cursor-pointer"
+                    onClick={() => toggleError(error.id)}
+                  >
+                    <button
+                      className="mt-1 p-0.5 hover:bg-gray-700 rounded"
+                      aria-label={
+                        expandedErrors.includes(error.id)
+                          ? "Collapse error"
+                          : "Expand error"
+                      }
                     >
-                      {pages[selectedPageIndex]?.href || "No pages recorded"}
-                      <ChevronDown className="h-4 w-4 ml-2" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                    {pages.map((page, index) => (
-                      <DropdownMenuItem
-                        key={index}
-                        onClick={() => {
-                          if (!replayer) return;
-                          setSelectedPageIndex(index);
-                          const relativeTime = getRelativeTimestamp(
-                            page.timestamp,
-                            session.started_at || 0
-                          );
-                          replayer.play(relativeTime);
-                          setSliderValue(relativeTime);
-                          setIsPlaying(true);
-                        }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
-                            {index + 1}.
-                          </span>
-                          {page.href}
+                      <ChevronRight
+                        className={`h-3 w-3 transition-transform ${
+                          expandedErrors.includes(error.id) ? "rotate-90" : ""
+                        }`}
+                      />
+                    </button>
+                    <div className="flex-grow">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="text-red-400 flex items-start gap-1">
+                          <span>×</span>
+                          <span>{error.message}</span>
                         </div>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCopyUrl}
-              disabled={!pages.length}
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleOpenExternal}
-              disabled={!pages.length}
-            >
-              <ExternalLink className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Video Area */}
-          <div
-            ref={wrapperRef}
-            className="aspect-video w-full bg-zinc-200 rounded-lg relative overflow-hidden flex items-center justify-center cursor-pointer"
-            onClick={handlePlayPause}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "calc(100vh - 300px)",
-              maxHeight: "800px",
-            }}
-          >
-            {/* Play/Pause Overlay */}
-            {!isPlaying && (
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity hover:bg-black/40">
-                <Play className="h-16 w-16 text-white" />
-              </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const event = new CustomEvent("jumpToTime", {
+                              detail: error.timestamp,
+                            });
+                            window.dispatchEvent(event);
+                          }}
+                          className="text-gray-500 hover:text-gray-300 whitespace-nowrap text-xs mt-0.5"
+                        >
+                          {formatTime(error.timestamp)}
+                        </button>
+                      </div>
+                      {error.subMessage && (
+                        <div className="text-red-400 ml-3">
+                          {error.subMessage}
+                        </div>
+                      )}
+                      {expandedErrors.includes(error.id) && (
+                        <pre className="mt-2 text-[#8B949E] whitespace-pre-wrap ml-3">
+                          {error.stack}
+                        </pre>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
             )}
           </div>
-
-          {/* Timeline */}
-          <div className="mt-4">
-            <div className="flex items-center gap-4">
-              <Button size="icon" variant="ghost" onClick={handlePlayPause}>
-                {isPlaying ? (
-                  <Pause className="h-4 w-4" fill="currentColor" />
-                ) : (
-                  <Play className="h-4 w-4" fill="currentColor" />
-                )}
-              </Button>
-              <span className="text-sm">
-                {currentTime} / {duration}
-              </span>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleJump(-10)}
-                  >
-                    <SkipBack className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Jump back 10s (←)</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleJump(10)}
-                  >
-                    <SkipForward className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Jump forward 10s (→)</TooltipContent>
-              </Tooltip>
-              <div className="flex-1">
-                <Slider
-                  value={[sliderValue]}
-                  max={session.duration}
-                  step={100}
-                  onValueChange={handleSliderChange}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-sm">
-                      {playbackSpeed}x
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleSpeedChange(0.5)}>
-                      0.5x
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleSpeedChange(1)}>
-                      1x
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleSpeedChange(2)}>
-                      2x
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">Skip inactivity</span>
-                  <Switch
-                    checked={skipInactive}
-                    onCheckedChange={handleSkipInactive}
-                  />
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                          Delete
-                        </DropdownMenuItem>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently
-                            delete the session recording and all its data.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleDelete}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          </div>
         </div>
+      )}
 
-        {/* Right Sidebar */}
-        <div className="w-96 border-l p-4">
-          {/* Feedback Card */}
-          <SessionInfo session={session} events={sessionEvents}/>
-        </div>
-      </div>
+      <CustomSlider
+        totalDuration={15000}
+        events={sampleEvents}
+        errors={sampleErrors}
+        onConsoleToggle={toggleConsole}
+      />
     </div>
   );
 }

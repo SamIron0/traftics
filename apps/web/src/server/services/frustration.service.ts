@@ -8,13 +8,11 @@ export class FrustrationService {
 
   public static async calculateFrustrationScore(
     events: eventWithTime[],
-    pageEvents: { href: string; timestamp: string }[]
   ): Promise<number> {
     const rageClickScore = this.detectRageClicks(events);
     const uturnScore = this.detectUturns(events);
-    
-    // Apply weights (1:1 ratio)
-    const weightedScore = (rageClickScore + uturnScore) / 2;
+    // Apply weights (2:1 ratio)
+    const weightedScore = (rageClickScore * 2 + uturnScore) / 3;
 
     // Normalize to 0-3 scale
     return this.normalizeScore(weightedScore);
@@ -27,8 +25,8 @@ export class FrustrationService {
     events.forEach(event => {
       if (
         event.type === EventType.IncrementalSnapshot &&
-        event.data?.source === IncrementalSource.MouseInteraction &&
-        event.data?.type === MouseInteractions.Click
+        event.data?.source === IncrementalSource.MouseInteraction && // Check source type
+        event.data?.type === MouseInteractions.Click // Check for Click interaction
       ) {
         const timestamp = event.timestamp;
         
@@ -65,17 +63,20 @@ export class FrustrationService {
         const currentTimestamp = event.timestamp;
         const referrer = payload.referrer;
 
+        // Add current navigation to array
         navigationEvents.push({
           url: currentUrl,
           timestamp: currentTimestamp,
           referrer: referrer,
         });
 
+        // Check for U-turn pattern if we have at least 2 navigation events
         if (navigationEvents.length >= 2) {
           const currentNav = navigationEvents[navigationEvents.length - 1];
           const prevNav = navigationEvents[navigationEvents.length - 2];
           const timeDifference = currentNav.timestamp - prevNav.timestamp;
 
+          // Check if this is a quick return to the referrer URL
           if (timeDifference <= this.UTURN_THRESHOLD && currentUrl === prevNav.referrer) {
             uturnCount++;
           }
@@ -83,7 +84,7 @@ export class FrustrationService {
       }
     });
 
-    // Normalize U-turns (0-1 scale)
+    // Normalize uturn count (0-1 scale)
     return Math.min(uturnCount / 3, 1);
   }
 

@@ -124,11 +124,7 @@ export async function POST(request: Request) {
     );
 
     const frustrationScore = await FrustrationService.calculateFrustrationScore(
-      allEvents,
-      allEvents.filter((e) => e.type === 4).map((e) => ({
-        href: e.data.href,
-        timestamp: new Date(e.timestamp).toISOString(),
-      }))
+      allEvents
     );
     const engagementScore = calculateEngagement({
       ...session,

@@ -21,7 +21,7 @@ export class ErrorEventService {
   static async storeErrorEvent(event: ErrorEvent): Promise<void> {
     const supabase = await createClient();
     const { error } = await supabase
-      .from("console_errors")
+      .from("session_events")
       .insert([{
         session_id: event.session_id,
         error_message: event.message,

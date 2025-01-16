@@ -7,10 +7,9 @@ import { eventWithTime } from "@rrweb/types";
 
 interface Props {
   session: Session;
-  events: eventWithTime[]
 }
 
-export function SessionInfo({events, session }: Props) {
+export function SessionInfo({session }: Props) {
   
   return (
     <Card>
@@ -56,7 +55,6 @@ export function SessionInfo({events, session }: Props) {
               <p className="text-sm text-muted-foreground">
                 Duration: {formatPlayerTime(session.duration || 0)}
               </p>
-              {events[0].timestamp}
             </div>
           </div>
         </div>

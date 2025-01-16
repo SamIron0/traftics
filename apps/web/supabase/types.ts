@@ -9,50 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      console_errors: {
-        Row: {
-          column_number: number | null
-          error_message: string
-          error_type: string
-          file_name: string | null
-          id: string
-          line_number: number | null
-          session_id: string
-          stack_trace: string | null
-          timestamp: string
-        }
-        Insert: {
-          column_number?: number | null
-          error_message: string
-          error_type: string
-          file_name?: string | null
-          id?: string
-          line_number?: number | null
-          session_id: string
-          stack_trace?: string | null
-          timestamp: string
-        }
-        Update: {
-          column_number?: number | null
-          error_message?: string
-          error_type?: string
-          file_name?: string | null
-          id?: string
-          line_number?: number | null
-          session_id?: string
-          stack_trace?: string | null
-          timestamp?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "console_errors_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       customers: {
         Row: {
           created_at: string | null
@@ -108,6 +64,50 @@ export type Database = {
             columns: ["website_id"]
             isOneToOne: false
             referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      error_events: {
+        Row: {
+          column_number: number | null
+          error_message: string
+          error_type: string
+          file_name: string | null
+          id: string
+          line_number: number | null
+          session_id: string
+          stack_trace: string | null
+          timestamp: string
+        }
+        Insert: {
+          column_number?: number | null
+          error_message: string
+          error_type: string
+          file_name?: string | null
+          id?: string
+          line_number?: number | null
+          session_id: string
+          stack_trace?: string | null
+          timestamp: string
+        }
+        Update: {
+          column_number?: number | null
+          error_message?: string
+          error_type?: string
+          file_name?: string | null
+          id?: string
+          line_number?: number | null
+          session_id?: string
+          stack_trace?: string | null
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "error_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
             referencedColumns: ["id"]
           },
         ]
