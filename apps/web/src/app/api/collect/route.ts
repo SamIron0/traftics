@@ -9,9 +9,9 @@ import { FrustrationService } from "@/server/services/frustration.service";
 import { calculateEngagement } from "./engagement";
 import { RelevanceService } from "@/server/services/relevance.service";
 import { isCustomEvent } from "@/utils/helpers";
-import { UserEventService } from "@/server/services/userEvent.service";
-import { NetworkEventService } from "@/server/services/networkEvent.service";
 import { PageEventService } from "@/server/services/pageEvent.service";
+import { SessionEventService } from "@/server/services/sessionEvent.service";
+import { processAndStoreEvents } from "@/utils/eventProcessing";
 
 interface NetworkErrorPayload {
   url: string;
@@ -23,19 +23,6 @@ interface NetworkErrorPayload {
 
 // Cache verification check results in memory
 const verifiedSites = new Set<string>();
-
-// Define a set of useful incremental data types
-const USEFUL_INCREMENTAL_DATA_TYPES = new Set([
-  IncrementalSource.MouseInteraction,
-  IncrementalSource.ViewportResize,
-  IncrementalSource.Scroll,
-  IncrementalSource.Input,
-  IncrementalSource.MediaInteraction,
-  IncrementalSource.CanvasMutation,
-  IncrementalSource.StyleSheetRule,
-  IncrementalSource.CustomElement,
-  IncrementalSource.Selection,
-]);
 
 function corsResponse(response: NextResponse) {
   response.headers.set("Access-Control-Allow-Origin", "*");
@@ -175,45 +162,11 @@ export async function POST(request: Request) {
       relevance_score: relevanceScore,
     });
 
-    // Process events
-    for (const event of session.events) {
-      if (
-        event.type === EventType.IncrementalSnapshot &&
-        USEFUL_INCREMENTAL_DATA_TYPES.has(event.data.source)
-      ) {
-        await UserEventService.storeUserEvent({
-          session_id: session.id,
-          event_type: event.type,
-          timestamp: new Date(event.timestamp).toISOString(),
-          event_data: event.data || null,
-        });
-      } else {
-        if (
-          isCustomEvent(event) &&
-          event.data.tag === "network_error"
-        ) {
-          const payload = event.data.payload as NetworkErrorPayload;
-          const networkErrorEvent = {
-            session_id: session.id,
-            request_url: payload.url || "",
-            status_code: payload.status || 0,
-            status_text: payload.statusText || "",
-            method: payload.method || "GET",
-            response_time: payload.duration || 0,
-            is_successful: false,
-            timestamp: new Date(event.timestamp).toISOString(),
-          };
-          await NetworkEventService.storeNetworkEvent(networkErrorEvent);
-        }
-      }
-    }
-
     // Store all events
-    await SessionService.storeEvents(
-      session.id,
-      session.site_id,
-      session.events
-    );
+    await Promise.all([
+      SessionService.storeEvents(session.id, session.site_id, session.events),
+      processAndStoreEvents(session.id, session.events)
+    ]);
 
     return corsResponse(NextResponse.json({ success: true, pageMetrics }));
   } catch (error) {

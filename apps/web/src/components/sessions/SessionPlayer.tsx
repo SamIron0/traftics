@@ -86,6 +86,7 @@ export default function SessionPlayer({
   >([]);
   const [selectedPageIndex, setSelectedPageIndex] = useState(0);
   const [viewportResize, setViewportResize] = useState<eventWithTime[]>();
+  const [sessionEvents, setSessionEvents] = useState<eventWithTime[]>([]);
 
   useEffect(() => {
     const currentWrapper = wrapperRef.current; // Copy ref to variable
@@ -372,18 +373,29 @@ export default function SessionPlayer({
   }, [handleJump, handlePlayPause, replayer]);
 
   useEffect(() => {
-    async function fetchPages() {
+    async function fetchSessionData() {
       try {
-        const response = await fetch(`/api/sessions/${session.id}/pages`);
-        if (!response.ok) throw new Error("Failed to fetch pages");
-        const data = await response.json();
-        setPages(data);
+        const [pagesRes, eventsRes] = await Promise.all([
+          fetch(`/api/sessions/${session.id}/pages`),
+          fetch(`/api/sessions/${session.id}/events`)
+        ]);
+        
+        if (!pagesRes.ok || !eventsRes.ok) 
+          throw new Error("Failed to fetch session data");
+        
+        const [pagesData, eventsData] = await Promise.all([
+          pagesRes.json(),
+          eventsRes.json()
+        ]);
+        
+        setPages(pagesData);
+        setSessionEvents(eventsData);
       } catch (error) {
-        console.error("Error fetching pages:", error);
+        console.error("Error fetching session data:", error);
       }
     }
 
-    fetchPages();
+    fetchSessionData();
   }, [session.id]);
 
   const handleCopyUrl = () => {

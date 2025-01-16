@@ -305,6 +305,41 @@ export type Database = {
         }
         Relationships: []
       }
+      session_events: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          event_type: Database["public"]["Enums"]["event_type"]
+          id: string
+          session_id: string | null
+          timestamp: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          event_type: Database["public"]["Enums"]["event_type"]
+          id?: string
+          session_id?: string | null
+          timestamp: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          session_id?: string | null
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           browser: Json | null
@@ -446,38 +481,6 @@ export type Database = {
             columns: ["price_id"]
             isOneToOne: false
             referencedRelation: "prices"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_events: {
-        Row: {
-          event_data: Json | null
-          event_type: string
-          id: string
-          session_id: string
-          timestamp: string
-        }
-        Insert: {
-          event_data?: Json | null
-          event_type: string
-          id?: string
-          session_id: string
-          timestamp: string
-        }
-        Update: {
-          event_data?: Json | null
-          event_type?: string
-          id?: string
-          session_id?: string
-          timestamp?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_events_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -654,6 +657,16 @@ export type Database = {
       }
     }
     Enums: {
+      event_type:
+        | "rage_click"
+        | "refresh"
+        | "selection"
+        | "uturn"
+        | "window_resize"
+        | "click"
+        | "input"
+        | "page_view"
+        | "error"
       pricing_plan_interval: "day" | "week" | "month" | "year"
       pricing_type: "one_time" | "recurring"
       subscription_status:

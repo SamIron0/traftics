@@ -2,21 +2,6 @@ import * as rrweb from "rrweb";
 import { v4 as uuidv4 } from "uuid";
 import type { eventWithTime } from "@rrweb/types";
 import type { Session, RetryConfig, BatchConfig, SessionConfig } from "./types";
-import { PerformanceService } from "./services/PerformanceService";
-
-interface NetworkEvent {
-  type: "xhr" | "fetch" | "resource" | "refresh";
-  status?: number;
-  method?: string;
-  url: string;
-  duration?: number;
-  timestamp: number;
-  initiatorType?: string;
-  failed?: boolean;
-  blocked?: boolean;
-  size?: number;
-  refreshType?: "reload" | "back_forward" | "navigate";
-}
 
 const DEFAULT_BATCH_CONFIG: BatchConfig = {
   maxBatchSize: 1000,
@@ -48,12 +33,8 @@ export class SessionTracker {
   } | null = null;
   private retryConfig: RetryConfig;
   private quotaExceeded = false;
-  private performanceService: PerformanceService;
 
   constructor(config: SessionConfig) {
-    this.performanceService = new PerformanceService();
-    this.performanceService.setupMonitoring();
-
     this.batchConfig = {
       ...DEFAULT_BATCH_CONFIG,
       ...config.batchConfig,
@@ -96,8 +77,6 @@ export class SessionTracker {
       backoffMs: 1000,
       maxBackoffMs: 10000,
     };
-
-    this.setupCustomEventListeners();
   }
 
   private resetInactivityTimer() {
@@ -162,7 +141,6 @@ export class SessionTracker {
   private createBatches(): Session[] {
     const batches: Session[] = [];
     const { maxBatchSize } = this.batchConfig;
-    const performanceData = this.performanceService.getPerformanceData();
 
     for (let i = 0; i < this.eventQueue.length; i += maxBatchSize) {
       const batchEvents = this.eventQueue.slice(i, i + maxBatchSize);
@@ -178,22 +156,6 @@ export class SessionTracker {
               screen_width: window.innerWidth,
               screen_height: window.innerHeight,
               location: this.location || undefined,
-              performance_metrics: {
-                pages: performanceData.map((metrics) => ({
-                  url: metrics.url,
-                  timestamp: metrics.timestamp,
-                  webVitals: {
-                    fcp: metrics.fcp,
-                    lcp: metrics.lcp,
-                    fid: metrics.fid,
-                    cls: metrics.cls,
-                    ttfb: metrics.ttfb,
-                  },
-                  resources: metrics.resourceLoading,
-                  errors: metrics.jsErrors,
-                  apiCalls: metrics.apiCalls,
-                })),
-              },
             }
           : {}),
         duration: this.lastEventTime - this.startedAt,
@@ -249,40 +211,46 @@ export class SessionTracker {
     let hasQueuedRefreshEvent = false; // Flag to track if the event has been queued
 
     const handleNavigation = () => {
-        const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming;
-        if (navigation) {
-            const type = navigation.type;
+      const navigation = performance.getEntriesByType(
+        "navigation"
+      )[0] as PerformanceNavigationTiming;
+      if (navigation) {
+        const type = navigation.type;
 
-            // Only handle refresh/reload events
-            if ((type === "reload" || type === "back_forward") && !hasQueuedRefreshEvent) {
-                hasQueuedRefreshEvent = true; // Set the flag to true
-                this.queueEvent({
-                    type: 5, // Custom event type
-                    timestamp: Date.now(),
-                    data: {
-                        tag: "page_refresh",
-                        payload: {
-                            type,
-                            url: window.location.href,
-                            referrer: document.referrer || null,
-                            navigationSource: type === "reload" ? "refresh" : "back_forward"
-                        }
-                    }
-                });
-            }
+        // Only handle refresh/reload events
+        if (
+          (type === "reload" || type === "back_forward") &&
+          !hasQueuedRefreshEvent
+        ) {
+          hasQueuedRefreshEvent = true; // Set the flag to true
+          this.queueEvent({
+            type: 5,
+            timestamp: Date.now(),
+            data: {
+              tag: "page_refresh",
+              payload: {
+                type,
+                url: window.location.href,
+                referrer: document.referrer || null,
+                navigationSource:
+                  type === "reload" ? "refresh" : "back_forward",
+              },
+            },
+          });
         }
+      }
     };
 
     // Listen for the load event to capture initial navigation type
-    window.addEventListener('load', handleNavigation);
+    window.addEventListener("load", handleNavigation);
 
     // Create a PerformanceObserver to monitor navigation timing
     const observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-            if (entry.entryType === "navigation") {
-                handleNavigation();
-            }
+      for (const entry of list.getEntries()) {
+        if (entry.entryType === "navigation") {
+          handleNavigation();
         }
+      }
     });
 
     observer.observe({ entryTypes: ["navigation"] });
@@ -417,50 +385,6 @@ export class SessionTracker {
       });
     }
   }
-
-  private setupCustomEventListeners(): void {
-    let lastEventTime = 0;
-    const COOLDOWN_PERIOD = 2000; // 2 seconds cooldown
-
-    const observer = new PerformanceObserver(() => {
-      const now = Date.now();
-      if (now - lastEventTime < COOLDOWN_PERIOD) {
-        return; // Skip if within cooldown period
-      }
-
-      const performanceData = this.performanceService.getPerformanceData();
-
-      // Only emit if we have new data
-      if (performanceData.length > 0) {
-        lastEventTime = now;
-        const latestMetrics = performanceData[0];
-
-        this.queueEvent({
-          type: 5,
-          timestamp: now,
-          data: {
-            tag: "performance_metrics",
-            payload: {
-              url: latestMetrics.url,
-              timestamp: latestMetrics.timestamp,
-              webVitals: {
-                fcp: latestMetrics.fcp,
-                lcp: latestMetrics.lcp,
-                fid: latestMetrics.fid,
-                cls: latestMetrics.cls,
-                ttfb: latestMetrics.ttfb,
-              },
-              resources: latestMetrics.resourceLoading,
-              errors: latestMetrics.jsErrors,
-              apiCalls: latestMetrics.apiCalls,
-            },
-          },
-        });
-      }
-    });
-
-    observer.observe({ entryTypes: ["navigation", "resource"] });
-  }
 }
 
 declare global {
@@ -479,7 +403,6 @@ if (typeof window !== "undefined" && window._r) {
     collectorUrl: window._r.collectorUrl,
   });
 
-  // Make tracker accessible for error boundary
   (window as any)._tracker = tracker;
 
   window.addEventListener("unload", () => {
