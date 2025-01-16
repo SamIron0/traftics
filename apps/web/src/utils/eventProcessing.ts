@@ -8,42 +8,20 @@ import { SessionEventService } from "@/server/services/sessionEvent.service";
 
 const RAGE_CLICK_THRESHOLD = 3;
 const RAGE_CLICK_TIMEFRAME = 1000;
-const UTURN_TIME_THRESHOLD = 30000;
 
 export async function processAndStoreEvents(
   sessionId: string,
   events: eventWithTime[]
 ): Promise<void> {
   let clickSequence: number[] = [];
-  const visitedPages = new Map<string, number>();
+  const navigationEvents: {
+    url: string;
+    timestamp: number;
+    referrer: string;
+  }[] = [];
+  const UTURN_THRESHOLD = 5000; // 5 seconds threshold for U-turn detection
 
   for (const event of events) {
-    // Handle uturns
-    if (event.type === EventType.Custom && event.data?.tag === "url_change") {
-      const currentTimestamp = event.timestamp;
-      const href = (event.data as { payload: { href: string } }).payload.href;
-
-      if (visitedPages.has(href)) {
-        const lastVisit = visitedPages.get(href)!;
-        const timeDiff = currentTimestamp - lastVisit;
-
-        if (timeDiff < UTURN_TIME_THRESHOLD) {
-          await SessionEventService.storeEvent({
-            session_id: sessionId,
-            event_type: "uturn",
-            timestamp: new Date(currentTimestamp).toISOString(),
-            data: {
-              url: href,
-              previousVisit: new Date(lastVisit).toISOString(),
-              timeDiff,
-            },
-          });
-        }
-      }
-
-      visitedPages.set(href, currentTimestamp);
-    }
-
     // Handle clicks and rage clicks
     if (
       event.type === EventType.IncrementalSnapshot &&
@@ -83,10 +61,49 @@ export async function processAndStoreEvents(
       }
     }
 
+    // Handle U-turn detection for navigation events
+    if (event.type === EventType.Custom && event.data?.tag === "url_change") {
+      const payload = event.data.payload as { href: string; referrer: string };
+      const currentUrl = payload.href;
+      const currentTimestamp = event.timestamp;
+      const referrer = payload.referrer;
+
+      // Add current navigation to array
+      navigationEvents.push({
+        url: currentUrl,
+        timestamp: currentTimestamp,
+        referrer: referrer,
+      });
+
+      // Check for U-turn pattern if we have at least 2 navigation events
+      if (navigationEvents.length >= 2) {
+        const currentNav = navigationEvents[navigationEvents.length - 1];
+        const prevNav = navigationEvents[navigationEvents.length - 2];
+        const timeDifference = currentNav.timestamp - prevNav.timestamp;
+        console.log("check", timeDifference, currentUrl, prevNav.referrer);
+
+        // Check if this is a quick return to the referrer URL
+        if (timeDifference <= UTURN_THRESHOLD && currentUrl === prevNav.referrer) {
+          await SessionEventService.storeEvent({
+            session_id: sessionId,
+            event_type: "uturn",
+            timestamp: new Date(currentTimestamp).toISOString(),
+            data: {
+              from_url: prevNav.url,
+              to_url: currentUrl,
+              duration: timeDifference,
+            },
+          });
+        }
+      }
+    }
+
     // Handle inputs
     if (
       event.type === EventType.IncrementalSnapshot &&
-      event.data.source === IncrementalSource.Input
+      event.data.source === IncrementalSource.Input &&
+      event.data.text &&
+      event.data.id >= 0
     ) {
       await SessionEventService.storeEvent({
         session_id: sessionId,

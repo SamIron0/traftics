@@ -11,6 +11,7 @@ const DEFAULT_BATCH_CONFIG: BatchConfig = {
 
 export class SessionTracker {
   private readonly INACTIVITY_TIMEOUT = 30 * 60 * 1000;
+  private readonly SESSION_ID_KEY = 'tracker_session_id';
   private inactivityTimer: number | null = null;
   private sessionId: string;
   private readonly websiteId: string;
@@ -35,6 +36,9 @@ export class SessionTracker {
   private quotaExceeded = false;
 
   constructor(config: SessionConfig) {
+    this.sessionId = this.getExistingSessionId() || uuidv4();
+    localStorage.setItem(this.SESSION_ID_KEY, this.sessionId);
+
     this.batchConfig = {
       ...DEFAULT_BATCH_CONFIG,
       ...config.batchConfig,
@@ -42,7 +46,6 @@ export class SessionTracker {
 
     this.currentHref = window.location.href;
     this.previousHref = document.referrer || null;
-    this.sessionId = uuidv4();
     this.websiteId = config.websiteId;
     this.collectorUrl = config.collectorUrl || "https://traftics.ironkwe.site";
     this.startedAt = Date.now();
@@ -79,10 +82,28 @@ export class SessionTracker {
     };
   }
 
+  private getExistingSessionId(): string | null {
+    const storedId = localStorage.getItem(this.SESSION_ID_KEY);
+    if (storedId) {
+      const lastActiveTime = localStorage.getItem(`${this.SESSION_ID_KEY}_last_active`);
+      if (lastActiveTime) {
+        const timeSinceLastActive = Date.now() - parseInt(lastActiveTime, 10);
+        if (timeSinceLastActive < this.INACTIVITY_TIMEOUT) {
+          return storedId;
+        }
+      }
+      localStorage.removeItem(this.SESSION_ID_KEY);
+      localStorage.removeItem(`${this.SESSION_ID_KEY}_last_active`);
+    }
+    return null;
+  }
+
   private resetInactivityTimer() {
     if (this.inactivityTimer) {
       window.clearTimeout(this.inactivityTimer);
     }
+    localStorage.setItem(`${this.SESSION_ID_KEY}_last_active`, Date.now().toString());
+    
     this.inactivityTimer = window.setTimeout(() => {
       this.stop();
       this.sendBatch({
@@ -92,6 +113,8 @@ export class SessionTracker {
         is_active: false,
         end_reason: "inactivity_timeout",
       });
+      localStorage.removeItem(this.SESSION_ID_KEY);
+      localStorage.removeItem(`${this.SESSION_ID_KEY}_last_active`);
     }, this.INACTIVITY_TIMEOUT);
   }
 
