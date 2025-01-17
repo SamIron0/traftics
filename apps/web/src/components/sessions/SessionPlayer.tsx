@@ -2,8 +2,11 @@
 
 import React, { useState } from "react";
 import { CustomSlider } from "./CustomSlider";
+import { SessionInfo } from "./SessionInfo";
 import { X, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Session } from "@/types/api";
+import { eventWithTime } from "@rrweb/types";
 
 const sampleEvents = [
   { id: "1", timestamp: 1000, type: "click" as const },
@@ -55,9 +58,30 @@ const EmptyConsole = () => (
   </div>
 );
 
-export default function Home() {
+interface Props {
+  session: Session & { events: eventWithTime[] };
+  onNextSession?: () => void;
+  onPreviousSession?: () => void;
+  hasNextSession?: boolean;
+  hasPreviousSession?: boolean;
+  currentSessionIndex?: number;
+  totalSessions?: number;
+  onDeleteSession?: () => void;
+}
+
+export default function SessionPlayer({
+  session,
+  onNextSession,
+  onPreviousSession,
+  hasNextSession,
+  hasPreviousSession,
+  currentSessionIndex,
+  totalSessions,
+  onDeleteSession,
+}: Props) {
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const [expandedErrors, setExpandedErrors] = useState<number[]>([]);
+  const [isSessionInfoOpen, setIsSessionInfoOpen] = useState(true);
 
   const toggleConsole = () => {
     setIsConsoleOpen((prev) => !prev);
@@ -86,7 +110,7 @@ export default function Home() {
       </div>
 
       {isConsoleOpen && (
-        <div className="fixed bottom-20 left-0 right-0 bg-[#242424] text-white h-72 overflow-y-auto">
+        <div className="fixed bottom-20 left-0 right-0 bg-[#242424] text-white h-72 overflow-y-auto z-50">
           <div className="flex justify-between items-center mb-2 border-b border-gray-700 px-4 py-2">
             <h2 className="text-sm font-semibold text-gray-300">Console</h2>
             <Button
@@ -166,6 +190,11 @@ export default function Home() {
         events={sampleEvents}
         errors={sampleErrors}
         onConsoleToggle={toggleConsole}
+      />
+
+      <SessionInfo
+        isOpen={isSessionInfoOpen}
+        onToggle={() => setIsSessionInfoOpen(!isSessionInfoOpen)}
       />
     </div>
   );
