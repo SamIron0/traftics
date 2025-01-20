@@ -49,7 +49,7 @@ export default function FeaturesSection() {
     <div className="container w-full items-center px-4 py-2 min-h-[580px] space-y-4 flex flex-col justify-center">
       <div className="flex w-full">
         <Button
-          onClick={() => router.push("https://traftics.ironkwe.site/login")}
+          onClick={() => router.push("https://traftics.ironkwe.com/login")}
           className="h-9 max-w-md rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-sm font-medium text-white hover:from-blue-600 hover:to-blue-700 sm:text-lg"
         >
           <Sparkles className="mr-2 h-4 w-4" />

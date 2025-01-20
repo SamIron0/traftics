@@ -49,7 +49,7 @@ export class SessionTracker {
     this.currentHref = window.location.href;
     this.previousHref = document.referrer || null;
     this.websiteId = config.websiteId;
-    this.collectorUrl = config.collectorUrl || "https://traftics.ironkwe.site";
+    this.collectorUrl = config.collectorUrl || "https://traftics.ironkwe.com";
     this.startedAt = Date.now();
     this.lastEventTime = this.startedAt;
     this.getLocation().then((location) => {

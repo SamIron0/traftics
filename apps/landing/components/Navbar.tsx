@@ -30,7 +30,7 @@ export default function Navbar() {
                 Pricing
               </Link>
               <Link
-                href="https://traftics-docs.ironkwe.site/"
+                href="https://traftics-docs.ironkwe.com/"
                 className=" text-muted-foreground hover:text-foreground transition-colors"
               >
                 Documentation
@@ -40,14 +40,14 @@ export default function Navbar() {
               variant="ghost"
               className="text-md h-9 px-4"
               size="sm"
-              onClick={() => router.push("https://traftics.ironkwe.site/login")}
+              onClick={() => router.push("https://traftics.ironkwe.com/login")}
             >
               Sign in
             </Button>
             <Button
               size="sm"
               className="bg-zinc-900 text-zinc-50 text-md h-9 px-4"
-              onClick={() => router.push("https://traftics.ironkwe.site/login")}
+              onClick={() => router.push("https://traftics.ironkwe.com/login")}
             >
               Get Started
             </Button>

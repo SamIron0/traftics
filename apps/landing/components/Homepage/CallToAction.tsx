@@ -27,7 +27,7 @@ export default function CallToActionSection() {
             View pricing
           </Button>
           <Button
-            onClick={() => router.push("https://traftics.ironkwe.site/login")}
+            onClick={() => router.push("https://traftics.ironkwe.com/login")}
             size="lg"
             className="text-md h-11 bg-zinc-900 text-zinc-50"
           >

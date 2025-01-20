@@ -1,18 +1,6 @@
 import React, { useState, useCallback } from "react";
 import * as Slider from "@radix-ui/react-slider";
-import {
-  Play,
-  Pause,
-  RotateCcw,
-  Terminal,
-  ArrowUp,
-  CornerUpLeft,
-  Maximize,
-  MousePointerClick,
-  RefreshCcw,
-  RotateCw,
-  AlertCircle,
-} from "lucide-react";
+import { Play, Pause, RotateCcw, Terminal, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlayerSwitch } from "../ui/player-switch";
 import {
@@ -22,11 +10,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatTime } from "@/utils/helpers";
-import { Event } from "@/types/event";
 import { Session } from "@/types/api";
 
 interface ControllerProps {
-  specialEvents: Event[];
   onValueChange?: (value: number[]) => void;
   onConsoleToggle: () => void;
   onPlayPause: () => void;
@@ -42,7 +28,6 @@ interface ControllerProps {
 }
 
 export function Controller({
-  specialEvents,
   onValueChange,
   onConsoleToggle,
   onPlayPause,
@@ -58,44 +43,6 @@ export function Controller({
 }: ControllerProps) {
   const progressPercent = (currentTime / session.duration) * 100;
   const [hoveredTime, setHoveredTime] = useState<number | null>(null);
-  const [activeEventTooltip, setActiveEventTooltip] = useState<string | null>(
-    null
-  );
-  const getEventPosition = useCallback(
-    (event: Event) => {
-      return (Number(event.timestamp) / session.duration) * 100;
-    },
-    [session.duration]
-  );
-  const getEventColor = (type: Event["event_type"]) => {
-    switch (type) {
-      case "click":
-        return "bg-white";
-      case "scroll":
-        return "bg-green-500";
-      case "rage_click":
-        return "bg-yellow-500";
-      case "refresh":
-        return "bg-purple-500";
-      case "selection":
-        return "bg-gray-700";
-      case "uturn":
-        return "bg-indigo-500";
-      case "window_resize":
-        return "bg-orange-500";
-      case "error":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  const handleEventClick = useCallback(
-    (event: Event) => {
-      onValueChange?.([new Date(event.timestamp).getTime()]);
-    },
-    [onValueChange]
-  );
   const handleTrackHover = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -109,27 +56,6 @@ export function Controller({
     setHoveredTime(null);
   }, []);
 
-  const getEventIcon = (type: Event["event_type"]) => {
-    switch (type) {
-      case "scroll":
-        return <ArrowUp className="w-3 h-3 text-white" />;
-      case "rage_click":
-        return <MousePointerClick className="w-3 h-3 text-white" />;
-      case "refresh":
-        return <RefreshCcw className="w-3 h-3 text-white" />;
-      case "uturn":
-        return <CornerUpLeft className="w-3 h-3 text-white" />;
-      case "window_resize":
-        return <Maximize className="w-3 h-3 text-white" />;
-      case "error":
-        return <AlertCircle className="w-3 h-3 text-white" />;
-      case "selection":
-      case "click":
-        return null;
-      default:
-        return null;
-    }
-  };
   return (
     <TooltipProvider delayDuration={0}>
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg pt-3 z-50">
@@ -155,73 +81,8 @@ export function Controller({
                   className="absolute top-1/2 -translate-y-1/2 bg-blue-500 h-[8px]"
                   style={{ width: `${progressPercent}%` }}
                 />
-                {/* Event markers */}
-                {specialEvents.map((event) => {
-                  if (
-                    event.event_type === "input" &&
-                    event.data?.startTime &&
-                    event.data?.endTime
-                  ) {
-                    const startPercent =
-                      (event.data.startTime / session.duration) * 100;
-                    const endPercent =
-                      (event.data.endTime / session.duration) * 100;
-                    return (
-                      <Tooltip key={event.id}>
-                        <TooltipTrigger asChild>
-                          <div
-                            className="absolute top-1/2 -translate-y-1/2 bg-purple-500 h-[3px] hover:h-[5px] transition-all duration-200"
-                            style={{
-                              left: `${startPercent}%`,
-                              width: `${endPercent - startPercent}%`,
-                            }}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            Input: {formatTime(event.data.startTime)} -{" "}
-                            {formatTime(event.data.endTime)}
-                            {event.data?.value && ` (${event.data.value})`}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  }
-                  return (
-                    <Tooltip key={event.id}>
-                      <TooltipTrigger asChild>
-                        <button
-                          className={`absolute top-1/2 -translate-y-1/2 shadow-md hover:scale-150 transition-transform focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center
-                            ${
-                              event.event_type === "selection" ||
-                              event.event_type === "click"
-                                ? "w-1 h-1 rounded-full"
-                                : "w-4 h-4 rounded-sm"
-                            } ${getEventColor(event.event_type)}`}
-                          style={{
-                            left: `${getEventPosition(event)}%`,
-                          }}
-                          onClick={() => handleEventClick(event)}
-                          onMouseEnter={() => setActiveEventTooltip(event.id)}
-                          onMouseLeave={() => setActiveEventTooltip(null)}
-                          aria-label={`${
-                            event.event_type
-                          } event at ${formatTime(
-                            new Date(event.timestamp).getTime()
-                          )}`}
-                        >
-                          {getEventIcon(event.event_type)}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{event.event_type}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
-
                 {/* Track tooltip */}
-                {hoveredTime !== null && activeEventTooltip === null && (
+                {hoveredTime !== null && (
                   <div
                     className="absolute top-[-30px] px-2 py-1 bg-gray-800 text-white text-xs rounded pointer-events-none"
                     style={{

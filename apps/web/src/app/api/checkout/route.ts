@@ -56,7 +56,7 @@ export async function POST(request: Request) {
         },
       ],
       cancel_url: getURL(),
-      success_url: "https://traftics.ironkwe.site",
+      success_url: "https://traftics.ironkwe.com",
     };
 
   

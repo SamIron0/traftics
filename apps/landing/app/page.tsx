@@ -29,7 +29,7 @@ export default function Home() {
                 size="sm"
                 className="text-md h-10 px-12"
                 onClick={() =>
-                  router.push("https://traftics.ironkwe.site/signup")
+                  router.push("https://traftics.ironkwe.com/signup")
                 }
               >
                 Get started
@@ -39,7 +39,7 @@ export default function Home() {
                 className="text-md h-10 px-5 bg-zinc-900 text-zinc-50"
                 onClick={() =>
                   router.push(
-                    "https://traftics.ironkwe.site/org/remeal/project/project-4fd62621/dashboards/89ddb53f-f040-4c64-9bfe-52930fac6fd7"
+                    "https://traftics.ironkwe.com/org/remeal/project/project-4fd62621/dashboards/89ddb53f-f040-4c64-9bfe-52930fac6fd7"
                   )
                 }
               >
@@ -69,7 +69,7 @@ export default function Home() {
         </section>
         <div className="py-20 w-full flex flex-col items-center">
           <Button
-            onClick={() => router.push("https://traftics.ironkwe.site/login")}
+            onClick={() => router.push("https://traftics.ironkwe.com/login")}
             variant="secondary"
             className="px-8 py-7 text-lg"
           >

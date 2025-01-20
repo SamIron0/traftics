@@ -691,7 +691,6 @@ export default function SessionPlayer({
       )}
 
       <Controller
-        specialEvents={specialSessionEvents}
         onConsoleToggle={toggleConsole}
         onPlayPause={handlePlayPause}
         onSkipForward={() => handleJump(10)}
