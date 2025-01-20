@@ -1,55 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
-import { CustomSlider } from "./CustomSlider";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Controller } from "./Controller";
 import { SessionInfo } from "./SessionInfo";
-import { X, ChevronRight } from "lucide-react";
+import {
+  X,
+  ChevronRight,
+  ArrowLeft,
+  SkipBack,
+  SkipForward,
+  ChevronDown,
+  Copy,
+  ExternalLink,
+  Play,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Session } from "@/types/api";
-import { eventWithTime } from "@rrweb/types";
-
-const sampleEvents = [
-  { id: "1", timestamp: 1000, type: "click" as const },
-  { id: "2", timestamp: 3000, type: "refresh" as const },
-  { id: "3", startTime: 5000, endTime: 6000, type: "input" as const },
-  { id: "4", timestamp: 7000, type: "rageClick" as const },
-  { id: "5", timestamp: 9000, type: "refresh" as const },
-  { id: "6", timestamp: 11000, type: "selection" as const },
-  { id: "7", timestamp: 13000, type: "uturn" as const },
-  { id: "8", timestamp: 14000, type: "windowResize" as const },
-  { id: "9", timestamp: 15000, type: "scroll" as const },
-];
-
-const sampleErrors = [
-  {
-    id: 1,
-    timestamp: 4500,
-    message: "GET https://ipinfo.io/json?token=0d420c2f8c5887",
-    subMessage: "net::ERR_BLOCKED_BY_CLIENT",
-    stack: `Failed to fetch location: TypeError: Failed to fetch
-    at t.PerformanceService.<anonymous> (tracker.js:2:10845)
-    at Generator.next (<anonymous>)
-    at tracker.js:2:7798
-    at new Promise (<anonymous>)
-    at r (tracker.js:2:7543)
-    at window.fetch (tracker.js:2:10633)
-    at d.<anonymous> (tracker.js:2:6194)
-    at Generator.next (<anonymous>)
-    at tracker.js:2:1228
-    at new Promise (<anonymous>)`,
-  },
-  {
-    id: 2,
-    timestamp: 10500,
-    message:
-      "Uncaught TypeError: Cannot read properties of undefined (reading 'length')",
-    stack: `TypeError: Cannot read properties of undefined (reading 'length')
-    at getArrayLength (app.js:10:20)
-    at processArray (app.js:15:22)
-    at handleUserInput (app.js:25:10)
-    at HTMLButtonElement.onclick (index.html:30:75)`,
-  },
-];
+import { EventType, eventWithTime, IncrementalSource } from "@rrweb/types";
+import { motion } from "framer-motion";
+import { itemVariants } from "@/lib/animation-variants";
+import { Replayer } from "rrweb";
+import { formatPlayerTime, getRelativeTimestamp } from "@/utils/helpers";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Event } from "@/types/event";
 
 const EmptyConsole = () => (
   <div className="flex flex-col items-center justify-center h-full text-gray-400">
@@ -66,7 +48,22 @@ interface Props {
   hasPreviousSession?: boolean;
   currentSessionIndex?: number;
   totalSessions?: number;
-  onDeleteSession?: () => void;
+}
+
+function convertToSliderEvents(events: Event[]): Event[] {
+  return events.map((event) => ({
+    ...event,
+    timestamp: new Date(event.timestamp).toISOString(),
+    ...(event.event_type === "input" &&
+      event.data?.startTime &&
+      event.data?.endTime && {
+        data: {
+          ...event.data,
+          startTime: event.data.startTime,
+          endTime: event.data.endTime,
+        },
+      }),
+  }));
 }
 
 export default function SessionPlayer({
@@ -77,17 +74,355 @@ export default function SessionPlayer({
   hasPreviousSession,
   currentSessionIndex,
   totalSessions,
-  onDeleteSession,
 }: Props) {
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
-  const [expandedErrors, setExpandedErrors] = useState<number[]>([]);
+  const [expandedErrors, setExpandedErrors] = useState<string[]>([]);
   const [isSessionInfoOpen, setIsSessionInfoOpen] = useState(true);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [replayer, setReplayer] = useState<Replayer | null>(null);
+    formatPlayerTime(session.duration || 0)
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [sliderValue, setSliderValue] = useState(0);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [skipInactive, setSkipInactive] = useState(true);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const { toast } = useToast();
+  const [pages, setPages] = useState<
+    Array<{ href: string; timestamp: string }>
+  >([]);
+  const [selectedPageIndex, setSelectedPageIndex] = useState(0);
+  const [viewportResize, setViewportResize] = useState<eventWithTime[]>();
+  const [specialSessionEvents, setSpecialSessionEvents] = useState<Event[]>([]);
+  const [errors, setErrors] = useState<
+    Array<{
+      id: string;
+      error_message: string;
+      stack_trace: string | null;
+      error_type: string;
+      file_name: string | null;
+      line_number: number | null;
+      column_number: number | null;
+      timestamp: string;
+    }>
+  >([]);
+  useEffect(() => {
+    const currentWrapper = wrapperRef.current; // Copy ref to variable
+    // if session.events contains IncrementalSource.ViewportResize, setViewportResize
+    const viewportResizeEvents = session.events.filter(
+      (event) =>
+        event.type === EventType.IncrementalSnapshot &&
+        event.data.source === IncrementalSource.ViewportResize
+    );
+    setViewportResize(viewportResizeEvents);
+    if (!currentWrapper || !session.events.length) return;
+
+    // Only clear content if there's existing content AND we're switching sessions
+    const existingWrapper = currentWrapper.querySelector(".replayer-wrapper");
+    if (
+      existingWrapper &&
+      existingWrapper.getAttribute("data-session-id") !== session.id
+    ) {
+      currentWrapper.innerHTML = "";
+    }
+
+    const player = new Replayer(session.events, {
+      root: currentWrapper,
+      skipInactive: skipInactive,
+      showWarning: false,
+      blockClass: "privacy",
+      liveMode: false,
+      speed: playbackSpeed,
+    });
+
+    const replayerWrapper = currentWrapper.querySelector(".replayer-wrapper");
+
+    if (replayerWrapper) {
+      // Add session ID to wrapper for tracking
+      replayerWrapper.setAttribute("data-session-id", session.id);
+
+      const containerHeight = currentWrapper.clientHeight;
+      const containerWidth = currentWrapper.clientWidth;
+      const sessionHeight = session.screen_height || 0;
+      const sessionWidth = session.screen_width || 0;
+
+      const heightScale = containerHeight / sessionHeight;
+      const widthScale = containerWidth / sessionWidth;
+      const scale = Math.min(heightScale, widthScale);
+
+      Object.assign((replayerWrapper as HTMLElement).style, {
+        position: "absolute",
+        height: `${sessionHeight}px`,
+        width: `${sessionWidth}px`,
+        transform: `scale(${scale})`,
+        transformOrigin: "center center",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "10px",
+      });
+    }
+    setReplayer(player);
+    setSliderValue(0);
+    setIsPlaying(false);
+
+    return () => {
+      player.pause();
+      setReplayer(null);
+      // Only clear content during cleanup if we're unmounting completely
+      if (currentWrapper && !currentWrapper.parentElement) {
+        currentWrapper.innerHTML = "";
+      }
+    };
+  }, [
+    session.events,
+    session.duration,
+    skipInactive,
+    playbackSpeed,
+    session.screen_height,
+    session.screen_width,
+    session.id,
+  ]);
+  useEffect(() => {
+    if (!replayer || !pages.length || !viewportResize) return;
+
+    const updateTime = () => {
+      if (!replayer || !wrapperRef.current) return;
+
+      const time = replayer.getCurrentTime();
+      setSliderValue(time);
+
+      // Check if we've reached the end of the session
+      if (time >= (session.duration || 0)) {
+        replayer.pause();
+        setIsPlaying(false);
+      }
+
+      // Check for closest resize events
+      const closestResizeEvent = viewportResize?.reduce((closest, current) => {
+        const eventTime = getRelativeTimestamp(
+          current.timestamp,
+          session.started_at || 0
+        );
+
+        if (eventTime > time) return closest;
+        if (!closest) return current;
+
+        const closestTime = getRelativeTimestamp(
+          closest.timestamp,
+          session.started_at || 0
+        );
+
+        return time - eventTime < time - closestTime ? current : closest;
+      }, null as eventWithTime | null);
+
+      if (closestResizeEvent) {
+        const { width, height } = closestResizeEvent.data as {
+          width: number;
+          height: number;
+        };
+        const containerHeight = wrapperRef.current.clientHeight || 0;
+        const containerWidth = wrapperRef.current.clientWidth || 0;
+        const scale = Math.min(
+          containerWidth / width,
+          containerHeight / height
+        );
+
+        const replayerWrapper =
+          wrapperRef.current.querySelector(".replayer-wrapper");
+        if (replayerWrapper) {
+          Object.assign((replayerWrapper as HTMLElement).style, {
+            height: `${height}px`,
+            width: `${width}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: "center center",
+          });
+        }
+      } else {
+        const replayerWrapper =
+          wrapperRef.current.querySelector(".replayer-wrapper");
+        if (replayerWrapper) {
+          const containerHeight = wrapperRef.current.clientHeight || 0;
+          const containerWidth = wrapperRef.current.clientWidth || 0;
+          const sessionHeight = session.screen_height || 0;
+          const sessionWidth = session.screen_width || 0;
+
+          const heightScale = containerHeight / sessionHeight;
+          const widthScale = containerWidth / sessionWidth;
+          const scale = Math.min(heightScale, widthScale);
+
+          Object.assign((replayerWrapper as HTMLElement).style, {
+            height: `${sessionHeight}px`,
+            width: `${sessionWidth}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: "center center",
+          });
+        }
+      }
+
+      // Find the last page that was visited before the current time
+      const currentPageIndex = pages.reduce((lastIndex, page, index) => {
+        const pageTime = getRelativeTimestamp(
+          page.timestamp,
+          session.started_at || 0
+        );
+        return pageTime <= time ? index : lastIndex;
+      }, 0);
+
+      setSelectedPageIndex(currentPageIndex);
+    };
+
+    const timer = setInterval(updateTime, 100);
+    return () => clearInterval(timer);
+  }, [
+    replayer,
+    session.duration,
+    pages,
+    session.started_at,
+    viewportResize,
+    session.screen_height,
+    session.screen_width,
+  ]);
+
+  const handlePlayPause = useCallback(() => {
+    if (!replayer) return;
+    const currentTime = replayer.getCurrentTime();
+    if (isPlaying) {
+      replayer.pause();
+    } else {
+      replayer.play(
+        currentTime < 0 || currentTime >= session.duration ? 0 : currentTime
+      );
+    }
+    setIsPlaying(!isPlaying);
+  }, [replayer, isPlaying, session.duration]);
+
+  const handleSkipInactive = useCallback(() => {
+    if (!replayer) return;
+    if (wrapperRef.current) {
+      wrapperRef.current.innerHTML = "";
+    }
+    replayer.setConfig({ skipInactive: !skipInactive });
+    setSkipInactive(!skipInactive);
+  }, [replayer, skipInactive]);
+
+  const handleSliderChange = (value: number[]) => {
+    if (!replayer) return;
+    replayer.pause();
+    setSliderValue(value[0]);
+    replayer.play(value[0]);
+    setIsPlaying(true);
+  };
+
+  const handleBack = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("mode");
+    params.delete("sessionId");
+    router.push(`?${params.toString()}`);
+  };
+
+  const handleSpeedChange = (speed: number) => {
+    if (!replayer) return;
+    if (wrapperRef.current) {
+      wrapperRef.current.innerHTML = "";
+    }
+
+    replayer.setConfig({ speed });
+    setPlaybackSpeed(speed);
+  };
+
+  const handleJump = useCallback(
+    (seconds: number) => {
+      if (!replayer) return;
+      const currentTime = replayer.getCurrentTime();
+      const newTime = Math.max(
+        0,
+        Math.min(currentTime + seconds * 1000, session.duration || 0)
+      );
+      replayer.play(newTime);
+      setSliderValue(newTime);
+      setIsPlaying(true);
+    },
+    [replayer, session.duration]
+  );
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement) return; // Don't trigger when typing in inputs
+
+      switch (e.key) {
+        case "ArrowLeft":
+          handleJump(-10);
+          break;
+        case "ArrowRight":
+          handleJump(10);
+          break;
+        case " ": // Spacebar
+          e.preventDefault();
+          handlePlayPause();
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [handleJump, handlePlayPause, replayer]);
+
+  useEffect(() => {
+    async function fetchSessionData() {
+      try {
+        const [pagesRes, eventsRes] = await Promise.all([
+          fetch(`/api/sessions/${session.id}/pages`),
+          fetch(`/api/sessions/${session.id}/events`),
+        ]);
+
+        if (!pagesRes.ok || !eventsRes.ok)
+          throw new Error("Failed to fetch session data");
+
+        const [pagesData, eventsData] = await Promise.all([
+          pagesRes.json(),
+          eventsRes.json(),
+        ]);
+
+        setPages(pagesData);
+
+        // Convert timestamps to relative time from session start
+        const convertedEvents = eventsData.map((event: Event) => ({
+          ...event,
+          timestamp:
+            new Date(event.timestamp).getTime() -
+            (session.started_at ? new Date(session.started_at).getTime() : 0),
+        }));
+
+        const processedEvents = convertToSliderEvents(convertedEvents);
+        setSpecialSessionEvents(processedEvents);
+      } catch (error) {
+        console.error("Error fetching session data:", error);
+      }
+    }
+
+    fetchSessionData();
+  }, [session.id, session.started_at]);
+
+  const handleCopyUrl = () => {
+    if (pages[selectedPageIndex]) {
+      navigator.clipboard.writeText(pages[selectedPageIndex].href);
+      toast({
+        description: "URL copied to clipboard",
+      });
+    }
+  };
+
+  const handleOpenExternal = () => {
+    if (pages[selectedPageIndex]) {
+      window.open(pages[selectedPageIndex].href, "_blank");
+    }
+  };
 
   const toggleConsole = () => {
     setIsConsoleOpen((prev) => !prev);
   };
 
-  const toggleError = (errorId: number) => {
+  const toggleError = (errorId: string) => {
     setExpandedErrors((prev) =>
       prev.includes(errorId)
         ? prev.filter((id) => id !== errorId)
@@ -102,11 +437,175 @@ export default function SessionPlayer({
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
+  useEffect(() => {
+    async function fetchErrors() {
+      try {
+        const res = await fetch(`/api/sessions/${session.id}/errors`);
+        if (!res.ok) throw new Error("Failed to fetch errors");
+        const errorData = await res.json();
+        setErrors(errorData);
+      } catch (error) {
+        console.error("Error fetching session errors:", error);
+      }
+    }
+
+    fetchErrors();
+  }, [session.id]);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
-      <div className="flex-grow p-4">
-        <h1 className="text-2xl font-bold mb-4">Custom Slider Demo</h1>
-        <p>Interact with the slider at the bottom of the page.</p>
+      <header className="flex items-center border-b px-4 py-2 bg-white">
+        <div className="flex items-center gap-4">
+          <motion.img
+            src="/logo.svg"
+            alt="logo"
+            className="mx-auto h-10 w-10"
+            variants={itemVariants}
+          />
+          <Button
+            variant="ghost"
+            className="flex items-center gap-2"
+            onClick={handleBack}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onPreviousSession}
+                disabled={!hasPreviousSession}
+              >
+                <SkipBack className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Previous session</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onNextSession}
+                disabled={!hasNextSession}
+              >
+                <SkipForward className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Next session</TooltipContent>
+          </Tooltip>
+          <div className="text-sm">
+            {(currentSessionIndex ?? 0) + 1} / {totalSessions} sessions
+          </div>
+        </div>
+      </header>
+
+      <div
+        className={cn(
+          "border-b px-4 py-3 transition-all duration-300 bg-gray-50",
+          isSessionInfoOpen ? "mr-80" : "mr-10"
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <div className="flex items-center">
+              <span className="text-sm text-muted-foreground mr-2">
+                {selectedPageIndex + 1}/{pages.length}
+              </span>
+              <div className="flex w-full items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full max-w-xl justify-between"
+                    >
+                      {pages[selectedPageIndex]?.href || "No pages recorded"}
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                    {pages.map((page, index) => (
+                      <DropdownMenuItem
+                        key={index}
+                        onClick={() => {
+                          if (!replayer) return;
+                          setSelectedPageIndex(index);
+                          const relativeTime = getRelativeTimestamp(
+                            page.timestamp,
+                            session.started_at || 0
+                          );
+                          replayer.play(relativeTime);
+                          setSliderValue(relativeTime);
+                          setIsPlaying(true);
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            {index + 1}.
+                          </span>
+                          {page.href}
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleCopyUrl}
+                      disabled={!pages.length}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Copy URL</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleOpenExternal}
+                      disabled={!pages.length}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Open in new tab</TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          "flex-1 transition-all duration-300",
+          isSessionInfoOpen ? "mr-80" : "mr-10"
+        )}
+      >
+        <div
+          ref={wrapperRef}
+          className="aspect-video w-full bg-zinc-200 relative overflow-hidden flex items-center justify-center cursor-pointer"
+          onClick={handlePlayPause}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "calc(100vh - 185px)",
+          }}
+        >
+          {!isPlaying && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Play className="h-16 w-16 text-gray-300" />
+            </div>
+          )}
+        </div>
       </div>
 
       {isConsoleOpen && (
@@ -124,17 +623,17 @@ export default function SessionPlayer({
             </Button>
           </div>
           <div className="font-mono text-[13px] space-y-2 px-4 pb-4">
-            {sampleErrors.length === 0 ? (
+            {errors.length === 0 ? (
               <EmptyConsole />
             ) : (
-              sampleErrors.map((error) => (
+              errors.map((error) => (
                 <div key={error.id} className="group">
                   <div
                     className="flex items-start gap-2 cursor-pointer"
                     onClick={() => toggleError(error.id)}
                   >
                     <button
-                      className="mt-1 p-0.5 hover:bg-gray-700 rounded"
+                      className="mt-1 p-0.5 hover:bg-gray-700 rounded flex-shrink-0"
                       aria-label={
                         expandedErrors.includes(error.id)
                           ? "Collapse error"
@@ -147,33 +646,39 @@ export default function SessionPlayer({
                         }`}
                       />
                     </button>
-                    <div className="flex-grow">
+                    <div className="flex-grow min-w-0">
                       <div className="flex items-start justify-between gap-4">
-                        <div className="text-red-400 flex items-start gap-1">
-                          <span>×</span>
-                          <span>{error.message}</span>
+                        <div className="text-red-400 flex items-start gap-1 min-w-0">
+                          <span className="flex-shrink-0">×</span>
+                          <span className="truncate">{error.error_message}</span>
                         </div>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            const event = new CustomEvent("jumpToTime", {
-                              detail: error.timestamp,
-                            });
-                            window.dispatchEvent(event);
+                            if (!replayer) return;
+                            const timestamp =
+                              new Date(error.timestamp).getTime() -
+                              new Date(session.started_at || 0).getTime();
+                            replayer.play(timestamp);
+                            setSliderValue(timestamp);
+                            setIsPlaying(true);
                           }}
-                          className="text-gray-500 hover:text-gray-300 whitespace-nowrap text-xs mt-0.5"
+                          className="text-gray-500 hover:text-gray-300 whitespace-nowrap text-xs mt-0.5 flex-shrink-0"
                         >
-                          {formatTime(error.timestamp)}
+                          {formatTime(
+                            new Date(error.timestamp).getTime() -
+                              new Date(session.started_at || 0).getTime()
+                          )}
                         </button>
                       </div>
-                      {error.subMessage && (
-                        <div className="text-red-400 ml-3">
-                          {error.subMessage}
+                      {error.file_name && (
+                        <div className="text-red-400 ml-3 truncate">
+                          at {error.file_name}:{error.line_number}:{error.column_number}
                         </div>
                       )}
-                      {expandedErrors.includes(error.id) && (
-                        <pre className="mt-2 text-[#8B949E] whitespace-pre-wrap ml-3">
-                          {error.stack}
+                      {expandedErrors.includes(error.id) && error.stack_trace && (
+                        <pre className="mt-2 text-[#8B949E] whitespace-pre-wrap ml-3 break-words">
+                          {error.stack_trace}
                         </pre>
                       )}
                     </div>
@@ -185,16 +690,27 @@ export default function SessionPlayer({
         </div>
       )}
 
-      <CustomSlider
-        totalDuration={15000}
-        events={sampleEvents}
-        errors={sampleErrors}
+      <Controller
+        specialEvents={specialSessionEvents}
         onConsoleToggle={toggleConsole}
+        onPlayPause={handlePlayPause}
+        onSkipForward={() => handleJump(10)}
+        onSkipBackward={() => handleJump(-10)}
+        onSpeedChange={handleSpeedChange}
+        onSkipInactiveChange={handleSkipInactive}
+        isPlaying={isPlaying}
+        playbackSpeed={playbackSpeed}
+        skipInactive={skipInactive}
+        currentTime={sliderValue}
+        onValueChange={handleSliderChange}
+        session={session}
       />
 
       <SessionInfo
         isOpen={isSessionInfoOpen}
         onToggle={() => setIsSessionInfoOpen(!isSessionInfoOpen)}
+        session={session}
+        specialEvents={specialSessionEvents}
       />
     </div>
   );

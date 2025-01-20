@@ -74,27 +74,31 @@ export async function POST(request: Request) {
       }
     }
     let allEvents = session.events;
-    let updatedMetrics = metrics;
-    if (!session.user_agent) {// if not first batch of events
-      const existingSession = await SessionService.getSession(session.id);
-      // Combine existing metrics with new metrics
+    let updatedMetrics = { ...metrics, totalDuration: session.duration };
+    let existingSession;
+
+    try {
+      existingSession = await SessionService.getSession(session.id);
+    } catch (error) {
+      existingSession = null;
+    }
+
+    if (existingSession) {
+      // Update existing session
       updatedMetrics = {
-        totalClicks:
-          existingSession.total_clicks + metrics.totalClicks,
+        totalDuration: session.user_agent
+          ? existingSession.duration + session.duration
+          : session.duration,
+        totalClicks: existingSession.total_clicks + metrics.totalClicks,
         totalScrollDistance:
-          existingSession.total_scroll_distance +
-          metrics.totalScrollDistance,
+          existingSession.total_scroll_distance + metrics.totalScrollDistance,
         totalInputs: existingSession.total_inputs + metrics.totalInputs,
-        errorCount:
-          existingSession.session_error_count + metrics.errorCount,
+        errorCount: existingSession.session_error_count + metrics.errorCount,
       };
 
-      allEvents = [
-        ...(await SessionService.getSession(session.id)).events,
-        ...session.events,
-      ];
-
+      allEvents = [...existingSession.events, ...session.events];
     } else {
+      // Create new session
       const userAgentInfo = parseUserAgent(session.user_agent || "");
       await SessionService.createSession({
         id: session.id,
@@ -137,7 +141,7 @@ export async function POST(request: Request) {
     );
 
     await SessionService.updateSession(session.id, {
-      duration: session.duration,
+      duration: updatedMetrics.totalDuration,
       total_clicks: updatedMetrics.totalClicks,
       total_scroll_distance: updatedMetrics.totalScrollDistance,
       total_inputs: updatedMetrics.totalInputs,
@@ -150,17 +154,14 @@ export async function POST(request: Request) {
     // Store all events
     await Promise.all([
       SessionService.storeEvents(session.id, session.site_id, session.events),
-      processAndStoreEvents(session.id, session.events)
+      processAndStoreEvents(session.id, session.events),
     ]);
 
     return corsResponse(NextResponse.json({ success: true, pageMetrics }));
   } catch (error) {
     console.error("Error in POST request:", error);
     return corsResponse(
-      NextResponse.json(
-        { error: "Internal server error" },
-        { status: 500 }
-      )
+      NextResponse.json({ error: "Internal server error" }, { status: 500 })
     );
   }
 }
@@ -171,7 +172,7 @@ export async function PATCH(request: Request) {
 
     if (!sessionId || !status) {
       return corsResponse(
-        NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+        NextResponse.json({ error: "Missing required fields" }, { status: 400 })
       );
     }
 
@@ -182,9 +183,9 @@ export async function PATCH(request: Request) {
 
     return corsResponse(NextResponse.json({ success: true }));
   } catch (error) {
-    console.error('Error updating session:', error);
+    console.error("Error updating session:", error);
     return corsResponse(
-      NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+      NextResponse.json({ error: "Internal server error" }, { status: 500 })
     );
   }
 }

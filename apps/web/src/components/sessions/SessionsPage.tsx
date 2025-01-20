@@ -128,7 +128,6 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
         hasPreviousSession={currentIndex > 0}
         currentSessionIndex={currentIndex}
         totalSessions={sortedSessions.length}
-        onDeleteSession={callApi}
       />
     );
   }

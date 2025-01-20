@@ -1,8 +1,12 @@
 import { Session } from "@/types/api";
 import { ErrorType } from "@/types/error";
-import { EventType, eventWithTime, IncrementalSource, MouseInteractions } from "@rrweb/types";
-import * as UAParser from 'ua-parser-js';
-
+import {
+  EventType,
+  eventWithTime,
+  IncrementalSource,
+  MouseInteractions,
+} from "@rrweb/types";
+import * as UAParser from "ua-parser-js";
 
 interface ScrollData {
   source: IncrementalSource.Scroll;
@@ -44,14 +48,12 @@ export const calculateTrialEndUnixTimestamp = (
 export const getURL = (path: string = "") => {
   let url =
     process?.env?.NEXT_PUBLIC_SITE_URL &&
-      process.env.NEXT_PUBLIC_SITE_URL.trim() !== ""
+    process.env.NEXT_PUBLIC_SITE_URL.trim() !== ""
       ? process.env.NEXT_PUBLIC_SITE_URL
-      :
-      process?.env?.NEXT_PUBLIC_VERCEL_URL &&
+      : process?.env?.NEXT_PUBLIC_VERCEL_URL &&
         process.env.NEXT_PUBLIC_VERCEL_URL.trim() !== ""
-        ? process.env.NEXT_PUBLIC_VERCEL_URL
-        :
-        "http://localhost:3000/";
+      ? process.env.NEXT_PUBLIC_VERCEL_URL
+      : "http://localhost:3000/";
 
   url = url.replace(/\/+$/, "");
   url = url.includes("http") ? url : `https://${url}`;
@@ -107,11 +109,14 @@ export function calculateAverageSessionDuration(sessions: Session[]): string {
 export function generateSlug(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
-export function generateUniqueSlug(name: string, existingSlugs: string[]): string {
+export function generateUniqueSlug(
+  name: string,
+  existingSlugs: string[]
+): string {
   let slug = generateSlug(name);
   let counter = 1;
 
@@ -125,12 +130,9 @@ export function generateUniqueSlug(name: string, existingSlugs: string[]): strin
 
 export const generateTrackingScript = async () => {
   try {
-    const response = await fetch(
-      `/api/tracking-code/generate`,
-      {
-        method: "GET",
-      }
-    );
+    const response = await fetch(`/api/tracking-code/generate`, {
+      method: "GET",
+    });
     if (!response.ok) throw new Error("Failed to generate tracking code");
     const data = await response.json();
     return {
@@ -167,8 +169,7 @@ export function calculateSessionMetrics(events: eventWithTime[]) {
   let totalScrollDistance = 0;
   let totalInputs = 0;
   let errorCount = 0;
-
-  events.forEach(event => {
+  events.forEach((event) => {
     if (event.type === EventType.IncrementalSnapshot) {
       if (event.data.source === IncrementalSource.MouseInteraction) {
         if (event.data.type === MouseInteractions.Click) {
@@ -181,11 +182,11 @@ export function calculateSessionMetrics(events: eventWithTime[]) {
         totalInputs++;
       }
     } else if (isCustomEvent(event)) {
-      if (event.data.tag === 'network_success') {
+      if (event.data.tag === "network_success") {
         // do nothing
       } else {
         const errorTag = event.data.tag as ErrorType;
-        if (['error', 'console_error', 'network_error'].includes(errorTag)) {
+        if (["error", "console_error", "network_error"].includes(errorTag)) {
           errorCount++;
         }
       }
@@ -204,7 +205,9 @@ export function formatTime(ms: number): string {
   const seconds = Math.floor(ms / 1000);
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+    .toString()
+    .padStart(2, "0")}`;
 }
 export const formatPlayerTime = (ms: number): string => {
   const seconds = Math.floor(ms / 1000);
@@ -231,11 +234,14 @@ export const getErrorRedirect = (
     arbitraryParams
   );
 
-
-export function getRelativeTimestamp(eventTime: string | number, sessionStartTime: string | number): number {
+export function getRelativeTimestamp(
+  eventTime: string | number,
+  sessionStartTime: string | number
+): number {
   const eventTimestamp = new Date(eventTime).getTime();
-  const startTimestamp = typeof sessionStartTime === 'string' 
-    ? new Date(sessionStartTime).getTime()
-    : sessionStartTime;
+  const startTimestamp =
+    typeof sessionStartTime === "string"
+      ? new Date(sessionStartTime).getTime()
+      : sessionStartTime;
   return eventTimestamp - startTimestamp;
 }

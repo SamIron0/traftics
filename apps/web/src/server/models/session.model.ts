@@ -49,13 +49,12 @@ export class SessionModel {
   }
 
   static async create(data: Session): Promise<TablesInsert<"sessions">> {
-    // Convert milliseconds timestamp to ISO string
     const startedAtDate = data.started_at ? new Date(data.started_at).toISOString() : undefined;
-
+    
     const supabase = await createClient();
     const { data: session, error } = await supabase
       .from("sessions")
-      .upsert({
+      .insert({
         ...data,
         started_at: startedAtDate,
       })

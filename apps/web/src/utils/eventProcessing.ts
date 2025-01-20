@@ -23,7 +23,14 @@ export async function processAndStoreEvents(
   }[] = [];
   const UTURN_THRESHOLD = 5000; // 5 seconds threshold for U-turn detection
 
-  for (const event of events) {
+  let currentInputStart: number | null = null;
+  let lastInputTime: number | null = null;
+  let lastInputId: number | null = null;
+
+  for (let i = 0; i < events.length; i++) {
+    const event = events[i];
+    const nextEvent = events[i + 1];
+
     // Handle clicks and rage clicks
     if (
       event.type === EventType.IncrementalSnapshot &&
@@ -100,22 +107,52 @@ export async function processAndStoreEvents(
       }
     }
 
-    // Handle inputs
+    // Handle inputs with start and end time tracking
     if (
       event.type === EventType.IncrementalSnapshot &&
       event.data.source === IncrementalSource.Input &&
       event.data.text &&
       event.data.id >= 0
     ) {
-      await SessionEventService.storeEvent({
-        session_id: sessionId,
-        event_type: "input",
-        timestamp: new Date(event.timestamp).toISOString(),
-        data: {
-          value: event.data.text,
-          element: event.data.id,
-        },
-      });
+      const currentTime = event.timestamp;
+
+      // Start new input sequence if not already started or if element ID changed
+      if (currentInputStart === null || event.data.id !== lastInputId) {
+        currentInputStart = currentTime;
+        lastInputId = event.data.id;
+      }
+
+      // Update last input time
+      lastInputTime = currentTime;
+
+      // Check if this is the end of an input sequence
+      const isLastEvent = !nextEvent;
+      const isNextEventDifferent = nextEvent && (
+        nextEvent.type !== EventType.IncrementalSnapshot ||
+        nextEvent.data.source !== IncrementalSource.Input ||
+        nextEvent.data.id !== event.data.id ||
+        Math.abs(nextEvent.timestamp - currentTime) > 1000 // Add time gap threshold
+      );
+
+      if (isLastEvent || isNextEventDifferent) {
+        // Store the complete input event
+        await SessionEventService.storeEvent({
+          session_id: sessionId,
+          event_type: "input",
+          timestamp: new Date(currentInputStart).toISOString(),
+          data: {
+            value: event.data.text,
+            element: event.data.id,
+            startTime: currentInputStart,
+            endTime: lastInputTime
+          },
+        });
+
+        // Reset tracking variables
+        currentInputStart = null;
+        lastInputTime = null;
+        lastInputId = null;
+      }
     }
 
     // Handle window resize
