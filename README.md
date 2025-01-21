@@ -101,14 +101,6 @@ pnpm deploy:docs
 pnpm deploy:all
 ```
 
-## Testing
-
-Run tests for the web application:
-```bash
-cd apps/web
-pnpm test
-```
-
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
