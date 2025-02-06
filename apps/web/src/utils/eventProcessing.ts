@@ -131,7 +131,7 @@ export async function processAndStoreEvents(
         nextEvent.type !== EventType.IncrementalSnapshot ||
         nextEvent.data.source !== IncrementalSource.Input ||
         nextEvent.data.id !== event.data.id ||
-        Math.abs(nextEvent.timestamp - currentTime) > 1000 // Add time gap threshold
+        Math.abs(nextEvent.timestamp - currentTime) > 3000 // Add time gap threshold
       );
 
       if (isLastEvent || isNextEventDifferent) {

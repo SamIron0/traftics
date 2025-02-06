@@ -202,6 +202,9 @@ export function calculateSessionMetrics(events: eventWithTime[]) {
 }
 
 export function formatTime(ms: number): string {
+  if (ms <= 0) {
+    return "0:00";
+  }
   const seconds = Math.floor(ms / 1000);
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;

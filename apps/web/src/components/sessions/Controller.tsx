@@ -134,7 +134,7 @@ export function Controller({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Skip backward</p>
+                  <p>Skip forward</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
