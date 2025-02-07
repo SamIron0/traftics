@@ -96,7 +96,7 @@ const getToastRedirect = (
 };
 
 export function calculateAverageSessionDuration(sessions: Session[]): string {
-  if (!sessions.length) return "0:00";
+  if (!sessions.length) return "00:00";
 
   const totalDuration = sessions.reduce((acc, session) => {
     return acc + (session.duration || 0);
@@ -203,7 +203,7 @@ export function calculateSessionMetrics(events: eventWithTime[]) {
 
 export function formatTime(ms: number): string {
   if (ms <= 0) {
-    return "0:00";
+    return "00:00";
   }
   const seconds = Math.floor(ms / 1000);
   const minutes = Math.floor(seconds / 60);

@@ -32,6 +32,8 @@ export default function SignupPage() {
           <Image
             src="/auth-img.png"
             alt="Auth illustration"
+            width={1000}
+            height={1000}
           />
         </div>
       </div>

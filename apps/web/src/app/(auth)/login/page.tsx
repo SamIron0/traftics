@@ -29,7 +29,12 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-purple-600 opacity-90" />
         <div className="absolute inset-0 bg-[url('/auth-bg.jpg')] bg-cover bg-center mix-blend-overlay" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <Image src="/auth-img.png" alt="Auth illustration" />
+          <Image
+            src="/auth-img.png"
+            alt="Auth illustration"
+            width={1000}
+            height={1000}
+          />
         </div>
       </div>
     </div>

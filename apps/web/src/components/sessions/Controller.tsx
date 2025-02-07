@@ -174,12 +174,19 @@ export function Controller({
               <span className="text-sm font-medium px-3">
                 {formatTime(currentTime)} / {formatTime(session.duration)}
               </span>
-              <PlayerSwitch
-                checked={skipInactive}
-                onCheckedChange={onSkipInactiveChange}
-                className="relative transition-colors duration-200"
-                aria-label="Toggle skip inactivity"
-              />
+              <Tooltip>
+                <TooltipTrigger >
+                  <PlayerSwitch
+                    checked={skipInactive}
+                    onCheckedChange={onSkipInactiveChange}
+                    className="relative transition-colors duration-200"
+                    aria-label="Toggle skip inactivity"
+                  />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Skip inactive periods</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="flex items-center gap-2">
               <Tooltip>

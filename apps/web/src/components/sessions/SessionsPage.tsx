@@ -54,14 +54,6 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
 
   const handleSelectSession = useCallback(
     async (sessionId: string) => {
-      if (sessionId === sessionWithEvents?.id) {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("mode", "replay");
-        params.set("sessionId", sessionId);
-        router.push(`?${params.toString()}`);
-        return;
-      }
-
       setCurrentSessionId(sessionId);
       try {
         const response = await fetch(`/api/sessions/${sessionId}`);
@@ -76,7 +68,7 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
         console.error("Failed to fetch session events:", error);
       }
     },
-    [searchParams, router, sessionWithEvents]
+    [searchParams, router]
   );
 
   useEffect(() => {
