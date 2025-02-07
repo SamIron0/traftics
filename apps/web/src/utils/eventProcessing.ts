@@ -29,7 +29,7 @@ export async function processAndStoreEvents(
 
   for (let i = 0; i < events.length; i++) {
     const event = events[i];
-    const nextEvent = events[i + 1];
+    const nextEvent = events[i +2];
 
     // Handle clicks and rage clicks
     if (
@@ -89,7 +89,6 @@ export async function processAndStoreEvents(
         const currentNav = navigationEvents[navigationEvents.length - 1];
         const prevNav = navigationEvents[navigationEvents.length - 2];
         const timeDifference = currentNav.timestamp - prevNav.timestamp;
-        console.log("check", timeDifference, currentUrl, prevNav.referrer);
 
         // Check if this is a quick return to the referrer URL
         if (timeDifference <= UTURN_THRESHOLD && currentUrl === prevNav.referrer) {
@@ -122,7 +121,7 @@ export async function processAndStoreEvents(
         lastInputId = event.data.id;
       }
 
-      // Update last input time
+      // Always update last input time
       lastInputTime = currentTime;
 
       // Check if this is the end of an input sequence
@@ -131,11 +130,10 @@ export async function processAndStoreEvents(
         nextEvent.type !== EventType.IncrementalSnapshot ||
         nextEvent.data.source !== IncrementalSource.Input ||
         nextEvent.data.id !== event.data.id ||
-        Math.abs(nextEvent.timestamp - currentTime) > 3000 // Add time gap threshold
+        Math.abs(nextEvent.timestamp - currentTime) > 1000 // Time gap threshold
       );
-
       if (isLastEvent || isNextEventDifferent) {
-        // Store the complete input event
+        // Store the complete input sequence
         await SessionEventService.storeEvent({
           session_id: sessionId,
           event_type: "input",
