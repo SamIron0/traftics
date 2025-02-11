@@ -75,7 +75,7 @@ export class SessionService {
     }
   }
 
-  static async storeEvents(
+  static async storeAllEvents(
     sessionId: string, 
     siteId: string, 
     events: eventWithTime[]

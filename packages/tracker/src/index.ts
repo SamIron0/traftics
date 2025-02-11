@@ -38,7 +38,11 @@ export class SessionTracker {
   private errorDetection: ErrorDetectionService;
 
   constructor(config: SessionConfig) {
-    this.sessionId = this.getExistingSessionId() || uuidv4();
+    const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming;
+    const isPageRefresh = navigation && navigation.type === "reload";
+    
+    // Only check for existing session if this is a page refresh
+    this.sessionId = isPageRefresh ? this.getExistingSessionId() || uuidv4() : uuidv4();
     localStorage.setItem(this.SESSION_ID_KEY, this.sessionId);
 
     this.batchConfig = {
@@ -235,7 +239,7 @@ export class SessionTracker {
   }
 
   private setupNavigationMonitoring(): void {
-    let hasQueuedRefreshEvent = false; // Flag to track if the event has been queued
+    let hasQueuedRefreshEvent = false;
 
     const handleNavigation = () => {
       const navigation = performance.getEntriesByType(
@@ -245,11 +249,8 @@ export class SessionTracker {
         const type = navigation.type;
 
         // Only handle refresh/reload events
-        if (
-          (type === "reload" || type === "back_forward") &&
-          !hasQueuedRefreshEvent
-        ) {
-          hasQueuedRefreshEvent = true; // Set the flag to true
+        if (type === "reload" && !hasQueuedRefreshEvent) {
+          hasQueuedRefreshEvent = true;
           this.queueEvent({
             type: 5,
             timestamp: Date.now(),
@@ -259,8 +260,7 @@ export class SessionTracker {
                 type,
                 url: window.location.href,
                 referrer: document.referrer || null,
-                navigationSource:
-                  type === "reload" ? "refresh" : "back_forward",
+                navigationSource: "refresh",
               },
             },
           });

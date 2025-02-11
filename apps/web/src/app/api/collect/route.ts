@@ -8,7 +8,7 @@ import { FrustrationService } from "@/server/services/frustration.service";
 import { calculateEngagement } from "./engagement";
 import { RelevanceService } from "@/server/services/relevance.service";
 import { PageEventService } from "@/server/services/pageEvent.service";
-import { processAndStoreEvents } from "@/utils/eventProcessing";
+import { processAndStoreSpecialEvents } from "@/utils/eventProcessing";
 
 // Cache verification check results in memory
 const verifiedSites = new Set<string>();
@@ -153,8 +153,12 @@ export async function POST(request: Request) {
 
     // Store all events
     await Promise.all([
-      SessionService.storeEvents(session.id, session.site_id, session.events),
-      processAndStoreEvents(session.id, session.events),
+      SessionService.storeAllEvents(
+        session.id,
+        session.site_id,
+        session.events
+      ),
+      processAndStoreSpecialEvents(session.id, session.events),
     ]);
 
     return corsResponse(NextResponse.json({ success: true, pageMetrics }));

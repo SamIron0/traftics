@@ -11,7 +11,7 @@ import { ErrorType } from "@/types/error";
 const RAGE_CLICK_THRESHOLD = 3;
 const RAGE_CLICK_TIMEFRAME = 1000;
 
-export async function processAndStoreEvents(
+export async function processAndStoreSpecialEvents(
   sessionId: string,
   events: eventWithTime[]
 ): Promise<void> {
