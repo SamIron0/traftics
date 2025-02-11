@@ -68,20 +68,20 @@ export default function SidebarMembershipSection({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
+                  <button
                     className={cn(
-                      "flex items-center gap-2 group-data-[collapsible=icon]:p-2",
-                      state === "collapsed" &&
-                        "bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-purple-500/20 hover:from-blue-500/30 hover:via-indigo-500/30 hover:to-purple-500/30"
+                      "flex border items-center justify-center gap-2 group-data-[collapsible=icon]:p-2 rounded-lg px-3 py-2",
+                      state === "collapsed"
+                        ? "bg-gradient-to-br border border-zinc-300 from-blue-500/20 via-indigo-500/20 to-purple-500/20 hover:from-blue-500/30 hover:via-indigo-500/30 hover:to-purple-500/30"
+                        : "border-zinc-500/50"
                     )}
                     onClick={handleUpgradeClick}
                   >
                     <Rocket className="h-4 w-4" />
-                    <span className="group-data-[collapsible=icon]:hidden">
+                    <span className="text-xs group-data-[collapsible=icon]:hidden">
                       Renew subscription
                     </span>
-                  </Button>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent
                   side="right"
@@ -105,20 +105,20 @@ export default function SidebarMembershipSection({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
+                  <button
                     className={cn(
-                      "flex items-center gap-2 group-data-[collapsible=icon]:p-2",
-                      state === "collapsed" &&
-                        "bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-purple-500/20 hover:from-blue-500/30 hover:via-indigo-500/30 hover:to-purple-500/30"
+                      "flex border items-center justify-center gap-2 group-data-[collapsible=icon]:p-2 rounded-lg px-3 py-2",
+                      state === "collapsed"
+                        ? "bg-gradient-to-br border border-zinc-300 from-blue-500/20 via-indigo-500/20 to-purple-500/20 hover:from-blue-500/30 hover:via-indigo-500/30 hover:to-purple-500/30"
+                        : "border-zinc-500/50"
                     )}
                     onClick={handleUpgradeClick}
                   >
                     <CreditCard className="h-4 w-4" />
-                    <span className="group-data-[collapsible=icon]:hidden">
+                    <span className="text-xs group-data-[collapsible=icon]:hidden">
                       Update payment
                     </span>
-                  </Button>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent
                   side="right"
@@ -135,26 +135,26 @@ export default function SidebarMembershipSection({
       default:
         return (
           <div className="flex flex-col gap-5">
-            <p className="text-xs text-white/90 transition-all duration-200 ease-linear opacity-100 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:translate-x-4">
+            <p className="text-xs group-data-[collapsible=icon]:hidden">
               ✨ Get access to our most advanced features.
             </p>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
+                  <button
                     className={cn(
-                      "flex items-center gap-2 group-data-[collapsible=icon]:p-2 bg-white/10 hover:bg-white/20 text-white/90",
-                      state === "collapsed" &&
-                        "bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-purple-500/20 hover:from-blue-500/30 hover:via-indigo-500/30 hover:to-purple-500/30"
+                      "flex border items-center justify-center gap-2 group-data-[collapsible=icon]:p-2 rounded-lg px-3 py-2",
+                      state === "collapsed"
+                        ? "bg-gradient-to-br border border-zinc-300 from-blue-500/20 via-indigo-500/20 to-purple-500/20 hover:from-blue-500/30 hover:via-indigo-500/30 hover:to-purple-500/30"
+                        : "border-zinc-500/50"
                     )}
                     onClick={handleUpgradeClick}
                   >
                     <Rocket className="h-4 w-4" />
-                    <span className="transition-all duration-200 ease-linear opacity-100 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:translate-x-4">
+                    <span className="text-xs group-data-[collapsible=icon]:hidden">
                       Upgrade plan
                     </span>
-                  </Button>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent
                   side="right"
