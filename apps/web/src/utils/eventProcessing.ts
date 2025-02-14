@@ -130,7 +130,7 @@ export async function processAndStoreSpecialEvents(
         nextEvent.type !== EventType.IncrementalSnapshot ||
         nextEvent.data.source !== IncrementalSource.Input ||
         nextEvent.data.id !== event.data.id ||
-        Math.abs(nextEvent.timestamp - currentTime) > 1000 // Time gap threshold
+        Math.abs(nextEvent.timestamp - currentTime) > 5000 // Time gap threshold
       );
       if (isLastEvent || isNextEventDifferent) {
         // Store the complete input sequence
