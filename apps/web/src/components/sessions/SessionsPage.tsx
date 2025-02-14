@@ -10,7 +10,6 @@ import SessionPlayer from "./SessionPlayer";
 import DateFilter from "@/components/DateFilter";
 import { useAppStore } from "@/stores/useAppStore";
 import { SessionsSkeleton } from "./SessionsSkeleton";
-import DemoBanner from "./DemoBanner";
 
 interface Props {
   sessions: Session[];
@@ -140,7 +139,6 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
 
   return (
     <div className="flex-1 flex flex-col p-6">
-      <DemoBanner />
       <div className="mb-4">
         <DateFilter onDateRangeChange={handleDateRangeChange} />
       </div>

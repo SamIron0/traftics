@@ -1,4 +1,11 @@
-import { eventWithTime } from "@rrweb/types";
+import type { eventWithTime } from "@rrweb/types";
+import { ErrorType } from "../types";
+
+const EXCLUDED_ERROR_PATTERNS = [
+  /https?:\/\/www\.google-analytics\.com/,
+  /https?:\/\/analytics\.google\.com/,
+  /https?:\/\/www\.googletagmanager\.com/
+];
 
 export type ErrorEvent = {
   type: 'error' | 'unhandled_promise' | 'console_error' | 'network_error' | 'resource_error';
@@ -23,62 +30,83 @@ export class ErrorDetectionService {
     this.initializeErrorListeners();
   }
 
+  private shouldExcludeError(error: Error | string | Event): boolean {
+    const errorString = error instanceof Error ? error.message + error.stack : 
+                       error instanceof Event ? (error as any).message || error.type : 
+                       String(error);
+
+    return EXCLUDED_ERROR_PATTERNS.some(pattern => pattern.test(errorString));
+  }
+
   private initializeErrorListeners(): void {
     // Global error handler
     window.addEventListener('error', (event) => {
-      if (event.error instanceof Error) {
-        this.handleJavaScriptError(event.error, event);
-      } else if (event.target instanceof HTMLElement) {
+      if (this.shouldExcludeError(event)) return;
+      
+      this.queueEvent({
+        type: 5,
+        timestamp: Date.now(),
+        data: {
+          tag: 'error',
+          payload: {
+            type: 'error' as ErrorType,
+            message: event.message || 'Unknown error',
+            stack: event.error?.stack,
+            lineNumber: event.lineno,
+            columnNumber: event.colno,
+            fileName: event.filename
+          }
+        }
+      });
+    }, true);
+
+    // Unhandled promise rejection handler
+    window.addEventListener('unhandledrejection', (event) => {
+      if (this.shouldExcludeError(event.reason)) return;
+
+      this.queueEvent({
+        type: 5,
+        timestamp: Date.now(),
+        data: {
+          tag: 'unhandled_promise',
+          payload: {
+            type: 'unhandled_promise' as ErrorType,
+            message: event.reason?.message || String(event.reason),
+            stack: event.reason?.stack
+          }
+        }
+      });
+    });
+
+    // Console error interceptor
+    const originalConsoleError = console.error;
+    console.error = (...args) => {
+      const errorMessage = args.map(arg => String(arg)).join(' ');
+      if (!this.shouldExcludeError(errorMessage)) {
+        this.queueEvent({
+          type: 5,
+          timestamp: Date.now(),
+          data: {
+            tag: 'console_error',
+            payload: {
+              type: 'console_error' as ErrorType,
+              message: errorMessage
+            }
+          }
+        });
+      }
+      originalConsoleError.apply(console, args);
+    };
+
+    // Resource error interceptor
+    window.addEventListener('error', (event) => {
+      if (event.target instanceof HTMLElement) {
         this.handleResourceError(event);
       }
     }, true);
 
-    // Unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
-      this.handleUnhandledRejection(event);
-    });
-
-    // Console error interceptor
-    this.interceptConsoleErrors();
-
     // Network error interceptor
     this.interceptNetworkErrors();
-  }
-
-  private handleJavaScriptError(error: Error, event: Event): void {
-    const errorEvent = event as unknown as globalThis.ErrorEvent;
-    this.queueEvent({
-      type: 5,
-      timestamp: Date.now(),
-      data: {
-        tag: 'error',
-        payload: {
-          type: 'error',
-          message: error.message,
-          stack: error.stack,
-          lineNumber: errorEvent.lineno,
-          columnNumber: errorEvent.colno,
-          fileName: errorEvent.filename,
-          url: window.location.href,
-        },
-      },
-    });
-  }
-
-  private handleUnhandledRejection(event: PromiseRejectionEvent): void {
-    const error = event.reason;
-    this.queueEvent({
-      type: 5,
-      timestamp: Date.now(),
-      data: {
-        tag: 'unhandled_promise',
-        payload: {
-          type: 'unhandled_promise',
-          message: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
-        },
-      },
-    });
   }
 
   private handleResourceError(event: Event): void {
@@ -99,27 +127,6 @@ export class ErrorDetectionService {
         },
       },
     });
-  }
-
-  private interceptConsoleErrors(): void {
-    const originalConsoleError = console.error;
-    console.error = (...args: any[]) => {
-      this.queueEvent({
-        type: 5,
-        timestamp: Date.now(),
-        data: {
-          tag: 'console_error',
-          payload: {
-            type: 'console_error',
-            message: args.map(arg => 
-              arg instanceof Error ? arg.message : String(arg)
-            ).join(' '),
-            stack: args.find(arg => arg instanceof Error)?.stack,
-          },
-        },
-      });
-      originalConsoleError.apply(console, args);
-    };
   }
 
   private interceptNetworkErrors(): void {
