@@ -1,47 +1,34 @@
 import { SessionService } from "@/server/services/session.service";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { revalidateTag } from 'next/cache';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser(); 
-    let user_id;
-    let user_email;
+    const { searchParams } = new URL(request.url);
+    const websiteId = searchParams.get('websiteId');
 
-    if (!user) {
-      user_id = "22acab5b-c6fd-4eef-b456-29d7fd4753a7"
-      user_email = "samuelironkwec@gmail.com"
-    }
-    else {
-      user_id = user.id;
-    }
-
-    const { data: profile } = await supabase
-      .from("user_profiles")
-      .select("org_id, active_project_id")
-      .eq("user_id", user_id)
-      .single();
-
-    if (!profile?.org_id || !profile?.active_project_id) {
+    if (!websiteId) {
       return NextResponse.json(
-        { error: "Organization or project not found" },
-        { status: 404 }
+        { error: "Website ID is required" },
+        { status: 400 }
       );
     }
 
-    // Revalidate the sessions cache
-    revalidateTag('sessions');
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const sessions = await SessionService.getAllSessions({
       user: {
-        id: user_id,
-        email: user_email!,
-        orgId: profile.org_id,
+        id: user.id,
       },
       params: {
-        projectId: profile.active_project_id,
+        projectId: websiteId,
       },
     });
 
@@ -53,4 +40,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-} 
+}

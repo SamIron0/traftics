@@ -32,23 +32,13 @@ export function LoginForm() {
         .from("user_profiles")
         .select(
           `
-            org_id, 
             active_project_id,
-            organizations!inner(slug),
             websites!fk_active_project(slug)
           `
         )
         .eq("user_id", user?.user?.id)
         .single();
-
-      if (profile?.organizations?.slug && profile?.websites?.slug) {
-        router.push(
-          `/org/${profile.organizations.slug}/project/${profile.websites.slug}/sessions`
-        );
-      } else {
-        // If no profile/project found, redirect to onboarding
-        router.push("/onboarding");
-      }
+      router.push(`/project/${profile?.websites?.slug}/sessions`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sign in");
     } finally {
@@ -81,7 +71,7 @@ export function LoginForm() {
         className="w-full"
         onClick={handleGithubLogin}
       >
-         <Image
+        <Image
           alt="google icon"
           src="/google-icon.svg"
           width={16}
@@ -89,7 +79,7 @@ export function LoginForm() {
           className="mr-2 "
         />
         Continue with Google
-   </Button>
+      </Button>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">

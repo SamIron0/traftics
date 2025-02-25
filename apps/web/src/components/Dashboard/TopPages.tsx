@@ -21,11 +21,11 @@ interface Props {
 
 export function TopPages({ pages }: Props) {
   const router = useRouter()
-  const { orgSlug, projectSlug } = useAppStore()
+  const { projectSlug } = useAppStore()
 
   const handlePlayClick = (page: string) => {
     // Navigate to sessions page with page filter
-    router.push(`/org/${orgSlug}/project/${projectSlug}/sessions?page=${encodeURIComponent(page)}`)
+    router.push(`/project/${projectSlug}/sessions?page=${encodeURIComponent(page)}`)
   }
 
   // Calculate total views for percentage

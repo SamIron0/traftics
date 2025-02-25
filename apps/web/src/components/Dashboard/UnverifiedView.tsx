@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/useAppStore";
 
 export function UnverifiedView({ script }: { script: string }) {
-  const { orgSlug, projectSlug, projectId, defaultDashboardId } =
+  const { projectSlug, projectId} =
     useAppStore.getState();
   const isVerified = useVerificationStatus(projectId);
   const router = useRouter();
@@ -15,9 +15,9 @@ export function UnverifiedView({ script }: { script: string }) {
   useEffect(() => {
     if (isVerified) {
       router.push(
-        `/org/${orgSlug}/project/${projectSlug}/dashboards/${defaultDashboardId}`
+        `/project/${projectSlug}/dashboard`
       );
     }
-  }, [isVerified, router, orgSlug, projectSlug, defaultDashboardId]);
+  }, [isVerified, router,projectSlug]);
   return <TrackingScript trackingScript={script} />;
 }

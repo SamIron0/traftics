@@ -14,7 +14,6 @@ export class WebsiteModel {
       .insert({
         name,
         domain,
-        org_id: req.user?.orgId,
       })
       .select()
       .single();
@@ -22,7 +21,7 @@ export class WebsiteModel {
     if (error) throw error;
     return website;
   }
-  static async getIdBySlug(orgSlug: string, projectSlug: string): Promise<string> {
+  static async getIdBySlug( projectSlug: string): Promise<string> {
     const supabase = await createClient();
     const { data: website, error } = await supabase
       .from("websites")
@@ -32,17 +31,6 @@ export class WebsiteModel {
 
     if (error) throw error;
     return website.id;
-  }
-  static async findAll(req: ServiceRequest): Promise<Tables<"websites">[]> {
-    const supabase = await createClient();
-    const { data: websites, error } = await supabase
-      .from("websites")
-      .select("*")
-      .eq("org_id", req.user?.orgId)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-    return websites;
   }
 
   static async findOne(
@@ -54,7 +42,6 @@ export class WebsiteModel {
       .from("websites")
       .select("*")
       .eq("id", id)
-      .eq("org_id", req.user?.orgId)
       .single();
 
     if (error) return null;
@@ -76,7 +63,6 @@ export class WebsiteModel {
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .eq("org_id", req.user?.orgId)
       .select()
       .single();
 
@@ -90,7 +76,6 @@ export class WebsiteModel {
       .from("websites")
       .delete()
       .eq("id", id)
-      .eq("org_id", req.user?.orgId);
 
     return !error;
   }

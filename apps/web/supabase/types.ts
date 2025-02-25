@@ -487,7 +487,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
-          active_project_id: string | null
+          active_project_id: string
           city: string
           country: string
           created_at: string | null
@@ -503,7 +503,7 @@ export type Database = {
           zip: string
         }
         Insert: {
-          active_project_id?: string | null
+          active_project_id: string
           city: string
           country: string
           created_at?: string | null
@@ -519,7 +519,7 @@ export type Database = {
           zip: string
         }
         Update: {
-          active_project_id?: string | null
+          active_project_id?: string
           city?: string
           country?: string
           created_at?: string | null
@@ -557,30 +557,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      waitlist_contacts: {
-        Row: {
-          created_at: string | null
-          email: string
-          id: string
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email: string
-          id?: string
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string
-          id?: string
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       websites: {
         Row: {

@@ -1,5 +1,4 @@
 import { useAppStore } from "@/stores/useAppStore";
-import { Button } from "@/components/ui/button";
 import { CreditCard, Rocket } from "lucide-react";
 import {
   Tooltip,

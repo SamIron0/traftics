@@ -5,9 +5,12 @@ import { useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Navbar } from "@/components/Navbar";
-import { useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams} from "next/navigation";
 import { useAppStore } from "@/stores/useAppStore";
 import { Spinner } from "@/components/ui/spinner";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 export default function RootLayout({
   children,
@@ -15,20 +18,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const searchParams = useSearchParams();
-  const pathname = usePathname();
   const isReplayMode = searchParams.get("mode") === "replay";
   const initializeState = useAppStore((state) => state.initializeState);
   const isLoading = useAppStore((state) => state.isLoading);
+  const router = useRouter();
+  const queryClient = new QueryClient();
 
-  // Check if the current path should show the sidebar panel
-  const dashboardsPattern = /^\/org\/[^/]+\/project\/[^/]+\/dashboards(?:\/[^/]+)?$/;
-  const sessionsPattern = /^\/org\/[^/]+\/project\/[^/]+\/sessions(?:\/[^/]+)?$/;
-  const shouldShowPanel = dashboardsPattern.test(pathname);
-  const shouldShowNavbar = !isReplayMode && (sessionsPattern.test(pathname) || dashboardsPattern.test(pathname)); ;
-
+  const shouldShowNavbar = !isReplayMode;
   useEffect(() => {
-    initializeState();
-  }, [initializeState]);
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push("/login");
+      } else {
+        initializeState(user);
+      }
+    };
+
+    checkAuth();
+  }, [router, initializeState]);
 
   if (isLoading) {
     return (
@@ -38,23 +50,21 @@ export default function RootLayout({
     );
   } else {
     return (
-      <SidebarProvider>
-        <div className="flex w-full">
-          {!isReplayMode && <AppSidebar />}
-          <div
-            className={`flex-1 flex flex-col ${
-              !isReplayMode && shouldShowPanel ? "overflow-x-hidden" : ""
-            }`}
-          >
-            {shouldShowNavbar && <Navbar />}
-            <main
-              className={`flex-1 w-full`}
+      <QueryClientProvider client={queryClient}>
+        <SidebarProvider>
+          <div className="flex w-full">
+            {!isReplayMode && <AppSidebar />}
+            <div
+              className={`flex-1 flex flex-col ${
+                !isReplayMode ? "overflow-x-hidden" : ""
+              }`}
             >
-              {children}
-            </main>
+              {shouldShowNavbar && <Navbar />}
+              <main className={`flex-1 w-full`}>{children}</main>
+            </div>
           </div>
-        </div>
-      </SidebarProvider>
+        </SidebarProvider>
+      </QueryClientProvider>
     );
   }
 }

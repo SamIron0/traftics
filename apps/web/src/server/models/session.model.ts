@@ -16,7 +16,6 @@ export class SessionModel {
         )
       `
       )
-      .eq("websites.org_id", req.user?.orgId)
       .eq("site_id", req.params?.projectId)
       .order("started_at", { ascending: false })
       .limit(100);

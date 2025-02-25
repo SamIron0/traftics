@@ -53,8 +53,7 @@ export function AppSidebar() {
   const { user, signOut } = useAuthStatus();
   const { state } = useSidebar();
   const reset = useAppStore((state) => state.reset);
-  const { full_name, defaultDashboardId } = useAppStore();
-  const orgSlug = useAppStore((state) => state.orgSlug);
+  const { full_name } = useAppStore();
   const projectSlug = useAppStore((state) => state.projectSlug);
   const handleLogout = async () => {
     if (!user?.id) {
@@ -77,12 +76,12 @@ export function AppSidebar() {
         {
           label: "Dashboard",
           icon: LayoutDashboard,
-          path: `/org/${orgSlug}/project/${projectSlug}/dashboards/${defaultDashboardId}`,
+          path: `/project/${projectSlug}/dashboard`,
         },
         {
           label: "Sessions",
           icon: BarChart3,
-          path: `/org/${orgSlug}/project/${projectSlug}/sessions`,
+          path: `/project/${projectSlug}/sessions`,
         },
       ],
     },
@@ -92,7 +91,7 @@ export function AppSidebar() {
         {
           label: "Project Settings",
           icon: Settings,
-          path: `/org/${orgSlug}/settings`,
+          path: `/settings`,
           exact: true,
         },
         {
@@ -114,7 +113,7 @@ export function AppSidebar() {
   };
 
   const handleUpgradeClick = () => {
-    router.push(`/org/${orgSlug}/settings/plans`);
+    router.push(`/settings/plans`);
   };
 
   return (
@@ -232,7 +231,7 @@ export function AppSidebar() {
                   <DropdownMenuGroup>
                     <DropdownMenuItem
                       onClick={() =>
-                        router.push(`/org/${orgSlug}/settings/account`)
+                        router.push(`/settings/account`)
                       }
                     >
                       <BadgeCheck />

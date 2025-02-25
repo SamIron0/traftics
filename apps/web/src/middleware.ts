@@ -1,8 +1,12 @@
-import { type NextRequest } from 'next/server'
-import { updateSession } from './utils/supabase/middleware'
+import { type NextRequest} from "next/server";
+import { updateSession } from "./utils/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request)
+  // Get the pathname from the request
+
+  const supabaseResponse = await updateSession(request);
+
+  return supabaseResponse;
 }
 
 export const config = {
@@ -12,8 +16,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * - public files (images, etc.)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
-}
+};

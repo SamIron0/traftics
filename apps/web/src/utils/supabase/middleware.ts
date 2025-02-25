@@ -1,43 +1,5 @@
-// this file is poorly implemented and needs to be refactored.
 import { createServerClient } from "@supabase/ssr";
-import { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
-
-const publicRoutes = [
-  "/forgot-password",
-  "/api/collect",
-  "/api/tracking-code/generate",
-  "/api/webhooks",
-  "/auth/confirm",
-  "/auth/update-password",
-  "/api/onboarding",
-];
-const onboardingRoutes = ["/onboarding"];
-const setupRoutes = ["/project-setup"];
-const authRoutes = ["/login", "/signup"];
-
-async function getDefaultDashboard(
-  supabase: SupabaseClient,
-  projectSlug: string
-) {
-  const { data: project } = await supabase
-    .from("websites")
-    .select("id")
-    .eq("slug", projectSlug)
-    .single();
-
-  if (!project) return null;
-
-  const { data: defaultDashboard } = await supabase
-    .from("dashboards")
-    .select("id")
-    .eq("website_id", project.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .single();
-
-  return defaultDashboard?.id;
-}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -66,88 +28,36 @@ export async function updateSession(request: NextRequest) {
       },
     }
   );
+  const { pathname } = request.nextUrl;
 
-  const pathname = request.nextUrl.pathname;
-  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
-  const isPublicRoute = publicRoutes.some((route) =>
-    pathname.startsWith(route)
+  // Define public routes that don't require authentication
+  const publicRoutes = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/auth/confirm",
+    "/auth/update-password",
+    "/signup/confirm",
+  ];
+  // Check if the current path is a public route
+  const isPublicRoute = publicRoutes.some(
+    (route) => pathname.startsWith(route) || pathname === "/"
   );
-  const isOnboardingRoute = onboardingRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
-  if (isPublicRoute) {
-    return supabaseResponse;
-  }
-  const isSetupRoute = setupRoutes.some((route) => pathname.startsWith(route));
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  let user_id = user?.id;
-  // If no user and trying to access protected route, redirect to demo project
-  if (!user) {
-    user_id = "22acab5b-c6fd-4eef-b456-29d7fd4753a7"
-  }
-  const { data: profile } = await supabase
-  .from("user_profiles")
-  .select("is_onboarded, org_id, active_project_id")
-  .eq("user_id", user_id)
-  .single();
 
-  // Get organization and project slugs
-  const { data: org } = await supabase
-    .from("organizations")
-    .select("slug")
-    .eq("id", profile?.org_id)
-    .single();
-
-  const { data: project } = await supabase
-    .from("websites")
-    .select("slug")
-    .eq("id", profile?.active_project_id)
-    .single();
-
-  // If user exists and trying to access auth routes, redirect to dashboard
-  if (isAuthRoute && user?.id) {
-    const defaultDashboard = await getDefaultDashboard(supabase, project?.slug);
-
-    const url = request.nextUrl.clone();
-    url.pathname = `/org/${org?.slug}/project/${project?.slug}/dashboards/${defaultDashboard}`;
-    return NextResponse.redirect(url);
-  }
-
-  if (!profile?.is_onboarded) {
-    // If not onboarded and not on onboarding routes, redirect to onboarding
-    if (!isOnboardingRoute) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
-      return NextResponse.redirect(url);
+  // If not a public route and no user, redirect to login
+  if (!isPublicRoute) {
+    // Extract user from the response (you'll need to modify updateSession to return this)
+    if (!user) {
+      // Create a new URL for the redirect
+      const redirectUrl = new URL("/login", request.url);
+      // Add the original URL as a query parameter to redirect back after login
+      redirectUrl.searchParams.set("redirectTo", pathname);
+      return NextResponse.redirect(redirectUrl);
     }
-  } else {
-    // If already onboarded but trying to access onboarding routes, redirect to dashboard
-    if (isOnboardingRoute) {
-      const url = request.nextUrl.clone();
-      url.pathname = `/org/${org?.slug}/project/${project?.slug}/dashboards/`;
-      return NextResponse.redirect(url);
-    }
-  }
-
-  if (!isSetupRoute) {
-    return supabaseResponse;
-  }
-
-  // Get setup completion status
-  const { data: setupStatus } = await supabase
-    .from("user_profiles")
-    .select("setup_completed")
-    .eq("user_id", user_id)
-    .single();
-
-  if (setupStatus?.setup_completed) {
-    const url = request.nextUrl.clone();
-    const defaultDashboard = await getDefaultDashboard(supabase, project?.slug);
-    url.pathname = `/org/${org?.slug}/project/${project?.slug}/dashboards/${defaultDashboard}`;
-    return NextResponse.redirect(url);
   }
   return supabaseResponse;
 }

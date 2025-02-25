@@ -29,27 +29,13 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
   >();
   const { isLoading } = useAppStore();
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
-  const [sortedSessions, setSortedSessions] =
-    useState<Session[]>(initialSessions);
+  const [sortedSessions, setSortedSessions] = useState<Session[]>(initialSessions);
 
-  const callApi = useCallback(async () => {
-    const response = await fetch("/api/sessions");
-    const newSessions = await response.json();
-    setSessions(newSessions);
-    setSortedSessions(newSessions);
-  }, []);
-
+  // Update sessions when initialSessions changes (from TanStack Query)
   useEffect(() => {
-    if (mode === "replay") return;
-
-    const pollSessions = async () => {
-      callApi();
-    };
-
-    const interval = setInterval(pollSessions, 10000);
-
-    return () => clearInterval(interval);
-  }, [mode, callApi]);
+    setSessions(initialSessions);
+    setSortedSessions(initialSessions);
+  }, [initialSessions]);
 
   const handleSelectSession = useCallback(
     async (sessionId: string) => {

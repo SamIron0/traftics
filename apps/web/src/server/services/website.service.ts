@@ -19,14 +19,14 @@ export class WebsiteService {
 
     return WebsiteModel.create(req, data);
   }
-  static async getIdBySlug(orgSlug: string, projectSlug: string): Promise<string> {
-    return WebsiteModel.getIdBySlug(orgSlug, projectSlug);
-  }
-  static async getWebsites(req: ServiceRequest): Promise<Tables<"websites">[]> {
-    return WebsiteModel.findAll(req);
+  static async getIdBySlug(projectSlug: string): Promise<string> {
+    return WebsiteModel.getIdBySlug(projectSlug);
   }
 
-  static async getWebsite(req: ServiceRequest, id: string): Promise<Tables<"websites">> {
+  static async getWebsite(
+    req: ServiceRequest,
+    id: string
+  ): Promise<Tables<"websites">> {
     const website = await WebsiteModel.findOne(req, id);
     if (!website) {
       throw new Error("Website not found");
@@ -66,9 +66,12 @@ export class WebsiteService {
     return status;
   }
 
-  static async verifyWebsite(websiteId: string, url?: string): Promise<boolean> {
+  static async verifyWebsite(
+    websiteId: string,
+    url?: string
+  ): Promise<boolean> {
     const data: { verified: boolean; domain?: string } = { verified: true };
-    
+
     // If URL is provided, update the domain
     if (url) {
       try {
@@ -78,9 +81,9 @@ export class WebsiteService {
         console.error("Invalid URL format:", error);
       }
     }
-    
+
     const success = await WebsiteModel.setVerified(websiteId, data);
-    
+
     if (!success) {
       throw new Error("Failed to verify website");
     }

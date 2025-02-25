@@ -12,8 +12,6 @@ export interface AuthenticatedRequest {
 export interface ServiceRequest {
   user: {
     id: string;
-    email: string;
-    orgId: string;
   };
   headers?: Record<string, string>;
   query?: Record<string, string | string[]>;

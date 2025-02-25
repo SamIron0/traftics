@@ -59,8 +59,6 @@ export async function DELETE(
     await SessionService.deleteSession({
       user: {
         id: user.id,
-        email: user.email!,
-        orgId: profile.org_id,
       }
     }, id);
 
