@@ -4,7 +4,11 @@ import { ErrorType } from "../types";
 const EXCLUDED_ERROR_PATTERNS = [
   /https?:\/\/www\.google-analytics\.com/,
   /https?:\/\/analytics\.google\.com/,
-  /https?:\/\/www\.googletagmanager\.com/
+  /https?:\/\/www\.googletagmanager\.com/,
+  /google-analytics/,
+  /ga\-/,
+  /analytics\.js/,
+  /gtag/
 ];
 
 export type ErrorEvent = {
@@ -30,7 +34,18 @@ export class ErrorDetectionService {
     this.initializeErrorListeners();
   }
 
-  private shouldExcludeError(error: Error | string | Event): boolean {
+  private shouldExcludeError(error: Error | string | Event | any): boolean {
+    // For network errors, check the URL
+    if (error && typeof error === 'object') {
+      if (error.url) {
+        return EXCLUDED_ERROR_PATTERNS.some(pattern => pattern.test(error.url));
+      }
+      // Check payload URL for network errors
+      if (error.payload?.url) {
+        return EXCLUDED_ERROR_PATTERNS.some(pattern => pattern.test(error.payload.url));
+      }
+    }
+
     const errorString = error instanceof Error ? error.message + error.stack : 
                        error instanceof Event ? (error as any).message || error.type : 
                        String(error);
@@ -156,6 +171,8 @@ export class ErrorDetectionService {
   }
 
   private handleNetworkError(error: any, url: string): void {
+    if (this.shouldExcludeError({ url })) return;
+    
     this.queueEvent({
       type: 5,
       timestamp: Date.now(),

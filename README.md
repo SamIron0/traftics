@@ -1,6 +1,6 @@
 # Traftics
 
-Traftics is the open source user behavioral analysis tool for modern teams.
+Traftics is an ai session summary tool.
 
 ## Project Structure
 
