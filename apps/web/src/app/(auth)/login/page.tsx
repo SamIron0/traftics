@@ -1,7 +1,27 @@
+"use client";
 import React from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 import Image from "next/image";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useAppStore } from "@/stores/useAppStore";
+
 export default function LoginPage() {
+  const { user } = useAuthStatus();
+  const router = useRouter();
+  const projectSlug = useAppStore((state) => state.projectSlug);
+
+  useEffect(() => {
+    if (user) {
+      if (projectSlug) {
+        router.push(`/project/${projectSlug}/dashboard`);
+      } else {
+        router.push('/');
+      }
+    }
+  }, [user, router, projectSlug]);
+
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-[45fr_55fr]">
       {/* Left Column - Form */}

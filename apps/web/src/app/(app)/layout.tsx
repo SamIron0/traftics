@@ -12,6 +12,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+const queryClient = new QueryClient();
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,7 +23,6 @@ export default function RootLayout({
   const initializeState = useAppStore((state) => state.initializeState);
   const isLoading = useAppStore((state) => state.isLoading);
   const router = useRouter();
-  const queryClient = new QueryClient();
 
   const shouldShowNavbar = !isReplayMode;
   useEffect(() => {

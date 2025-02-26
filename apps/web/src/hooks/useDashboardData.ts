@@ -30,6 +30,7 @@ export function useDashboardData(websiteId: string | null) {
       return fetchDashboardData(websiteId);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false, // Prevent refetching on window focus
     enabled: !!websiteId,
   });
 } 

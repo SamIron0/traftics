@@ -9,24 +9,11 @@ export async function GET(
   const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  let user_id;
 
   if (!user) {
-    user_id = "22acab5b-c6fd-4eef-b456-29d7fd4753a7"
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  else {
-    user_id = user.id;
-  }
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("org_id")
-    .eq("user_id", user_id)
-    .single();
-
-  if (!profile?.org_id) {
-    return NextResponse.json({ error: "Organization not found" }, { status: 404 });
-  }
-
+  
   const session = await SessionService.getSession(id);
 
   return NextResponse.json(session);
@@ -43,18 +30,6 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
-      .from("user_profiles")
-      .select("org_id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!profile?.org_id) {
-      return NextResponse.json(
-        { error: "Organization not found" },
-        { status: 404 }
-      );
-    }
     const { id } = await params;
     await SessionService.deleteSession({
       user: {

@@ -91,7 +91,7 @@ export function AppSidebar() {
         {
           label: "Project Settings",
           icon: Settings,
-          path: `/settings`,
+          path: `/project/${projectSlug}/settings`,
           exact: true,
         },
         {
@@ -113,7 +113,7 @@ export function AppSidebar() {
   };
 
   const handleUpgradeClick = () => {
-    router.push(`/settings/plans`);
+    router.push(`/project/${projectSlug}/settings/plans`);
   };
 
   return (
@@ -231,7 +231,7 @@ export function AppSidebar() {
                   <DropdownMenuGroup>
                     <DropdownMenuItem
                       onClick={() =>
-                        router.push(`/settings/account`)
+                        router.push(`/project/${projectSlug}/settings/account`)
                       }
                     >
                       <BadgeCheck />

@@ -31,7 +31,6 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
   const [sortedSessions, setSortedSessions] = useState<Session[]>(initialSessions);
 
-  // Update sessions when initialSessions changes (from TanStack Query)
   useEffect(() => {
     setSessions(initialSessions);
     setSortedSessions(initialSessions);
