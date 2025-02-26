@@ -5,6 +5,7 @@ import { ServiceRequest } from "@/types/api";
 import { Session } from "@/types/api";
 import { eventWithTime } from "@rrweb/types";
 import { PageEvent } from "./pageEvent.service";
+import { cacheSessionChunk, getCachedSessionChunks } from '@/utils/redis'
 const BUCKET_NAME = "sessions";
 
 export class SessionService {
@@ -20,18 +21,23 @@ export class SessionService {
       throw new Error("Session not found");
     }
 
+    // Try getting events from Redis first
+    const cachedEvents = await getCachedSessionChunks(session.site_id, session.id);
+    if (cachedEvents.length > 0) {
+      console.log('Found cached events')
+      return { ...session, events: cachedEvents };
+    }
+
+    // Fallback to storage bucket if not in cache
     const supabase = await createClient();
     const prefix = `${session.site_id}/${session.id}/chunks/`;
 
-    // List all chunks for this session
     const { data: chunks, error: listError } = await supabase.storage
       .from(BUCKET_NAME)
       .list(prefix);
 
-    if (listError) {
-      throw listError;
-    }
-    // Download and merge chunks in parallel
+    if (listError) throw listError;
+
     const events = await Promise.all(
       chunks.map(async (chunk) => {
         const { data, error } = await supabase.storage
@@ -39,7 +45,13 @@ export class SessionService {
           .download(`${prefix}${chunk.name}`);
 
         if (error) throw error;
-        return JSON.parse(await data.text());
+        const events = JSON.parse(await data.text());
+        
+        // Cache the chunk while we're at it
+        const chunkNumber = parseInt(chunk.name.split('.')[0]);
+        await cacheSessionChunk(session.site_id, session.id, chunkNumber, events);
+        
+        return events;
       })
     ).then((chunkArrays) =>
       chunkArrays.flat().sort((a, b) => a.timestamp - b.timestamp)
@@ -76,14 +88,15 @@ export class SessionService {
   }
 
   static async storeAllEvents(
-    sessionId: string, 
-    siteId: string, 
+    sessionId: string,
+    siteId: string,
     events: eventWithTime[]
   ): Promise<void> {
     const supabase = await createClient();
     const chunkNumber = Math.floor(Date.now() / 1000);
     const filePath = `${siteId}/${sessionId}/chunks/${chunkNumber}.json`;
 
+    // Store in Supabase bucket
     const { error } = await supabase.storage
       .from('sessions')
       .upload(filePath, JSON.stringify(events), {
@@ -92,6 +105,9 @@ export class SessionService {
       });
 
     if (error) throw error;
+
+    // Cache in Redis
+    await cacheSessionChunk(siteId, sessionId, chunkNumber, events);
   }
 
   static async getSessionWithPageEvents(id: string): Promise<Session & { events: eventWithTime[]; pageEvents: PageEvent[] }> {

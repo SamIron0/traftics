@@ -9,6 +9,7 @@ interface AppState {
   full_name: string;
   projectId: string | null;
   projectSlug: string | null;
+  projectUrl: string | null;
   isLoading: boolean;
   sessions: Session[];
   isWebsiteVerified: boolean;
@@ -29,6 +30,7 @@ export const useAppStore = create<AppState>()(
       full_name: "",
       projectId: null,
       projectSlug: null,
+      projectUrl: null,
       isLoading: true,
       sessions: [],
       isWebsiteVerified: false,
@@ -69,7 +71,7 @@ export const useAppStore = create<AppState>()(
           if (profile?.active_project_id) {
             const { data: website } = await supabase
               .from("websites")
-              .select("verified")
+              .select("verified,domain")
               .eq("id", profile.active_project_id)
               .single();
             // Handle subscription status separately
@@ -83,6 +85,7 @@ export const useAppStore = create<AppState>()(
               isWebsiteVerified: website?.verified || false,
               subscriptionStatus: subscription?.status || null,
               cancelAtPeriodEnd: subscription?.cancel_at_period_end || false,
+              projectUrl: website?.domain,
             });
           }
           set({ isLoading: false });

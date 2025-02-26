@@ -30,7 +30,6 @@ export async function updateSession(request: NextRequest) {
   );
   const { pathname } = request.nextUrl;
 
-  // Define public routes that don't require authentication
   const publicRoutes = [
     "/login",
     "/signup",
@@ -38,6 +37,7 @@ export async function updateSession(request: NextRequest) {
     "/auth/confirm",
     "/auth/update-password",
     "/signup/confirm",
+    "/api/collect"
   ];
   // Check if the current path is a public route
   const isPublicRoute = publicRoutes.some(
