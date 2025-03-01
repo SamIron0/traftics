@@ -9,6 +9,7 @@ import { calculateEngagement } from "./engagement";
 import { RelevanceService } from "@/server/services/relevance.service";
 import { PageEventService } from "@/server/services/pageEvent.service";
 import { processAndStoreSpecialEvents } from "@/utils/eventProcessing";
+import { createClient } from "@/utils/supabase/server";
 
 // Cache verification check results in memory
 const verifiedSites = new Set<string>();
@@ -35,8 +36,22 @@ export async function POST(request: Request) {
       );
     }
 
+    // Get org_id for the website
+    const supabase = await createClient();
+    const { data: website } = await supabase
+      .from("websites")
+      .select("org_id")
+      .eq("id", session.site_id)
+      .single();
+
+    if (!website?.org_id) {
+      return corsResponse(
+        NextResponse.json({ error: "Website not found" }, { status: 404 })
+      );
+    }
+
     // Check usage quota
-    const hasQuota = await UsageService.checkQuota(session.site_id);
+    const hasQuota = await UsageService.checkQuota(session.site_id, website.org_id);
     if (!hasQuota) {
       return corsResponse(
         NextResponse.json(
@@ -80,6 +95,7 @@ export async function POST(request: Request) {
     try {
       existingSession = await SessionService.getSession(session.id);
     } catch (error) {
+      console.error('[collect] Error fetching existing session:', error instanceof Error ? error.message : error);
       existingSession = null;
     }
 

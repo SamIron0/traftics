@@ -126,6 +126,11 @@ export default function SessionPlayer({
       currentWrapper.innerHTML = "";
     }
 
+    // Mark session as played
+    fetch(`/api/sessions/${session.id}/played`, {
+      method: 'POST',
+    }).catch(console.error);
+
     const player = new Replayer(session.events, {
       root: currentWrapper,
       skipInactive: skipInactive,

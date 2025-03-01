@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { formatTime } from "@/utils/helpers";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Play, ArrowUp, ArrowDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, ArrowUp, ArrowDown, RefreshCw } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import {
@@ -309,8 +309,17 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange, onSort
               >
                 <TableCell>
                   <Button className="px-3" variant="outline" onClick={() => handleSessionClick(session.id)}>
-                    <Play className="h-4 w-4 " />
-                    Play
+                    {session.is_played ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Replay
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-4 w-4 mr-2" />
+                        Play
+                      </>
+                    )}
                   </Button>
                 </TableCell>
 

@@ -53,6 +53,7 @@ export interface Session {
   isp?: string;
   is_active?: boolean;
   end_reason?: string;
+  is_played?: boolean;
 }
 
 export type SessionStatus = {

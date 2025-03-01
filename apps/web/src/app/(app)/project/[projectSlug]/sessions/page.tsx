@@ -6,15 +6,18 @@ import { notFound } from "next/navigation";
 import { useAppStore } from "@/stores/useAppStore";
 import { useSessionsData } from "@/hooks/useSessionsData";
 import { SessionsSkeleton } from "@/components/sessions/SessionsSkeleton";
+import { useSearchParams } from "next/navigation";
 
 export default function Sessions() {
   const { projectId, isWebsiteVerified } = useAppStore();
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
 
   if (!projectId) {
     notFound();
   }
 
-  const { data: sessions, isLoading, error } = useSessionsData(projectId);
+  const { data: sessions, isLoading, error } = useSessionsData(projectId, mode);
 
   if (!isWebsiteVerified) {
     const script = generateScript(projectId);

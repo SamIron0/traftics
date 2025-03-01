@@ -202,6 +202,8 @@ const manageSubscriptionStatusChange = async (
   createAction = false
 ) => {
   const supabaseAdmin = await createClient();
+  
+  // Get customer data and user profile to get org_id
   const { data: customerData, error: noCustomerError } = await supabaseAdmin
     .from("customers")
     .select("id")
@@ -213,17 +215,27 @@ const manageSubscriptionStatusChange = async (
 
   const { id: uuid } = customerData!;
 
+  // Get org_id from user_profiles
+  const { data: userProfile, error: profileError } = await supabaseAdmin
+    .from("user_profiles")
+    .select("org_id")
+    .eq("user_id", uuid)
+    .single();
+
+  if (profileError || !userProfile?.org_id)
+    throw new Error("Could not find organization for user");
+
   const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
     expand: ["default_payment_method"],
   });
+  
   const subscriptionData: TablesInsert<"subscriptions"> = {
     id: subscription.id,
     user_id: uuid,
+    org_id: userProfile.org_id,
     metadata: subscription.metadata,
     status: subscription.status,
     price_id: subscription.items.data[0].price.id,
-    //@ts-expect-error - Supabase types conflict resolution
-    quantity: subscription.quantity,
     cancel_at_period_end: subscription.cancel_at_period_end,
     cancel_at: subscription.cancel_at
       ? toDateTime(subscription.cancel_at).toISOString()
@@ -252,6 +264,7 @@ const manageSubscriptionStatusChange = async (
   const { error: upsertError } = await supabaseAdmin
     .from("subscriptions")
     .upsert([subscriptionData]);
+
   if (upsertError)
     throw new Error(
       `Subscription insert/update failed: ${upsertError.message}`

@@ -24,7 +24,6 @@ export class SessionService {
     // Try getting events from Redis first
     const cachedEvents = await getCachedSessionChunks(session.site_id, session.id);
     if (cachedEvents.length > 0) {
-      console.log('Found cached events')
       return { ...session, events: cachedEvents };
     }
 

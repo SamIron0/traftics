@@ -40,14 +40,17 @@ export class SessionModel {
       .eq("id", id)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
     return data;
   }
 
   static async create(data: Session): Promise<TablesInsert<"sessions">> {
     const startedAtDate = data.started_at
       ? new Date(data.started_at).toISOString()
-      : undefined;
+      : new Date().toISOString();
 
     const supabase = await createClient();
     const { data: session, error } = await supabase

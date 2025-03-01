@@ -15,7 +15,8 @@ export async function cacheSessionChunk(
   events: eventWithTime[]
 ): Promise<void> {
   const key = `session:${siteId}:${sessionId}:chunk:${chunkNumber}`;
-  await redis.set(key, JSON.stringify(events), {
+  const eventsString = typeof events === 'string' ? events : JSON.stringify(events);
+  await redis.set(key, eventsString, {
     ex: CACHE_TTL,
   });
 }
@@ -30,10 +31,19 @@ export async function getCachedSessionChunks(
   if (!keys.length) return [];
 
   const chunks = await Promise.all(keys.map((key) => redis.get(key)));
+  const validChunks = chunks.filter(Boolean);
 
-  return chunks
-    .filter(Boolean)
-    .map((chunk) => JSON.parse(chunk as string))
-    .flat()
-    .sort((a, b) => a.timestamp - b.timestamp);
+  try {
+    const events = validChunks
+      .map((chunk) => {
+        const parsed = typeof chunk === 'string' ? JSON.parse(chunk) : chunk;
+        return Array.isArray(parsed) ? parsed : [];
+      })
+      .flat()
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    return events;
+  } catch (error) {
+    return [];
+  }
 }

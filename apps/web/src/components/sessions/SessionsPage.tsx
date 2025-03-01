@@ -39,15 +39,16 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
   const handleSelectSession = useCallback(
     async (sessionId: string) => {
       setCurrentSessionId(sessionId);
+      
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("mode", "replay");
+      params.set("sessionId", sessionId);
+      router.replace(`?${params.toString()}`, { scroll: false });
+
       try {
         const response = await fetch(`/api/sessions/${sessionId}`);
         const data = await response.json();
         setSessionWithEvents(data);
-
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("mode", "replay");
-        params.set("sessionId", sessionId);
-        router.push(`?${params.toString()}`);
       } catch (error) {
         console.error("Failed to fetch session events:", error);
       }

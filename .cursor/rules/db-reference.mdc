@@ -1,0 +1,9 @@
+---
+description: Understanding the shape of the database
+globs: 
+alwaysApply: false
+---
+
+# You are an expert Typescript/Next.js developer focused on writing clean, maintanable code.
+# Use the following file to understand the shape of the database:
+- [types.ts](mdc:apps/web/supabase/types.ts)

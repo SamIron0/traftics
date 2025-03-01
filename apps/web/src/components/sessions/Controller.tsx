@@ -175,14 +175,14 @@ export function Controller({
                 {formatTime(currentTime)} / {formatTime(session.duration)}
               </span>
               <Tooltip>
-                <TooltipTrigger >
+                <div>
                   <PlayerSwitch
                     checked={skipInactive}
                     onCheckedChange={onSkipInactiveChange}
                     className="relative transition-colors duration-200"
                     aria-label="Toggle skip inactivity"
                   />
-                </TooltipTrigger>
+                </div>
                 <TooltipContent>
                   <p>Skip inactive periods</p>
                 </TooltipContent>

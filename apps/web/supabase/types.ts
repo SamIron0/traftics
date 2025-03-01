@@ -351,6 +351,7 @@ export type Database = {
           frustration_score: number | null
           id: string
           is_active: boolean | null
+          is_played: boolean | null
           location: Json | null
           os: Json | null
           relevance_score: number | null
@@ -375,6 +376,7 @@ export type Database = {
           frustration_score?: number | null
           id?: string
           is_active?: boolean | null
+          is_played?: boolean | null
           location?: Json | null
           os?: Json | null
           relevance_score?: number | null
@@ -399,6 +401,7 @@ export type Database = {
           frustration_score?: number | null
           id?: string
           is_active?: boolean | null
+          is_played?: boolean | null
           location?: Json | null
           os?: Json | null
           relevance_score?: number | null
@@ -434,8 +437,8 @@ export type Database = {
           ended_at: string | null
           id: string
           metadata: Json | null
+          org_id: string
           price_id: string | null
-          quantity: number | null
           status: Database["public"]["Enums"]["subscription_status"] | null
           trial_end: string | null
           trial_start: string | null
@@ -451,8 +454,8 @@ export type Database = {
           ended_at?: string | null
           id: string
           metadata?: Json | null
+          org_id: string
           price_id?: string | null
-          quantity?: number | null
           status?: Database["public"]["Enums"]["subscription_status"] | null
           trial_end?: string | null
           trial_start?: string | null
@@ -468,14 +471,21 @@ export type Database = {
           ended_at?: string | null
           id?: string
           metadata?: Json | null
+          org_id?: string
           price_id?: string | null
-          quantity?: number | null
           status?: Database["public"]["Enums"]["subscription_status"] | null
           trial_end?: string | null
           trial_start?: string | null
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "subscriptions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "subscriptions_price_id_fkey"
             columns: ["price_id"]

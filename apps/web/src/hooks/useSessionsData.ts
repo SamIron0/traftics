@@ -11,7 +11,7 @@ async function fetchSessionsData(websiteId: string): Promise<Session[]> {
   return response.json();
 }
 
-export function useSessionsData(websiteId: string | null) {
+export function useSessionsData(websiteId: string | null, mode?: string | null) {
   return useQuery({
     queryKey: ['sessions', websiteId],
     queryFn: () => {
@@ -21,7 +21,7 @@ export function useSessionsData(websiteId: string | null) {
       return fetchSessionsData(websiteId);
     },
     staleTime: 1 * 60 * 1000, // 1 minute
-    refetchInterval: 10 * 1000, // Poll every 10 seconds
+    refetchInterval: mode === 'replay' ? false : 10 * 1000, // Poll every 10 seconds unless in replay mode
     enabled: !!websiteId,
   });
 } 

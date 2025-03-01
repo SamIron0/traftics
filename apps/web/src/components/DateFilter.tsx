@@ -1,98 +1,113 @@
 "use client"
 
-import * as React from "react"
-import { Calendar, ChevronDown } from 'lucide-react'
+import { useState } from "react"
+import { CalendarIcon, Check } from "lucide-react"
+import { format, subDays, subMonths, startOfDay } from "date-fns"
+
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { subDays, startOfDay } from "date-fns"
 
-export type DateRangeKey = "last-24-hours" | "last-7-days" | "last-15-days" | "last-30-days" | "last-3-months" | "last-6-months" | "last-12-months" ;
+type DateRange = {
+  label: string
+  startDate: Date
+  endDate: Date
+}
 
 interface DateFilterProps {
   onDateRangeChange: (startDate: Date, endDate: Date) => void;
 }
 
 export default function DateFilter({ onDateRangeChange }: DateFilterProps) {
-  const [dateRange, setDateRange] = React.useState<DateRangeKey>("last-15-days")
+  const now = new Date()
 
-  const dateRangeMap: Record<DateRangeKey, string> = {
-    "last-24-hours": "Last 24 hours",
-    "last-7-days": "Last 7 days",
-    "last-15-days": "Last 15 days",
-    "last-30-days": "Last 30 days",
-    "last-3-months": "Last 3 months",
-    "last-6-months": "Last 6 months", 
-    "last-12-months": "Last 12 months",
+  const dateRanges: DateRange[] = [
+    {
+      label: "Last 24 hours",
+      startDate: subDays(now, 1),
+      endDate: now,
+    },
+    {
+      label: "Last 7 days",
+      startDate: subDays(now, 7),
+      endDate: now,
+    },
+    {
+      label: "Last 15 days",
+      startDate: subDays(now, 15),
+      endDate: now,
+    },
+    {
+      label: "Last 30 days",
+      startDate: subDays(now, 30),
+      endDate: now,
+    },
+    {
+      label: "Last 3 months",
+      startDate: subMonths(now, 3),
+      endDate: now,
+    },
+    {
+      label: "Last 6 months",
+      startDate: subMonths(now, 6),
+      endDate: now,
+    },
+    {
+      label: "Last 12 months",
+      startDate: subMonths(now, 12),
+      endDate: now,
+    },
+  ]
+
+  const [selectedRange, setSelectedRange] = useState<DateRange>(dateRanges[2]) // Default to "Last 30 days"
+
+  const formatDateRange = (range: DateRange) => {
+    return `${format(range.startDate, "MMM d, yyyy")} - ${format(range.endDate, "MMM d, yyyy")}`
   }
 
-  const handleDateRangeChange = (value: DateRangeKey) => {
-    setDateRange(value);
-    const endDate = new Date();
-    let startDate: Date;
-
-    switch (value) {
-      case "last-24-hours":
-        startDate = subDays(endDate, 1);
-        break;
-      case "last-7-days":
-        startDate = subDays(endDate, 7);
-        break;
-      case "last-15-days":
-        startDate = subDays(endDate, 15);
-        break;
-      case "last-30-days":
-        startDate = subDays(endDate, 30);
-        break;
-      case "last-3-months":
-        startDate = subDays(endDate, 90);
-        break;
-      case "last-6-months":
-        startDate = subDays(endDate, 180);
-        break;
-      case "last-12-months":
-        startDate = subDays(endDate, 365);
-        break;
-      default:
-        startDate = subDays(endDate, 15);
-    }
-
-    onDateRangeChange(startOfDay(startDate), endDate);
-  };
+  const handleRangeSelect = (range: DateRange) => {
+    setSelectedRange(range)
+    onDateRangeChange(startOfDay(range.startDate), range.endDate)
+  }
 
   return (
-    <div className="flex items-center gap-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="w-[200px] justify-start gap-2">
-            <Calendar className="h-4 w-4" />
-            {dateRangeMap[dateRange]}
-            <div className="ml-auto">
-              <ChevronDown className="h-4 w-4" />
-            </div>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-[280px]">
-          <DropdownMenuRadioGroup value={dateRange} onValueChange={(value) => handleDateRangeChange(value as DateRangeKey)}>
-            {Object.entries(dateRangeMap).map(([value, label]) => (
-              <DropdownMenuRadioItem
-                key={value}
-                value={value}
-                className="py-3"
-              >
-                <div className="flex items-center gap-2">
-                 {label}
-                </div>
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="w-full justify-start md:w-auto">
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          <span>{selectedRange.label}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56">
+        <DropdownMenuLabel>Filter by date</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          {dateRanges.map((range) => (
+            <DropdownMenuItem 
+              key={range.label} 
+              onClick={() => handleRangeSelect(range)} 
+              className="cursor-pointer"
+            >
+              <span>{range.label}</span>
+              <Check
+                className={cn("ml-auto h-4 w-4", selectedRange.label === range.label ? "opacity-100" : "opacity-0")}
+              />
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+          {formatDateRange(selectedRange)}
+        </DropdownMenuLabel>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 } 

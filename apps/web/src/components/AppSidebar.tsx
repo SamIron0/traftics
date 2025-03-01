@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   BarChart3,
   ChevronsUpDown,
@@ -146,10 +147,24 @@ export function AppSidebar() {
                         ? pathname === item.path
                         : pathname.includes(item.path)
                     }
-                    onClick={() => router.push(item.path)}
+                    asChild={!item.path.startsWith("http")}
+                    onClick={
+                      item.path.startsWith("http")
+                        ? () => router.push(item.path)
+                        : undefined
+                    }
                   >
-                    <item.icon />
-                    {item.label}
+                    {item.path.startsWith("http") ? (
+                      <>
+                        <item.icon />
+                        {item.label}
+                      </>
+                    ) : (
+                      <Link href={item.path}>
+                        <item.icon />
+                        {item.label}
+                      </Link>
+                    )}
                   </SidebarMenuButton>
                 ))}
               </SidebarGroup>

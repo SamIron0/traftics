@@ -75,7 +75,6 @@ export default function Pricing({ products, user }: Props) {
       });
     }
   };
-
   const handleManageSubscription = async () => {};
 
   const handleFreeSignup = () => router.push("/signup");
