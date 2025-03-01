@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { formatTime } from "@/utils/helpers";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Play, ArrowUp, ArrowDown, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, ArrowUp, ArrowDown, RefreshCw, Trash2 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import {
@@ -20,6 +20,18 @@ import {
 } from "@/components/ui/tooltip";
 import getCountryFlag from "country-flag-icons/unicode"
 import StepIndicator from "@/components/ui/StepIndicator";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type SortField = 'started_at' | 'duration' | 'location' | 'browser' | 'os' | 'relevanceScore' | 'frustrationScore' | 'engagementScore';
 type SortDirection = 'asc' | 'desc';
@@ -36,6 +48,7 @@ interface Props {
     startDate: Date;
     endDate: Date;
   };
+  statusFilter: 'all' | 'played' | 'not_played';
   onSort: (sortedSessions: Session[]) => void;
 }
 
@@ -136,8 +149,9 @@ function SortHeader({
   );
 }
 
-export function ClientSessionList({ sessions, onSelectSession, dateRange, onSort }: Props) {
+export function ClientSessionList({ sessions, onSelectSession, dateRange, statusFilter, onSort }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
   const itemsPerPage = 20;
   const [sortState, setSortState] = useState<SortState>({
     field: null,
@@ -145,14 +159,30 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange, onSort
   });
 
   const filteredSessions = useMemo(() => {
-    if (!dateRange) return sessions;
+    let filtered = sessions;
 
-    return sessions.filter((session) => {
-      if (!session.started_at) return false;
-      const sessionDate = new Date(session.started_at);
-      return sessionDate >= dateRange.startDate && sessionDate <= dateRange.endDate;
-    });
-  }, [sessions, dateRange]);
+    // Apply date filter
+    if (dateRange) {
+      filtered = filtered.filter((session) => {
+        if (!session.started_at) return false;
+        const sessionDate = new Date(session.started_at);
+        return sessionDate >= dateRange.startDate && sessionDate <= dateRange.endDate;
+      });
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((session) => {
+        if (statusFilter === 'played') {
+          return session.is_played === true;
+        } else {
+          return session.is_played === false;
+        }
+      });
+    }
+
+    return filtered;
+  }, [sessions, dateRange, statusFilter]);
 
   const handleSort = (field: SortField) => {
     setSortState(prev => ({
@@ -243,13 +273,51 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange, onSort
     }
   };
 
+  const handleDeleteSessions = async () => {
+    try {
+      await Promise.all(
+        selectedSessions.map(sessionId =>
+          fetch(`/api/sessions/${sessionId}`, { method: 'DELETE' })
+        )
+      );
+      setSelectedSessions([]);
+      // Refresh the sessions list (you might want to implement this through a callback)
+      window.location.reload();
+    } catch (error) {
+      console.error('Error deleting sessions:', error);
+    }
+  };
+
+  const toggleSessionSelection = (sessionId: string) => {
+    setSelectedSessions(prev =>
+      prev.includes(sessionId)
+        ? prev.filter(id => id !== sessionId)
+        : [...prev, sessionId]
+    );
+  };
+
+  const toggleAllSessions = () => {
+    if (selectedSessions.length === currentSessions.length) {
+      setSelectedSessions([]);
+    } else {
+      setSelectedSessions(currentSessions.map(session => session.id));
+    }
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="relative">
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead></TableHead>
+              <TableHead className="w-[30px]">
+                <Checkbox
+                  checked={selectedSessions.length === currentSessions.length && currentSessions.length > 0}
+                  onCheckedChange={toggleAllSessions}
+                  aria-label="Select all sessions"
+                />
+              </TableHead>
+              <TableHead className="w-[100px]">Action</TableHead>
               <SortHeader
                 field="relevanceScore"
                 label="Relevance"
@@ -298,15 +366,18 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange, onSort
                 sortState={sortState}
                 onSort={handleSort}
               />
-
             </TableRow>
           </TableHeader>
           <TableBody>
             {currentSessions.map((session) => (
-              <TableRow
-                key={session.id}
-                className="hover:bg-muted/50"
-              >
+              <TableRow key={session.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedSessions.includes(session.id)}
+                    onCheckedChange={() => toggleSessionSelection(session.id)}
+                    aria-label={`Select session ${session.id}`}
+                  />
+                </TableCell>
                 <TableCell>
                   <Button className="px-3" variant="outline" onClick={() => handleSessionClick(session.id)}>
                     {session.is_played ? (
@@ -322,7 +393,6 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange, onSort
                     )}
                   </Button>
                 </TableCell>
-
                 <TableCell>{getRelevanceDescription(session.relevance_score)}</TableCell>
                 <TableCell>
                   <StepIndicator score={session.frustration_score} type="frustration" />
@@ -330,7 +400,6 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange, onSort
                 <TableCell>
                   <StepIndicator score={session.engagement_score} type="engagement" />
                 </TableCell>
-
                 <TableCell>
                   {session.started_at ? formatDistanceToNow(new Date(session.started_at), {
                     addSuffix: true,
@@ -380,7 +449,6 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange, onSort
           </TableBody>
         </Table>
       </div>
-
       {/* Pagination Controls */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
@@ -407,6 +475,36 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange, onSort
           </Button>
         </div>
       </div>
+      
+      {selectedSessions.length > 0 && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 p-4 rounded-lg border shadow-lg flex items-center gap-4">
+          <span className="text-sm font-medium">
+            {selectedSessions.length} session{selectedSessions.length > 1 ? 's' : ''} selected
+          </span>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete {selectedSessions.length} selected session{selectedSessions.length > 1 ? 's' : ''}.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteSessions}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
     </div>
   );
 }

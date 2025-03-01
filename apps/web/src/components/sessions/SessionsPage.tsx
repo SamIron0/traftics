@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { eventWithTime } from "@rrweb/types";
 import SessionPlayer from "./SessionPlayer";
 import DateFilter from "@/components/DateFilter";
+import StatusFilter from "@/components/StatusFilter";
 import { useAppStore } from "@/stores/useAppStore";
 import { SessionsSkeleton } from "./SessionsSkeleton";
 
@@ -27,6 +28,7 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
   const [dateRange, setDateRange] = useState<
     { startDate: Date; endDate: Date } | undefined
   >();
+  const [statusFilter, setStatusFilter] = useState<'all' | 'played' | 'not_played'>('all');
   const { isLoading } = useAppStore();
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
   const [sortedSessions, setSortedSessions] = useState<Session[]>(initialSessions);
@@ -89,6 +91,10 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
     setDateRange({ startDate, endDate });
   };
 
+  const handleStatusChange = (status: 'all' | 'played' | 'not_played') => {
+    setStatusFilter(status);
+  };
+
   const handleSort = useCallback((sortedSessions: Session[]) => {
     setSortedSessions(sortedSessions);
   }, []);
@@ -125,13 +131,15 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
 
   return (
     <div className="flex-1 flex flex-col p-6">
-      <div className="mb-4">
+      <div className="mb-4 flex gap-2">
         <DateFilter onDateRangeChange={handleDateRangeChange} />
+        <StatusFilter onStatusChange={handleStatusChange} />
       </div>
       <ClientSessionList
         sessions={sessions}
         onSelectSession={handleSelectSession}
         dateRange={dateRange}
+        statusFilter={statusFilter}
         onSort={handleSort}
       />
     </div>
