@@ -153,14 +153,19 @@ export class SessionTracker {
 
     if (this.eventQueue.length > 0) {
       this.isFlushInProgress = true;
-      const batches = this.createBatches();
+      // Create a copy of events to flush
+      const eventsToFlush = [...this.eventQueue];
+      // Clear only these events from the queue
+      this.eventQueue = this.eventQueue.slice(eventsToFlush.length);
+      
+      const batches = this.createBatches(eventsToFlush);
 
       try {
         await Promise.all(batches.map((batch) => this.sendBatch(batch)));
-        this.eventQueue = [];
       } catch (error) {
+        // On error, add the events back to the front of the queue
+        this.eventQueue = [...eventsToFlush, ...this.eventQueue];
         console.error("Failed to send batches:", error);
-        // Schedule retry immediately
         this.scheduleFlush(true);
       } finally {
         this.isFlushInProgress = false;
@@ -169,12 +174,12 @@ export class SessionTracker {
     this.scheduleFlush();
   }
 
-  private createBatches(): Session[] {
+  private createBatches(events: eventWithTime[]): Session[] {
     const batches: Session[] = [];
     const { maxBatchSize } = this.batchConfig;
 
-    for (let i = 0; i < this.eventQueue.length; i += maxBatchSize) {
-      const batchEvents = this.eventQueue.slice(i, i + maxBatchSize);
+    for (let i = 0; i < events.length; i += maxBatchSize) {
+      const batchEvents = events.slice(i, i + maxBatchSize);
       const isFirstBatch = !this.hasFirstBatchBeenSent;
 
       batches.push({
