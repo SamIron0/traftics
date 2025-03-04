@@ -1,6 +1,6 @@
 export function SessionsSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-6">
       {/* Date Filter Skeleton */}
       <div className="mb-4">
         <div className="w-48 h-10 bg-muted animate-pulse rounded" />

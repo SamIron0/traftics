@@ -80,7 +80,7 @@ export default function SessionPlayer({
   const [isSessionInfoOpen, setIsSessionInfoOpen] = useState(true);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [replayer, setReplayer] = useState<Replayer | null>(null);
-    formatPlayerTime(session.duration || 0)
+  formatPlayerTime(session.duration || 0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [sliderValue, setSliderValue] = useState(0);
   const router = useRouter();
@@ -106,48 +106,67 @@ export default function SessionPlayer({
       timestamp: string;
     }>
   >([]);
+
   useEffect(() => {
-    const currentWrapper = wrapperRef.current; // Copy ref to variable
-    // if session.events contains IncrementalSource.ViewportResize, setViewportResize
-    const viewportResizeEvents = session.events.filter(
-      (event) =>
-        event.type === EventType.IncrementalSnapshot &&
-        event.data.source === IncrementalSource.ViewportResize
-    );
-    setViewportResize(viewportResizeEvents);
-    if (!currentWrapper || !session.events.length) return;
+    if (!wrapperRef.current || !session.events.length) return;
 
-    // Only clear content if there's existing content AND we're switching sessions
-    const existingWrapper = currentWrapper.querySelector(".replayer-wrapper");
-    if (
-      existingWrapper &&
-      existingWrapper.getAttribute("data-session-id") !== session.id
-    ) {
-      currentWrapper.innerHTML = "";
-    }
+    // Reset player state
+    setSliderValue(0);
+    setIsPlaying(false);
 
-    // Mark session as played
-    fetch(`/api/sessions/${session.id}/played`, {
-      method: 'POST',
-    }).catch(console.error);
+    // Clear any existing content
+    wrapperRef.current.innerHTML = "";
 
-    const player = new Replayer(session.events, {
-      root: currentWrapper,
+    // Mark session as played immediately
+    const markSessionAsPlayed = async () => {
+      try {
+        await fetch(`/api/sessions/${session.id}/played`, {
+          method: "POST",
+        });
+        // Update the session prop
+        session.is_played = true;
+      } catch (error) {
+        console.error("Failed to mark session as played:", error);
+      }
+    };
+    markSessionAsPlayed();
+
+    // Initialize the replayer
+    const replayerInstance = new Replayer(session.events, {
+      root: wrapperRef.current,
       skipInactive: skipInactive,
-      showWarning: false,
-      blockClass: "privacy",
-      liveMode: false,
       speed: playbackSpeed,
+      showWarning: false,
+      loadTimeout: 1,
+      UNSAFE_replayCanvas: true,
+      blockClass: "rr-block",
+      liveMode: false,
+      insertStyleRules: [
+        ".rr-block { background: #ccc }",
+        "iframe { background: #fff }",
+      ],
+      mouseTail: {
+        strokeStyle: "#556FF6",
+        lineWidth: 2,
+        duration: 500,
+      },
     });
 
-    const replayerWrapper = currentWrapper.querySelector(".replayer-wrapper");
+    // After initialization, set up the iframe
+    if (wrapperRef.current) {
+      const iframe = wrapperRef.current.querySelector("iframe");
+      if (iframe) {
+        iframe.setAttribute("sandbox", "");
+      }
+    }
 
+    // Add scaling for the replayer wrapper
+    const replayerWrapper = wrapperRef.current?.querySelector(
+      ".replayer-wrapper"
+    ) as HTMLElement;
     if (replayerWrapper) {
-      // Add session ID to wrapper for tracking
-      replayerWrapper.setAttribute("data-session-id", session.id);
-
-      const containerHeight = currentWrapper.clientHeight;
-      const containerWidth = currentWrapper.clientWidth;
+      const containerHeight = wrapperRef.current.clientHeight || 0;
+      const containerWidth = wrapperRef.current.clientWidth || 0;
       const sessionHeight = session.screen_height || 0;
       const sessionWidth = session.screen_width || 0;
 
@@ -155,7 +174,7 @@ export default function SessionPlayer({
       const widthScale = containerWidth / sessionWidth;
       const scale = Math.min(heightScale, widthScale);
 
-      Object.assign((replayerWrapper as HTMLElement).style, {
+      Object.assign(replayerWrapper.style, {
         position: "absolute",
         height: `${sessionHeight}px`,
         width: `${sessionWidth}px`,
@@ -166,27 +185,115 @@ export default function SessionPlayer({
         borderRadius: "10px",
       });
     }
-    setReplayer(player);
-    setSliderValue(0);
-    setIsPlaying(false);
 
-    return () => {
-      player.pause();
-      setReplayer(null);
-      // Only clear content during cleanup if we're unmounting completely
-      if (currentWrapper && !currentWrapper.parentElement) {
-        currentWrapper.innerHTML = "";
+    // Store the replayer instance
+    setReplayer(replayerInstance);
+
+    // Event listener for replayer state updates
+    const timer = setInterval(() => {
+      if (!replayerInstance) return;
+
+      const currentTime = replayerInstance.getCurrentTime();
+      setSliderValue(currentTime);
+
+      if (currentTime >= (session.duration || 0)) {
+        setIsPlaying(false);
+        replayerInstance.pause();
       }
+    }, 100);
+
+    // Cleanup function
+    return () => {
+      clearInterval(timer);
+      replayerInstance.destroy();
     };
+  }, [session.events, skipInactive, playbackSpeed]);
+
+  // Track viewport resize events
+  useEffect(() => {
+    if (!session.events) return;
+
+    const resizeEvents = session.events.filter(
+      (event) =>
+        event.type === EventType.IncrementalSnapshot &&
+        event.data.source === IncrementalSource.ViewportResize
+    );
+
+    setViewportResize(resizeEvents);
+  }, [session.events]);
+
+  const updateScale = useCallback(() => {
+    if (!wrapperRef.current || !replayer) return;
+
+    const replayerWrapper = wrapperRef.current.querySelector(
+      ".replayer-wrapper"
+    ) as HTMLElement;
+    if (!replayerWrapper) return;
+
+    const containerHeight = wrapperRef.current.clientHeight || 0;
+    const containerWidth = wrapperRef.current.clientWidth || 0;
+
+    // Get current dimensions from viewport resize events or fallback to session dimensions
+    const currentResizeEvent = viewportResize?.reduce((closest, current) => {
+      const eventTime = getRelativeTimestamp(
+        current.timestamp,
+        session.started_at || 0
+      );
+      const currentTime = replayer.getCurrentTime();
+
+      if (eventTime > currentTime) return closest;
+      if (!closest) return current;
+
+      const closestTime = getRelativeTimestamp(
+        closest.timestamp,
+        session.started_at || 0
+      );
+      return currentTime - eventTime < currentTime - closestTime
+        ? current
+        : closest;
+    }, null as eventWithTime | null);
+
+    const width =
+      (currentResizeEvent?.data as any)?.width || session.screen_width || 0;
+    const height =
+      (currentResizeEvent?.data as any)?.height || session.screen_height || 0;
+
+    const heightScale = containerHeight / height;
+    const widthScale = containerWidth / width;
+    const scale = Math.min(heightScale, widthScale);
+
+    Object.assign(replayerWrapper.style, {
+      height: `${height}px`,
+      width: `${width}px`,
+      transform: `scale(${scale})`,
+      transformOrigin: "center center",
+    });
   }, [
-    session.events,
-    session.duration,
-    skipInactive,
-    playbackSpeed,
+    replayer,
     session.screen_height,
     session.screen_width,
-    session.id,
+    session.started_at,
+    viewportResize,
   ]);
+
+  // Add effect to handle sidebar state changes
+  useEffect(() => {
+    updateScale();
+    // Add resize observer to handle container size changes
+    const resizeObserver = new ResizeObserver(() => {
+      updateScale();
+    });
+
+    if (wrapperRef.current) {
+      resizeObserver.observe(wrapperRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [isSessionInfoOpen, updateScale]);
+
+  // Update the existing useEffect that handles viewport resize events
   useEffect(() => {
     if (!replayer || !pages.length || !viewportResize) return;
 
@@ -202,67 +309,8 @@ export default function SessionPlayer({
         setIsPlaying(false);
       }
 
-      // Check for closest resize events
-      const closestResizeEvent = viewportResize?.reduce((closest, current) => {
-        const eventTime = getRelativeTimestamp(
-          current.timestamp,
-          session.started_at || 0
-        );
-
-        if (eventTime > time) return closest;
-        if (!closest) return current;
-
-        const closestTime = getRelativeTimestamp(
-          closest.timestamp,
-          session.started_at || 0
-        );
-
-        return time - eventTime < time - closestTime ? current : closest;
-      }, null as eventWithTime | null);
-
-      if (closestResizeEvent) {
-        const { width, height } = closestResizeEvent.data as {
-          width: number;
-          height: number;
-        };
-        const containerHeight = wrapperRef.current.clientHeight || 0;
-        const containerWidth = wrapperRef.current.clientWidth || 0;
-        const scale = Math.min(
-          containerWidth / width,
-          containerHeight / height
-        );
-
-        const replayerWrapper =
-          wrapperRef.current.querySelector(".replayer-wrapper");
-        if (replayerWrapper) {
-          Object.assign((replayerWrapper as HTMLElement).style, {
-            height: `${height}px`,
-            width: `${width}px`,
-            transform: `scale(${scale})`,
-            transformOrigin: "center center",
-          });
-        }
-      } else {
-        const replayerWrapper =
-          wrapperRef.current.querySelector(".replayer-wrapper");
-        if (replayerWrapper) {
-          const containerHeight = wrapperRef.current.clientHeight || 0;
-          const containerWidth = wrapperRef.current.clientWidth || 0;
-          const sessionHeight = session.screen_height || 0;
-          const sessionWidth = session.screen_width || 0;
-
-          const heightScale = containerHeight / sessionHeight;
-          const widthScale = containerWidth / sessionWidth;
-          const scale = Math.min(heightScale, widthScale);
-
-          Object.assign((replayerWrapper as HTMLElement).style, {
-            height: `${sessionHeight}px`,
-            width: `${sessionWidth}px`,
-            transform: `scale(${scale})`,
-            transformOrigin: "center center",
-          });
-        }
-      }
+      // Update scale when time changes
+      updateScale();
 
       // Find the last page that was visited before the current time
       const currentPageIndex = pages.reduce((lastIndex, page, index) => {
@@ -286,6 +334,7 @@ export default function SessionPlayer({
     viewportResize,
     session.screen_height,
     session.screen_width,
+    updateScale,
   ]);
 
   const handlePlayPause = useCallback(() => {
@@ -588,31 +637,6 @@ export default function SessionPlayer({
         </div>
       </div>
 
-      <div
-        className={cn(
-          "flex-1 transition-all duration-300",
-          isSessionInfoOpen ? "mr-80" : "mr-10"
-        )}
-      >
-        <div
-          ref={wrapperRef}
-          className="aspect-video w-full bg-zinc-200 relative overflow-hidden flex items-center justify-center cursor-pointer"
-          onClick={handlePlayPause}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "calc(100vh - 185px)",
-          }}
-        >
-          {!isPlaying && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Play className="h-16 w-16 text-gray-300" />
-            </div>
-          )}
-        </div>
-      </div>
-
       {isConsoleOpen && (
         <div className="fixed bottom-20 left-0 right-0 bg-[#242424] text-white h-72 overflow-y-auto z-50">
           <div className="flex justify-between items-center mb-2 border-b border-gray-700 px-4 py-2">
@@ -655,7 +679,9 @@ export default function SessionPlayer({
                       <div className="flex items-start justify-between gap-4">
                         <div className="text-red-400 flex items-start gap-1 min-w-0">
                           <span className="flex-shrink-0">×</span>
-                          <span className="truncate">{error.error_message}</span>
+                          <span className="truncate">
+                            {error.error_message}
+                          </span>
                         </div>
                         <button
                           onClick={(e) => {
@@ -678,14 +704,16 @@ export default function SessionPlayer({
                       </div>
                       {error.file_name && (
                         <div className="text-red-400 ml-3 truncate">
-                          at {error.file_name}:{error.line_number}:{error.column_number}
+                          at {error.file_name}:{error.line_number}:
+                          {error.column_number}
                         </div>
                       )}
-                      {expandedErrors.includes(error.id) && error.stack_trace && (
-                        <pre className="mt-2 text-[#8B949E] whitespace-pre-wrap ml-3 break-words">
-                          {error.stack_trace}
-                        </pre>
-                      )}
+                      {expandedErrors.includes(error.id) &&
+                        error.stack_trace && (
+                          <pre className="mt-2 text-[#8B949E] whitespace-pre-wrap ml-3 break-words">
+                            {error.stack_trace}
+                          </pre>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -716,6 +744,27 @@ export default function SessionPlayer({
         session={session}
         specialEvents={specialSessionEvents}
       />
+
+      <div
+        className={cn(
+          "flex-1 transition-all duration-300",
+          isSessionInfoOpen ? "mr-80" : "mr-10"
+        )}
+      >
+        <div
+          ref={wrapperRef}
+          className="aspect-video w-full bg-zinc-200 relative overflow-hidden flex items-center justify-center cursor-pointer"
+          onClick={handlePlayPause}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "calc(100vh - 185px)",
+          }}
+        >
+          
+        </div>
+      </div>
     </div>
   );
 }

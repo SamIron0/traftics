@@ -51,6 +51,22 @@ export function SessionsPage({ sessions: initialSessions }: Props) {
         const response = await fetch(`/api/sessions/${sessionId}`);
         const data = await response.json();
         setSessionWithEvents(data);
+
+        // Update the is_played status in local state
+        setSessions(prevSessions => 
+          prevSessions.map(session => 
+            session.id === sessionId 
+              ? { ...session, is_played: true }
+              : session
+          )
+        );
+        setSortedSessions(prevSessions => 
+          prevSessions.map(session => 
+            session.id === sessionId 
+              ? { ...session, is_played: true }
+              : session
+          )
+        );
       } catch (error) {
         console.error("Failed to fetch session events:", error);
       }
