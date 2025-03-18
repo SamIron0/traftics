@@ -12,11 +12,10 @@ import {
   ChevronDown,
   Copy,
   ExternalLink,
-  Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Session } from "@/types/api";
-import { EventType, eventWithTime, IncrementalSource } from "@rrweb/types";
+import { EventType, eventWithTime, IncrementalSource, viewportResizeData } from "@rrweb/types";
 import { motion } from "framer-motion";
 import { itemVariants } from "@/lib/animation-variants";
 import { Replayer } from "rrweb";
@@ -254,9 +253,9 @@ export default function SessionPlayer({
     }, null as eventWithTime | null);
 
     const width =
-      (currentResizeEvent?.data as any)?.width || session.screen_width || 0;
+      (currentResizeEvent?.data as viewportResizeData)?.width || session.screen_width || 0;
     const height =
-      (currentResizeEvent?.data as any)?.height || session.screen_height || 0;
+      (currentResizeEvent?.data as viewportResizeData)?.height || session.screen_height || 0;
 
     const heightScale = containerHeight / height;
     const widthScale = containerWidth / width;
