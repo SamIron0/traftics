@@ -65,9 +65,9 @@ export const useAppStore = create<AppState>()(
 
           set({
             projectId: profile?.active_project_id,
+            projectSlug: profile?.websites?.slug,
             full_name: profile?.full_name || "",
           });
-
           if (profile?.active_project_id) {
             const { data: website } = await supabase
               .from("websites")
