@@ -91,7 +91,7 @@ export function useReplayer({
       clearInterval(timer);
       replayerInstance.destroy();
     };
-  }, [session.events, skipInactive, playbackSpeed]);
+  }, [session.events, skipInactive]);
 
   const handlePlayPause = useCallback(() => {
     if (!replayer) return;
@@ -139,4 +139,4 @@ export function useReplayer({
     handleJump,
     seekTo,
   };
-} 
+}

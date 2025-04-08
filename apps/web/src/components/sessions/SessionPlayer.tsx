@@ -53,16 +53,17 @@ export default function SessionPlayer({
     updateSelectedPage,
   } = useSessionData({ session });
 
-  const { replayer, isPlaying, handlePlayPause, handleJump, seekTo } = useReplayer({
-    session,
-    wrapperRef,
-    skipInactive,
-    playbackSpeed,
-    onTimeUpdate: (time) => {
-      setSliderValue(time);
-      updateSelectedPage(time);
-    },
-  });
+  const { replayer, isPlaying, handlePlayPause, handleJump, seekTo } =
+    useReplayer({
+      session,
+      wrapperRef,
+      skipInactive,
+      playbackSpeed,
+      onTimeUpdate: (time) => {
+        setSliderValue(time);
+        updateSelectedPage(time);
+      },
+    });
 
   useViewportScaling({
     session,
@@ -87,6 +88,7 @@ export default function SessionPlayer({
     if (!replayer) return;
     replayer.setConfig({ skipInactive: !skipInactive });
     setSkipInactive(!skipInactive);
+    setSliderValue(0);
   };
 
   const handleSpeedChange = (speed: number) => {
@@ -104,7 +106,10 @@ export default function SessionPlayer({
   };
 
   const handleTimeUpdate = (timestamp: string) => {
-    const relativeTime = getRelativeTimestamp(timestamp, session.started_at || 0);
+    const relativeTime = getRelativeTimestamp(
+      timestamp,
+      session.started_at || 0
+    );
     seekTo(relativeTime);
   };
 
