@@ -26,7 +26,7 @@ export function SignupForm() {
         email,
         password,
         options: {
-          emailRedirectTo: `http://gaha.vercel.app/auth/confirm`,
+          emailRedirectTo: `https://traftics.ironkwe.com/auth/confirm`,
         },
       });
 

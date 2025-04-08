@@ -108,7 +108,7 @@ export function AppSidebar() {
   const data = {
     user: {
       name: full_name,
-      email: user?.email || "samuel@traftics.com",
+      email: user?.email,
       avatar: "/profile-gradient.jpg",
     },
   };

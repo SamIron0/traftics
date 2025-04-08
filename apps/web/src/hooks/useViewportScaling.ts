@@ -91,7 +91,6 @@ export function useViewportScaling({
     wrapperRef,
   ]);
 
-  // Add effect to handle sidebar state changes
   useEffect(() => {
     updateScale();
     // Add resize observer to handle container size changes

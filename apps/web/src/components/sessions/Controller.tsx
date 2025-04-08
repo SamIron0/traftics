@@ -127,21 +127,6 @@ export function Controller({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={onSkipForward}
-                    aria-label="Skip forward"
-                  >
-                    <RotateCw className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Skip forward</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
                     onClick={onSkipBackward}
                     aria-label="Skip backward"
                   >
@@ -150,6 +135,21 @@ export function Controller({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Skip backward</p>
+                </TooltipContent>
+              </Tooltip>{" "}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onSkipForward}
+                    aria-label="Skip forward"
+                  >
+                    <RotateCw className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Skip forward</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -175,14 +175,16 @@ export function Controller({
                 {formatTime(currentTime)} / {formatTime(session.duration)}
               </span>
               <Tooltip>
-                <div>
-                  <PlayerSwitch
-                    checked={skipInactive}
-                    onCheckedChange={onSkipInactiveChange}
-                    className="relative transition-colors duration-200"
-                    aria-label="Toggle skip inactivity"
-                  />
-                </div>
+                <TooltipTrigger asChild>
+                  <div>
+                    <PlayerSwitch
+                      checked={skipInactive}
+                      onCheckedChange={onSkipInactiveChange}
+                      className="relative transition-colors duration-200"
+                      aria-label="Toggle skip inactivity"
+                    />
+                  </div>
+                </TooltipTrigger>
                 <TooltipContent>
                   <p>Skip inactive periods</p>
                 </TooltipContent>
