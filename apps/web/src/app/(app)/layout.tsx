@@ -1,15 +1,10 @@
 "use client";
 
 import "../globals.css";
-import { useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Navbar } from "@/components/Navbar";
 import { useSearchParams } from "next/navigation";
-import { useAppStore } from "@/stores/useAppStore";
-import { Spinner } from "@/components/ui/spinner";
-import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();

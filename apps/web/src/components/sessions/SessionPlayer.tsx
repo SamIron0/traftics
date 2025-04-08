@@ -15,7 +15,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Session } from "@/types/api";
-import { EventType, eventWithTime, IncrementalSource, viewportResizeData } from "@rrweb/types";
+import {
+  EventType,
+  eventWithTime,
+  IncrementalSource,
+  viewportResizeData,
+} from "@rrweb/types";
 import { motion } from "framer-motion";
 import { itemVariants } from "@/lib/animation-variants";
 import { Replayer } from "rrweb";
@@ -253,9 +258,13 @@ export default function SessionPlayer({
     }, null as eventWithTime | null);
 
     const width =
-      (currentResizeEvent?.data as viewportResizeData)?.width || session.screen_width || 0;
+      (currentResizeEvent?.data as viewportResizeData)?.width ||
+      session.screen_width ||
+      0;
     const height =
-      (currentResizeEvent?.data as viewportResizeData)?.height || session.screen_height || 0;
+      (currentResizeEvent?.data as viewportResizeData)?.height ||
+      session.screen_height ||
+      0;
 
     const heightScale = containerHeight / height;
     const widthScale = containerWidth / width;
@@ -351,9 +360,7 @@ export default function SessionPlayer({
 
   const handleSkipInactive = useCallback(() => {
     if (!replayer) return;
-    if (wrapperRef.current) {
-      wrapperRef.current.innerHTML = "";
-    }
+
     replayer.setConfig({ skipInactive: !skipInactive });
     setSkipInactive(!skipInactive);
   }, [replayer, skipInactive]);
@@ -372,13 +379,11 @@ export default function SessionPlayer({
     params.delete("sessionId");
     router.push(`?${params.toString()}`);
   };
-
+  
   const handleSpeedChange = (speed: number) => {
     if (!replayer) return;
-    if (wrapperRef.current) {
-      wrapperRef.current.innerHTML = "";
-    }
 
+    // Don't clear the DOM content, just update the config
     replayer.setConfig({ speed });
     setPlaybackSpeed(speed);
   };
@@ -760,9 +765,7 @@ export default function SessionPlayer({
             justifyContent: "center",
             height: "calc(100vh - 185px)",
           }}
-        >
-          
-        </div>
+        ></div>
       </div>
     </div>
   );

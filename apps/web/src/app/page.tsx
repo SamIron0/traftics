@@ -43,5 +43,5 @@ export default function HomePage() {
     );
   }
 
-  return null; // Ensure this component doesn't render anything if it's done loading
+  return null; 
 }
