@@ -41,11 +41,11 @@ export function SignupForm() {
     }
   };
 
-  const handleGithubSignup = async () => {
+  const handleGoogleSignup = async () => {
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: "github",
+        provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
@@ -62,7 +62,7 @@ export function SignupForm() {
         type="button"
         variant="outline"
         className="w-full"
-        onClick={handleGithubSignup}
+        onClick={handleGoogleSignup}
       >
         <Image
           alt="google icon"

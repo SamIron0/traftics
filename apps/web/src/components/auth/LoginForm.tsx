@@ -25,20 +25,8 @@ export function LoginForm() {
       });
 
       if (error) throw error;
-      const { data: user } = await supabase.auth.getUser();
-      if (!user?.user?.id) throw new Error("User not found");
-      // Get user profile to redirect to correct org/project
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select(
-          `
-            active_project_id,
-            websites!fk_active_project(slug)
-          `
-        )
-        .eq("user_id", user?.user?.id)
-        .single();
-      router.push(`/project/${profile?.websites?.slug}/sessions`);
+
+      router.push(`/`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sign in");
     } finally {
@@ -46,11 +34,11 @@ export function LoginForm() {
     }
   };
 
-  const handleGithubLogin = async () => {
+  const handleGoogleSignin = async () => {
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: "github",
+        provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
@@ -58,7 +46,7 @@ export function LoginForm() {
       if (error) throw error;
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to sign in with Github"
+        err instanceof Error ? err.message : "Failed to sign in with Google"
       );
     }
   };
@@ -69,7 +57,7 @@ export function LoginForm() {
         type="button"
         variant="outline"
         className="w-full"
-        onClick={handleGithubLogin}
+        onClick={handleGoogleSignin}
       >
         <Image
           alt="google icon"

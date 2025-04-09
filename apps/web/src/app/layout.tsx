@@ -1,6 +1,7 @@
 import { Analytics } from "@vercel/analytics/react"
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
+
 export const metadata = {
   title: "Traftics",
   description: "Powerful user analytics",

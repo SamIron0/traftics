@@ -1,6 +1,5 @@
 "use client";
 
-import "../globals.css";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Navbar } from "@/components/Navbar";
@@ -8,14 +7,10 @@ import { useSearchParams } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+
+export function AppWrapper({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const isReplayMode = searchParams.get("mode") === "replay";
-
   const shouldShowNavbar = !isReplayMode;
 
   return (
@@ -35,4 +30,4 @@ export default function RootLayout({
       </SidebarProvider>
     </QueryClientProvider>
   );
-}
+} 

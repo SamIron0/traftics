@@ -3,7 +3,6 @@
 import {useEffect, useState } from "react";
 import Pricing from "@/components/Pricing";
 import { Tables } from "supabase/types";
-import { createClient } from "@/utils/supabase/client";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 interface ProductWithPrices extends Tables<"products"> {

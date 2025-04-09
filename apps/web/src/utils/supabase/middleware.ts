@@ -37,7 +37,8 @@ export async function updateSession(request: NextRequest) {
     "/auth/confirm",
     "/auth/update-password",
     "/signup/confirm",
-    "/api/collect"
+    "/api/collect",
+    "/auth/callback",
   ];
   // Check if the current path is a public route
   const isPublicRoute = publicRoutes.some(
