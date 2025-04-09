@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import { SessionsPage } from "@/components/sessions/SessionsPage";
 import { UnverifiedView } from "@/components/Dashboard/UnverifiedView";
 import { generateScript } from "@/utils/helpers";
@@ -23,7 +23,7 @@ export default function Sessions() {
     const script = generateScript(projectId);
     return <UnverifiedView script={script} />;
   }
-
+  console.log("check:", isWebsiteVerified);
   if (isLoading) {
     return <SessionsSkeleton />;
   }
@@ -31,9 +31,13 @@ export default function Sessions() {
   if (error) {
     return (
       <div className="p-8">
-        <h2 className="text-xl font-semibold text-red-500">Error loading sessions</h2>
+        <h2 className="text-xl font-semibold text-red-500">
+          Error loading sessions
+        </h2>
         <p className="text-gray-600">
-          {error instanceof Error ? error.message : 'An unexpected error occurred'}
+          {error instanceof Error
+            ? error.message
+            : "An unexpected error occurred"}
         </p>
       </div>
     );

@@ -57,14 +57,9 @@ export function AppSidebar() {
   const { full_name } = useAppStore();
   const projectSlug = useAppStore((state) => state.projectSlug);
   const handleLogout = async () => {
-    if (!user?.id) {
-      router.push("/signup");
-      return;
-    }
     try {
-      await signOut();
       reset();
-      router.push("/login");
+      await signOut();
     } catch (error) {
       console.error("Error signing out:", error);
     }
