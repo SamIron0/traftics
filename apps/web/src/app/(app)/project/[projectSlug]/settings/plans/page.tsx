@@ -4,7 +4,7 @@ import {useEffect, useState } from "react";
 import Pricing from "@/components/Pricing";
 import { Tables } from "supabase/types";
 import { createClient } from "@/utils/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 interface ProductWithPrices extends Tables<"products"> {
   prices: Tables<"prices">[];
@@ -44,7 +44,8 @@ function PricingSkeleton() {
 
 export default function PricingPage() {
   const [products, setProducts] = useState<ProductWithPrices[]>([]);
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useAuthStatus();
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -52,11 +53,6 @@ export default function PricingPage() {
         const productsResponse = await fetch('/api/products');
         const productsData = await productsResponse.json();
         setProducts(productsData || []);
-
-        // Get user session
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
       } catch (error) {
         console.error('Error fetching data:', error);
       }

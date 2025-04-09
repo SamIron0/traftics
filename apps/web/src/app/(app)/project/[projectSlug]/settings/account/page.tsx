@@ -16,11 +16,12 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState("");
   const { toast } = useToast();
-  const user_id = user?.id || "22acab5b-c6fd-4eef-b456-29d7fd4753a7";
   const router = useRouter();
   const initializeState = useAppStore((state) => state.initializeState);
-
+  
   useEffect(() => {
+    if (!user) return;
+    const user_id = user.id;
     async function fetchUserProfile() {
       const supabase = createClient();
       const { data: profile } = await supabase
@@ -35,7 +36,7 @@ export default function AccountPage() {
     }
 
     fetchUserProfile();
-  }, [user_id]);
+  }, [user]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     if (!user?.id) {
