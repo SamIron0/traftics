@@ -9,6 +9,8 @@ import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { createClient } from "@/utils/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { useAppStore } from "@/stores/useAppStore";
+
 export default function AccountPage() {
   const { user } = useAuthStatus();
   const [loading, setLoading] = useState(false);
@@ -16,6 +18,8 @@ export default function AccountPage() {
   const { toast } = useToast();
   const user_id = user?.id || "22acab5b-c6fd-4eef-b456-29d7fd4753a7";
   const router = useRouter();
+  const initializeState = useAppStore((state) => state.initializeState);
+
   useEffect(() => {
     async function fetchUserProfile() {
       const supabase = createClient();
@@ -54,8 +58,16 @@ export default function AccountPage() {
         .eq("user_id", user?.id);
 
       if (profileError) throw profileError;
+
+      // Re-initialize app state to update the store
+      await initializeState(user);
     } catch (error) {
       console.error("Error updating profile:", error);
+      toast({
+        variant: "destructive",
+        description: "Failed to update profile",
+      });
+      return;
     } finally {
       setLoading(false);
       toast({

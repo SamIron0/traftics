@@ -21,25 +21,56 @@ export async function GET(request: NextRequest) {
     });
 
     if (!error && user) {
-      // Create a new website record with auto-generated name
+      // Create a new organization
+      const orgId = uuidv4();
+      const { error: orgError } = await supabase.from("organizations").insert({
+        id: orgId,
+        name: `${user.email?.split("@")[0]}'s Organization`, // Create default org name from email
+        size: 1,
+      });
+
+      if (orgError) {
+        console.error("Error creating organization:", orgError);
+        redirect("/login");
+      }
+
       const websiteId = uuidv4();
+      const { error: profileError } = await supabase
+        .from("user_profiles")
+        .update({
+          is_onboarded: true,
+          org_id: orgId,
+        })
+        .eq("user_id", user.id);
+
+      if (profileError) {
+        console.error("Error updating profile:", profileError);
+        redirect("/login");
+      }
+
       const { error: websiteError } = await supabase.from("websites").insert({
         id: websiteId,
         tracking_id: uuidv4(),
         verified: false,
+        org_id: orgId,
+        slug: "project-" + websiteId.slice(0, 8),
       });
 
-      if (!websiteError) {
-        // Update user profile with the new active project
-        await supabase
-          .from("user_profiles")
-          .update({
-            is_onboarded: true,
-            active_project_id: websiteId,
-          })
-          .eq("user_id", user.id);
+      if (websiteError) {
+        console.error("Error creating website:", websiteError);
+        redirect("/login");
       }
 
+      const { error: activeProjectError } = await supabase
+        .from("user_profiles")
+        .update({
+          active_project_id: websiteId,
+        })
+        .eq("user_id", user.id);
+
+      if (activeProjectError) {
+        console.error("Error updating active project:", websiteError);
+      }
       redirect("/login");
     }
   }
