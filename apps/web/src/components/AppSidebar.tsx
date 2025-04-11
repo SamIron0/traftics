@@ -58,8 +58,8 @@ export function AppSidebar() {
   const projectSlug = useAppStore((state) => state.projectSlug);
   const handleLogout = async () => {
     try {
-      await signOut();
       reset();
+      await signOut();
     } catch (error) {
       console.error("Error signing out:", error);
     }

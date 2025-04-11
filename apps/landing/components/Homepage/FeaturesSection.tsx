@@ -98,7 +98,7 @@ export default function FeaturesSection() {
         </div>
 
         {/* Right Column - Placeholder */}
-        <div className="mb-8 lg:mb-0  rounded-2xl bg-[#EFEEEB] p-5">
+        <div className="mb-8 lg:mb-0  rounded-2xl bg-slate-200 p-5">
           <Image
             alt={content[activeTab].title}
             src={content[activeTab].image}

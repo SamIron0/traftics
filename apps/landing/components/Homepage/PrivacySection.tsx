@@ -1,11 +1,11 @@
 import { ShieldCheck } from "lucide-react";
-export default function PrivacySection() {
+export default function () {
   return (
     <div>
-      <h2 className="text-4xl sm:text-5xl font-medium tracking-tight mb-4">
+      <h2 className="text-4xl sm:text-5xl font-medium tracking-tight mb-4 text-center">
         Privacy focused by design
       </h2>
-      <p className="text-lg  text-muted-foreground px-4 sm:max-w-xl mx-auto">
+      <p className="text-lg text-muted-foreground px-4 sm:max-w-xl mx-auto text-center">
         Build trust with your users while gaining the insights you need.
       </p>
 
@@ -18,7 +18,8 @@ export default function PrivacySection() {
             <h3 className="text-xl font-semibold">Data Masking</h3>
             <p className="text-gray-500 text-left max-w-xs">
               We do not record sensitive data like passwords, credit card
-              numbers, or any other personal identifiable information during recording.
+              numbers, or any other personal identifiable information during
+              recording.
             </p>
           </div>
           <div className="flex flex-col items-start space-y-4">

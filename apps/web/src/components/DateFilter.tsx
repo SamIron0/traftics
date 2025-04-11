@@ -67,7 +67,7 @@ export default function DateFilter({ onDateRangeChange }: DateFilterProps) {
     },
   ]
 
-  const [selectedRange, setSelectedRange] = useState<DateRange>(dateRanges[2]) // Default to "Last 30 days"
+  const [selectedRange, setSelectedRange] = useState<DateRange>(dateRanges[6])
 
   const formatDateRange = (range: DateRange) => {
     return `${format(range.startDate, "MMM d, yyyy")} - ${format(range.endDate, "MMM d, yyyy")}`

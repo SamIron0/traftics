@@ -450,7 +450,7 @@ export function ClientSessionList({ sessions, onSelectSession, dateRange, status
         </Table>
       </div>
       {/* Pagination Controls */}
-      <div className="flex items-center justify-between">
+      <div className="mt-3 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Showing {startIndex + 1} to {Math.min(endIndex, sortedAndFilteredSessions.length)} of {sortedAndFilteredSessions.length} sessions
         </p>

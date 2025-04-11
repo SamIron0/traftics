@@ -39,7 +39,7 @@ export default function VideoDemo() {
           </div>
           <div className="flex-1 text-center px-2">
             <div className="bg-zinc-700/50 w-full  rounded-md text-xs text-zinc-300 py-0.5 px-2 inline-block">
-              demo.traftics.com
+              app.traftics.com
             </div>
           </div>
         </div>

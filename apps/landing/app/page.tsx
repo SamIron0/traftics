@@ -1,5 +1,5 @@
 "use client";
-import { Rocket, Router } from "lucide-react";
+import { Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import VideoDemo from "@/components/Homepage/VideoDemo";
 import FeaturesSection from "@/components/Homepage/FeaturesSection";
@@ -13,13 +13,13 @@ export default function Home() {
   return (
     <>
       <div className="">
-        <section className="grid max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-32 lg:grid-cols-[48fr_52fr] gap-12 items-center">
-          <div className="text-center order-first lg:text-left">
-            <h1 className="text-4xl sm:text-5xl max-w-2xl mx-auto font-medium tracking-tight mb-4">
+        <section className="grid mx-auto px-6 sm:px-8 lg:px-14 xl:px-24 2xl:px-56 pt-32 lg:grid-cols-[48fr_52fr] gap-12 items-center">
+          <div className="text-center max-w-2xl mx-auto order-first lg:text-left">
+            <h1 className="text-4xl sm:text-5xl  mx-auto font-medium tracking-tight mb-4">
               Record and Replay interactions you{" "}
               <span className="text-primary"> need </span> to see.
             </h1>
-            <p className="text-lg sm:text-[21px] max-w-sm sm:max-w-md mx-auto lg:mx-0 text-muted-foreground mb-12">
+            <p className="text-lg sm:text-[19px] max-w-sm sm:max-w-md mx-auto lg:mx-0 text-muted-foreground mb-12">
               Automatically analyze all sessions recordings and surface only
               those that provide valuable insights.
             </p>
@@ -44,7 +44,7 @@ export default function Home() {
                 }
               >
                 <Rocket className="mr-1 h-4 w-4" />
-                View the demo
+                Book a demo
               </Button>
             </div>
           </div>
@@ -53,7 +53,7 @@ export default function Home() {
             <VideoDemo />
           </div>
         </section>
-        <section className="mt-24 sm:mt-32 max-w-7xl mx-auto px-8 lg:px-12">
+        <section className="mt-24 sm:mt-32 lg:mt-44 max-w-7xl mx-auto px-8 lg:px-12">
           <div className="text-center mb-12">
             <h2 className="text-4xl sm:text-5xl font-medium tracking-tight mb-4">
               Powerful features to understand your users
@@ -76,10 +76,8 @@ export default function Home() {
             Get started for free
           </Button>
         </div>
-        <div className="w-full flex flex-col items-center px-8 py-8">
-          <div className="text-center mb-12">
+        <div className="w-full mx-auto flex flex-col items-center px-8 py-8">
             <PrivacySection />
-          </div>
         </div>
         <div className="mt-12 w-full flex flex-col items-center px-8 py-8">
           <div className="text-center mb-12">
