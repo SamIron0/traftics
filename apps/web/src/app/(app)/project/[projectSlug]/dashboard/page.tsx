@@ -1,4 +1,5 @@
 'use client'
+
 import Dashboard from "@/components/Dashboard/Dashboard";
 import { UnverifiedView } from "@/components/Dashboard/UnverifiedView";
 import { DashboardSkeleton } from "@/components/Dashboard/DashboardSkeleton";
