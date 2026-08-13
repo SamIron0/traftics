@@ -64,11 +64,11 @@ export default function PrivacyPage() {
                 Visit our website at{" "}
                 <span style={{ color: "rgb(0, 58, 250)" }}>
                   <a
-                    href="http://www.traftics.com"
+                    href="http://www.traftics.ironkwe.site"
                     target="_blank"
                     data-custom-class="link"
                   >
-                    http://www.traftics.com
+                    http://www.traftics.ironkwe.site
                   </a>
                 </span>
                 <span style={{ fontSize: 15 }}>
@@ -355,11 +355,11 @@ export default function PrivacyPage() {
                 way to exercise your rights is by visiting{" "}
                 <span style={{ color: "rgb(0, 58, 250)" }}>
                   <a
-                    href="http://www.traftics.com/contact"
+                    href="http://www.traftics.ironkwe.site/contact"
                     target="_blank"
                     data-custom-class="link"
                   >
-                    http://www.traftics.com/contact
+                    http://www.traftics.ironkwe.site/contact
                   </a>
                 </span>
                 , or by contacting us. We will consider and act upon any request
@@ -1193,11 +1193,11 @@ export default function PrivacyPage() {
                   this in our Cookie Notice:{" "}
                   <span style={{ color: "rgb(0, 58, 250)" }}>
                     <a
-                      href="http://www.traftics.com/cookies"
+                      href="http://www.traftics.ironkwe.site/cookies"
                       target="_blank"
                       data-custom-class="link"
                     >
-                      http://www.traftics.com/cookies
+                      http://www.traftics.ironkwe.site/cookies
                     </a>
                   </span>
                   .
@@ -3504,11 +3504,11 @@ export default function PrivacyPage() {
                                                                           >
                                                                             <span data-custom-class="body_text">
                                                                               <a
-                                                                                href="http://www.traftics.com/cookies"
+                                                                                href="http://www.traftics.ironkwe.site/cookies"
                                                                                 target="_blank"
                                                                                 data-custom-class="link"
                                                                               >
-                                                                                http://www.traftics.com/cookies
+                                                                                http://www.traftics.ironkwe.site/cookies
                                                                               </a>
                                                                             </span>
                                                                           </span>
@@ -7004,11 +7004,11 @@ export default function PrivacyPage() {
                                                                                   }}
                                                                                 >
                                                                                   <a
-                                                                                    href="http://www.traftics.com/cookies"
+                                                                                    href="http://www.traftics.ironkwe.site/cookies"
                                                                                     target="_blank"
                                                                                     data-custom-class="link"
                                                                                   >
-                                                                                    http://www.traftics.com/cookies
+                                                                                    http://www.traftics.ironkwe.site/cookies
                                                                                   </a>
                                                                                 </span>
 
@@ -11231,11 +11231,11 @@ export default function PrivacyPage() {
                                                                                               }}
                                                                                             >
                                                                                               <a
-                                                                                                href="http://www.traftics.com/contact"
+                                                                                                href="http://www.traftics.ironkwe.site/contact"
                                                                                                 target="_blank"
                                                                                                 data-custom-class="link"
                                                                                               >
-                                                                                                http://www.traftics.com/contact
+                                                                                                http://www.traftics.ironkwe.site/contact
                                                                                               </a>
                                                                                             </span>
 
@@ -13020,11 +13020,11 @@ export default function PrivacyPage() {
                                                                                               }}
                                                                                             >
                                                                                               <a
-                                                                                                href="http://www.traftics.com/contact"
+                                                                                                href="http://www.traftics.ironkwe.site/contact"
                                                                                                 target="_blank"
                                                                                                 data-custom-class="link"
                                                                                               >
-                                                                                                http://www.traftics.com/contact
+                                                                                                http://www.traftics.ironkwe.site/contact
                                                                                               </a>
                                                                                             </span>
                                                                                           </span>

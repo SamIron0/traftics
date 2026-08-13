@@ -166,11 +166,11 @@ export default function TermsPage() {
             We operate the website{" "}
             <span style={{ color: "rgb(0, 58, 250)" }}>
               <a
-                href="https://www.traftics.com"
+                href="https://www.traftics.ironkwe.site"
                 target="_blank"
                 data-custom-class="link"
               >
-                https://www.traftics.com
+                https://www.traftics.ironkwe.site
               </a>
             </span>{" "}
             (the "<strong>Site</strong>" ) , as well as any other related
@@ -3459,11 +3459,11 @@ export default function TermsPage() {
             &nbsp;
             <span style={{ color: "rgb(0, 58, 250)" }}>
               <a
-                href="https://traftics.com/privacy"
+                href="https://traftics.ironkwe.site/privacy"
                 target="_blank"
                 data-custom-class="link"
               >
-                https://traftics.com/privacy
+                https://traftics.ironkwe.site/privacy
               </a>
             </span>
           </strong>

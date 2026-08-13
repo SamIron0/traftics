@@ -8,7 +8,7 @@ export const stripe = new Stripe(
     appInfo: {
       name: 'Traftics',
       version: '0.0.0',
-      url: 'https://traftics.com'
+      url: 'https://traftics.ironkwe.site'
     }
   }
 );
