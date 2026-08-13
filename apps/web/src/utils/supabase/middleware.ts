@@ -39,6 +39,12 @@ export async function updateSession(request: NextRequest) {
     "/signup/confirm",
     "/api/collect",
     "/auth/callback",
+    // Marketing pages proxied to the landing app (see next.config.ts rewrites)
+    "/landing-static",
+    "/pricing",
+    "/contact",
+    "/privacy",
+    "/terms",
   ];
   // Check if the current path is a public route
   const isPublicRoute = publicRoutes.some(
@@ -48,6 +54,15 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Logged-out visitors on the root see the landing (marketing) page,
+  // served by the standalone landing deployment. Logged-in users fall
+  // through to the app home page, which forwards them to their dashboard.
+  if (pathname === "/" && !user) {
+    const landingUrl =
+      process.env.LANDING_URL ?? "https://traftic-landing.vercel.app";
+    return NextResponse.rewrite(new URL("/", landingUrl), { request });
+  }
 
   // If not a public route and no user, redirect to login
   if (!isPublicRoute) {
