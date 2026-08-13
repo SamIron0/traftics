@@ -20,7 +20,7 @@ type CheckoutResponse = {
 
 export async function checkoutWithStripe(
   price: Price,
-  redirectPath: string = '/account'
+  redirectPath = '/account'
 ): Promise<CheckoutResponse> {
   try {
     const supabase = await createClient();

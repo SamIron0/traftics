@@ -5,7 +5,7 @@ import { Session } from "@/types/api";
 
 interface UseReplayerProps {
   session: Session & { events: eventWithTime[] };
-  wrapperRef: React.RefObject<HTMLDivElement>;
+  wrapperRef: React.RefObject<HTMLDivElement | null>;
   skipInactive: boolean;
   playbackSpeed: number;
   onTimeUpdate?: (time: number) => void;

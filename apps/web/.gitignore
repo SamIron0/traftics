@@ -47,3 +47,4 @@ docs/.cache
 # Docs
 docs/.next
 docs/out
+.env*

@@ -75,7 +75,7 @@ export default function Pricing({ products, user }: Props) {
       });
     }
   };
-  const handleManageSubscription = async () => {};
+  const handleManageSubscription = async () => undefined;
 
   const handleFreeSignup = () => router.push("/signup");
 
@@ -160,7 +160,7 @@ export default function Pricing({ products, user }: Props) {
               subscriptionStatus === "trialing";
 
             let buttonText = "";
-            let buttonAction = () => {};
+            let buttonAction: () => void | Promise<unknown> = () => undefined;
             let showButton = true;
 
             if (hasActiveSubscription) {
@@ -176,7 +176,7 @@ export default function Pricing({ products, user }: Props) {
                   ? "Cancelling Soon"
                   : "Downgrade";
                 buttonAction = cancelAtPeriodEnd
-                  ? () => {} // No action when cancellation is pending
+                  ? () => undefined
                   : () => {
                       setShowCancelDialog(true);
                     };

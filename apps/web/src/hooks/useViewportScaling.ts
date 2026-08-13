@@ -6,7 +6,7 @@ import { getRelativeTimestamp } from "@/utils/helpers";
 
 interface UseViewportScalingProps {
   session: Session & { events: eventWithTime[] };
-  wrapperRef: React.RefObject<HTMLDivElement>;
+  wrapperRef: React.RefObject<HTMLDivElement | null>;
   replayer: Replayer | null;
   isSessionInfoOpen: boolean;
 }

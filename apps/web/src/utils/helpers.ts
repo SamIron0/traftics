@@ -45,7 +45,7 @@ export const calculateTrialEndUnixTimestamp = (
   return Math.floor(trialEnd.getTime() / 1000); // Convert to Unix timestamp in seconds
 };
 
-export const getURL = (path: string = "") => {
+export const getURL = (path = "") => {
   let url =
     process?.env?.NEXT_PUBLIC_SITE_URL &&
     process.env.NEXT_PUBLIC_SITE_URL.trim() !== ""
@@ -70,9 +70,9 @@ const getToastRedirect = (
   path: string,
   toastType: string,
   toastName: string,
-  toastDescription: string = "",
-  disableButton: boolean = false,
-  arbitraryParams: string = ""
+  toastDescription = "",
+  disableButton = false,
+  arbitraryParams = ""
 ): string => {
   const [nameKey, descriptionKey] = toastKeyMap[toastType];
 
@@ -224,9 +224,9 @@ export const formatPlayerTime = (ms: number): string => {
 export const getErrorRedirect = (
   path: string,
   errorName: string,
-  errorDescription: string = "",
-  disableButton: boolean = false,
-  arbitraryParams: string = ""
+  errorDescription = "",
+  disableButton = false,
+  arbitraryParams = ""
 ) =>
   getToastRedirect(
     path,

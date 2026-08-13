@@ -58,7 +58,7 @@ export class UsageService {
   static async isApproachingQuota(
     siteId: string,
     org_id: string,
-    threshold: number = 0.9
+    threshold = 0.9
   ): Promise<boolean> {
     const quota = await this.getQuota(siteId, org_id);
     return quota.used / quota.limit >= threshold;

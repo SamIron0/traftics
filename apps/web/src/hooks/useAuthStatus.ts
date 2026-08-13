@@ -14,10 +14,9 @@ interface AuthStatus {
 export function useAuthStatus(): AuthStatus {
   const router = useRouter();
   const supabase = createClient();
-  const [status, setStatus] = useState<AuthStatus>({
+  const [status, setStatus] = useState<Pick<AuthStatus, "user" | "loading">>({
     user: null,
     loading: true,
-    signOut: async () => {},
   });
 
   useEffect(() => {
@@ -26,19 +25,9 @@ export function useAuthStatus(): AuthStatus {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) {
-        setStatus({
-          user: null,
-          loading: false,
-          signOut: async () => {},
-        });
-        return;
-      }
-
       setStatus({
-        user,
+        user: user ?? null,
         loading: false,
-        signOut: async () => {},
       });
     }
 
