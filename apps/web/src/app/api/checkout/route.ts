@@ -9,6 +9,7 @@ import {
   getErrorRedirect,
   calculateTrialEndUnixTimestamp,
 } from "@/utils/helpers";
+import { isDemoUser } from "@/utils/demo";
 
 export async function POST(request: Request) {
   const { price, redirectPath } = await request.json();
@@ -18,6 +19,13 @@ export async function POST(request: Request) {
 
   if (error || !user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  if (isDemoUser(user)) {
+    return NextResponse.json(
+      { error: "The demo account is read-only" },
+      { status: 403 }
+    );
   }
 
   try {

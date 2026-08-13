@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { generateScript } from "@/utils/helpers";
+import { isDemoUser } from "@/utils/demo";
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -11,6 +12,15 @@ export async function GET() {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Creating a website switches active_project_id, which would break the
+    // shared demo account for everyone.
+    if (isDemoUser(user)) {
+      return NextResponse.json(
+        { error: "The demo account is read-only" },
+        { status: 403 }
+      );
     }
     // Get user's organization and setup status
     const { data: profile } = await supabase

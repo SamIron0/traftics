@@ -8,6 +8,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { PasswordStrengthMeter } from "./PasswordStrengthMeter";
 import { Eye, EyeOff } from "lucide-react";
+import { isDemoUser } from "@/utils/demo";
 
 export function UpdatePasswordForm() {
   const [password, setPassword] = useState("");
@@ -31,6 +32,15 @@ export function UpdatePasswordForm() {
     }
 
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (isDemoUser(user)) {
+        setError("The demo account's password can't be changed.");
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: password,
       });

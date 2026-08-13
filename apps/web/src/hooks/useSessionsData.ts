@@ -22,6 +22,9 @@ export function useSessionsData(websiteId: string | null, mode?: string | null) 
     },
     staleTime: 1 * 60 * 1000, // 1 minute
     refetchInterval: mode === 'replay' ? false : 10 * 1000, // Poll every 10 seconds unless in replay mode
+    // "always" bypasses staleTime so the list is fresh the moment a user
+    // tabs back (e.g. demo visitors returning from the tracked demo site)
+    refetchOnWindowFocus: mode === 'replay' ? false : "always",
     enabled: !!websiteId,
   });
 } 

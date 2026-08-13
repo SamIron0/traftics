@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { stripe } from "@/utils/stripe/config";
+import { isDemoUser } from "@/utils/demo";
 
 export async function POST() {
   try {
@@ -9,6 +10,13 @@ export async function POST() {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (isDemoUser(user)) {
+      return NextResponse.json(
+        { error: "The demo account is read-only" },
+        { status: 403 }
+      );
     }
 
     // Get the customer's subscription

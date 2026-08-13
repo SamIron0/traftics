@@ -3,6 +3,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Navbar } from "@/components/Navbar";
+import { DemoBanner } from "@/components/demo/DemoBanner";
 import { useSearchParams } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -23,6 +24,7 @@ export function AppWrapper({ children }: { children: React.ReactNode }) {
               !isReplayMode ? "overflow-x-hidden" : ""
             }`}
           >
+            {!isReplayMode && <DemoBanner />}
             {shouldShowNavbar && <Navbar />}
             <main className={`flex-1 w-full`}>{children}</main>
           </div>

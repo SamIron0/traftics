@@ -20,6 +20,7 @@ import { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 import { PRICING_PLANS } from "@/config/pricing";
 import { useToast } from "@/hooks/use-toast";
+import { isDemoUser } from "@/utils/demo";
 
 type Product = Tables<"products">;
 type Price = Tables<"prices">;
@@ -44,9 +45,20 @@ export default function Pricing({ products, user }: Props) {
 
   const currentPath = usePathname();
 
+  const demoReadOnlyToast = () =>
+    toast({
+      description:
+        "You're on a shared demo account, so billing is read-only here.",
+    });
+
   const handleStripeCheckout = async (price: Price) => {
     if (!user) {
       router.push("/signup");
+      return;
+    }
+
+    if (isDemoUser(user)) {
+      demoReadOnlyToast();
       return;
     }
 
@@ -92,6 +104,11 @@ export default function Pricing({ products, user }: Props) {
   const handleCancelSubscription = async () => {
     if (user == null) {
       router.push("/signup");
+      return;
+    }
+    if (isDemoUser(user)) {
+      demoReadOnlyToast();
+      setShowCancelDialog(false);
       return;
     }
     try {

@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
-
-const DEMO_USER_EMAIL =
-  process.env.DEMO_USER_EMAIL ?? "samuelironkwec@gmail.com";
+import { DEMO_USER_EMAIL } from "@/utils/demo";
 
 export async function GET(request: Request) {
   try {

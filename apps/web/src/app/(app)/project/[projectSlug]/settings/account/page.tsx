@@ -10,6 +10,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/useAppStore";
+import { isDemoUser } from "@/utils/demo";
 
 export default function AccountPage() {
   const { user } = useAuthStatus();
@@ -44,6 +45,13 @@ export default function AccountPage() {
       return;
     }
     e.preventDefault();
+    if (isDemoUser(user)) {
+      toast({
+        description:
+          "You're on a shared demo account, so profile changes are disabled.",
+      });
+      return;
+    }
     setLoading(true);
     toast({
       description: "Updating profile...",
@@ -111,11 +119,20 @@ export default function AccountPage() {
           <CardContent>
             <Button
               variant="outline"
-              onClick={() =>
-                user?.id
-                  ? (window.location.href = "/forgot-password")
-                  : router.push("/signup")
-              }
+              onClick={() => {
+                if (isDemoUser(user)) {
+                  toast({
+                    description:
+                      "You're on a shared demo account, so the password can't be changed.",
+                  });
+                  return;
+                }
+                if (user?.id) {
+                  window.location.href = "/forgot-password";
+                } else {
+                  router.push("/signup");
+                }
+              }}
             >
               Change Password
             </Button>

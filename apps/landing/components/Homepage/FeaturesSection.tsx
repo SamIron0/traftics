@@ -34,7 +34,7 @@ export default function FeaturesSection() {
     prioritization: {
       title: "Intelligent Priority Assessment",
       description:
-        " Not all session are created equal and we know that, that&apos;s why we auto tag sessions based on your priorities so you can spend less time sifting through irrelevant data.",
+        "Not all sessions are created equal and we know that, that's why we auto tag sessions based on your priorities so you can spend less time sifting through irrelevant data.",
       image: "/homepage-intelligent-assessment.png",
     },
     analytics: {
