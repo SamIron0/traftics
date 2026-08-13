@@ -44,13 +44,17 @@ case "$1" in
   "docs")
     deploy_docs
     ;;
+  "landing")
+    deploy_landing
+    ;;
   "all")
     deploy_tracker
     deploy_web
     deploy_docs
+    deploy_landing
     ;;
   *)
-    echo "Usage: ./deploy.sh [tracker|web|docs|all]"
+    echo "Usage: ./deploy.sh [tracker|web|docs|landing|all]"
     exit 1
     ;;
 esac 

@@ -31,12 +31,14 @@
     "build:tracker": "pnpm --filter @traftics/tracker build",
     "build:web": "pnpm --filter web build",
     "build:docs": "cd docs && pnpm build",
+    "build:landing": "pnpm --filter landing build",
     "install:all": "pnpm install && pnpm install --filter @traftics/tracker && pnpm install --filter web && pnpm install --filter docs",
     "clean": "pnpm -r exec rm -rf dist node_modules pnpm-lock.yaml package-lock.json",
     "deploy:all": "bash infrastructure/scripts/deploy.sh all",
     "deploy:tracker": "bash infrastructure/scripts/deploy.sh tracker",
     "deploy:web": "bash infrastructure/scripts/deploy.sh web",
-    "deploy:docs": "vercel deploy docs --prod"
+    "deploy:docs": "vercel deploy docs --prod",
+    "deploy:landing": "bash infrastructure/scripts/deploy.sh landing"
   },
   "browserslist": [
     "defaults",
