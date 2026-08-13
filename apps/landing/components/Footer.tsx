@@ -8,7 +8,7 @@ const productLinks = [
 ];
 
 const companyLinks = [
-  { name: "About", href: "https://www.linkedin.com/company/traftics/" },
+  { name: "About", href: "https://www.linkedin.com/in/samuel-ironkwe/" },
   { name: "Contact", href: "/contact" },
 ];
 
@@ -25,7 +25,7 @@ const socialLinks = [
   },
   {
     name: "LinkedIn",
-    href: "https://linkedin.com/company/traftics",
+    href: "https://www.linkedin.com/in/samuel-ironkwe/",
     icon: Linkedin,
   },
 ];
