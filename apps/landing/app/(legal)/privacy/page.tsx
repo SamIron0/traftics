@@ -35,14 +35,14 @@ export default function PrivacyPage() {
         <span style={{ color: "rgb(127, 127, 127)" }}>
           <span style={{ color: "rgb(89, 89, 89)", fontSize: 15 }}>
             <span data-custom-class="body_text">
-              This Privacy Notice for Traftics ("<strong>we</strong>," "
-              <strong>us</strong>," or "<strong>our</strong>"
+              This Privacy Notice for Traftics (&quot;<strong>we</strong>,&quot; &quot;
+              <strong>us</strong>,&quot; or &quot;<strong>our</strong>&quot;
             </span>
             <span data-custom-class="body_text">
               ), describes how and why we might access, collect, store, use,
-              and/or share ("
-              <strong>process</strong>" ) your personal information when you use
-              our services ( "<strong>Services</strong>" ), including when you:
+              and/or share (&quot;
+              <strong>process</strong>&quot; ) your personal information when you use
+              our services ( &quot;<strong>Services</strong>&quot; ), including when you:
             </span>
           </span>
         </span>
@@ -228,8 +228,8 @@ export default function PrivacyPage() {
                 <strong>
                   Do we process any sensitive personal information?&nbsp;
                 </strong>
-                Some of the information may be considered "special" or
-                "sensitive" in certain jurisdictions, for example your racial or
+                Some of the information may be considered &quot;special&quot; or
+                &quot;sensitive&quot; in certain jurisdictions, for example your racial or
                 ethnic origins, sexual orientation, and religious beliefs. We do
                 not process sensitive personal information.
               </span>
@@ -1053,7 +1053,7 @@ export default function PrivacyPage() {
                   social media account details, like your Facebook, X, or other
                   social media account. If you choose to register in this way,
                   we will collect certain profile information about you from the
-                  social media provider, as described in the section called "
+                  social media provider, as described in the section called &quot;
                   <span style={{ fontSize: 15 }}>
                     <span data-custom-class="body_text">
                       <span style={{ fontSize: 15 }}>
@@ -1065,7 +1065,7 @@ export default function PrivacyPage() {
                       </span>
                     </span>
                   </span>
-                  " below.
+                  &quot; below.
                 </span>
               </span>
             </span>
@@ -1244,7 +1244,7 @@ export default function PrivacyPage() {
                     date/time stamps associated with your usage, pages and files
                     viewed, searches, and other actions you take such as which
                     features you use), device event information (such as system
-                    activity, error reports (sometimes called "crash dumps" ),
+                    activity, error reports (sometimes called &quot;crash dumps&quot; ),
                     and hardware settings).
                     <span style={{ fontSize: 15 }}>
                       <span style={{ color: "rgb(89, 89, 89)" }}>
@@ -1303,7 +1303,7 @@ export default function PrivacyPage() {
                 <span style={{ fontSize: 15, color: "rgb(89, 89, 89)" }}>
                   <span data-custom-class="body_text">
                     <em>Location Data.</em> We collect location data such as
-                    information about your device's location, which can be
+                    information about your device&apos;s location, which can be
                     either precise or imprecise. How much information we collect
                     depends on the type and settings of the device you use to
                     access the Services. For example, we may use GPS and other
@@ -1668,7 +1668,7 @@ export default function PrivacyPage() {
                                                               <strong>
                                                                 To save or
                                                                 protect an
-                                                                individual's
+                                                                individual&apos;s
                                                                 vital interest.
                                                               </strong>{" "}
                                                               We may process
@@ -3371,7 +3371,7 @@ export default function PrivacyPage() {
                                                                         are
                                                                         deemed
                                                                         to be a{" "}
-                                                                        "sale"/"sharing"{" "}
+                                                                        &quot;sale&quot;/&quot;sharing&quot;{" "}
                                                                         (which
                                                                         includes
                                                                         targeted
@@ -3401,7 +3401,7 @@ export default function PrivacyPage() {
                                                                         below
                                                                         under
                                                                         section{" "}
-                                                                        "
+                                                                        &quot;
                                                                       </span>
                                                                     </span>
                                                                     <span data-custom-class="body_text">
@@ -3433,7 +3433,7 @@ export default function PrivacyPage() {
                                                                       }}
                                                                     >
                                                                       <span data-custom-class="body_text">
-                                                                        "
+                                                                        &quot;
                                                                       </span>
                                                                     </span>
                                                                   </div>
@@ -3865,9 +3865,9 @@ export default function PrivacyPage() {
                                                                         similar
                                                                         technologies
                                                                         (collectively,{" "}
-                                                                        " AI
+                                                                        &quot; AI
                                                                         Products
-                                                                        " ).
+                                                                        &quot; ).
                                                                         These
                                                                         tools
                                                                         are
@@ -3953,10 +3953,10 @@ export default function PrivacyPage() {
                                                                         third-party
                                                                         service
                                                                         providers
-                                                                        ( " AI
+                                                                        ( &quot; AI
                                                                         Service
                                                                         Providers
-                                                                        " ),
+                                                                        &quot; ),
                                                                         including{" "}
                                                                         Google
                                                                         Cloud AI
@@ -3988,7 +3988,7 @@ export default function PrivacyPage() {
                                                                         for
                                                                         purposes
                                                                         outlined
-                                                                        in "
+                                                                        in &quot;
                                                                       </span>
                                                                     </span>
                                                                     <span data-custom-class="body_text">
@@ -4020,7 +4020,7 @@ export default function PrivacyPage() {
                                                                           fontSize: 15,
                                                                         }}
                                                                       >
-                                                                        " You
+                                                                        &quot; You
                                                                         must not
                                                                         use the
                                                                         AI
@@ -4221,7 +4221,7 @@ export default function PrivacyPage() {
                                                                         mind
                                                                         about
                                                                         your
-                                                                        data's
+                                                                        data&apos;s
                                                                         safety.
                                                                       </span>
                                                                     </span>
@@ -4967,7 +4967,7 @@ export default function PrivacyPage() {
                                                                           the
                                                                           termination
                                                                           of the
-                                                                          user's
+                                                                          user&apos;s
                                                                           account
                                                                           <span
                                                                             style={{
@@ -5971,7 +5971,7 @@ export default function PrivacyPage() {
                                                                           provided
                                                                           in the
                                                                           section{" "}
-                                                                          "
+                                                                          &quot;
                                                                         </span>
                                                                       </span>
                                                                     </span>
@@ -6021,7 +6021,7 @@ export default function PrivacyPage() {
                                                                         }}
                                                                       >
                                                                         <span data-custom-class="body_text">
-                                                                          "{" "}
+                                                                          &quot;{" "}
                                                                           below.
                                                                         </span>
                                                                       </span>
@@ -6403,7 +6403,7 @@ export default function PrivacyPage() {
                                                                           provided
                                                                           in the
                                                                           section{" "}
-                                                                          "
+                                                                          &quot;
                                                                         </span>
                                                                       </span>
                                                                     </span>
@@ -6453,7 +6453,7 @@ export default function PrivacyPage() {
                                                                         }}
                                                                       >
                                                                         <span data-custom-class="body_text">
-                                                                          "{" "}
+                                                                          &quot;{" "}
                                                                           below
                                                                           .
                                                                         </span>
@@ -6578,7 +6578,7 @@ export default function PrivacyPage() {
                                                                         provided
                                                                         in the
                                                                         section{" "}
-                                                                        "
+                                                                        &quot;
                                                                       </span>
                                                                     </span>
                                                                     <a
@@ -6610,7 +6610,7 @@ export default function PrivacyPage() {
                                                                       }}
                                                                     >
                                                                       <span data-custom-class="body_text">
-                                                                        " below.
+                                                                        &quot; below.
                                                                         You will
                                                                         then be
                                                                         removed
@@ -7219,7 +7219,7 @@ export default function PrivacyPage() {
                                                                           a
                                                                           Do-Not-Track
                                                                           (
-                                                                          "DNT"
+                                                                          &quot;DNT&quot;
                                                                           )
                                                                           feature
                                                                           or
@@ -9856,7 +9856,7 @@ export default function PrivacyPage() {
                                                                                           we
                                                                                           collect
                                                                                           in{" "}
-                                                                                          "
+                                                                                          &quot;
                                                                                         </span>
                                                                                       </span>
                                                                                       <span data-custom-class="body_text">
@@ -9885,7 +9885,7 @@ export default function PrivacyPage() {
                                                                                         }}
                                                                                       >
                                                                                         <span data-custom-class="body_text">
-                                                                                          "
+                                                                                          &quot;
                                                                                         </span>
 
                                                                                         <span data-custom-class="body_text" />
@@ -9965,7 +9965,7 @@ export default function PrivacyPage() {
                                                                                         in
                                                                                         the
                                                                                         section,{" "}
-                                                                                        "
+                                                                                        &quot;
                                                                                       </span>
                                                                                       <a
                                                                                         data-custom-class="link"
@@ -9992,7 +9992,7 @@ export default function PrivacyPage() {
                                                                                           fontSize: 15,
                                                                                         }}
                                                                                       >
-                                                                                        "
+                                                                                        &quot;
                                                                                       </span>
 
                                                                                       <span
@@ -10141,7 +10141,7 @@ export default function PrivacyPage() {
                                                                                             in
                                                                                             the
                                                                                             section,{" "}
-                                                                                            "
+                                                                                            &quot;
                                                                                           </span>
                                                                                         </span>
                                                                                       </span>
@@ -10191,7 +10191,7 @@ export default function PrivacyPage() {
                                                                                           }}
                                                                                         >
                                                                                           <span data-custom-class="body_text">
-                                                                                            "
+                                                                                            &quot;
                                                                                           </span>
                                                                                         </span>
                                                                                       </span>
@@ -10253,7 +10253,7 @@ export default function PrivacyPage() {
                                                                                             considered
                                                                                             to
                                                                                             be{" "}
-                                                                                            "selling"{" "}
+                                                                                            &quot;selling&quot;{" "}
                                                                                             of
                                                                                             your
                                                                                             personal
@@ -10777,7 +10777,7 @@ export default function PrivacyPage() {
                                                                                           significant
                                                                                           effects
                                                                                           (
-                                                                                          "profiling"
+                                                                                          &quot;profiling&quot;
                                                                                           )
                                                                                         </span>
                                                                                       </li>
@@ -10907,9 +10907,9 @@ export default function PrivacyPage() {
                                                                                           applicable
                                                                                           law,
                                                                                           including{" "}
-                                                                                          California's
+                                                                                          California&apos;s
                                                                                           and
-                                                                                          Delaware's{" "}
+                                                                                          Delaware&apos;s{" "}
                                                                                           privacy
                                                                                           law)
                                                                                         </span>
@@ -10962,9 +10962,9 @@ export default function PrivacyPage() {
                                                                                           applicable
                                                                                           law,
                                                                                           including{" "}
-                                                                                          Minnesota's
+                                                                                          Minnesota&apos;s
                                                                                           and
-                                                                                          Oregon's{" "}
+                                                                                          Oregon&apos;s{" "}
                                                                                           privacy
                                                                                           law)
                                                                                         </span>
@@ -11861,9 +11861,9 @@ export default function PrivacyPage() {
                                                                                         <strong>
                                                                                           <span data-custom-class="heading_2">
                                                                                             California{" "}
-                                                                                            "Shine
+                                                                                            &quot;Shine
                                                                                             The
-                                                                                            Light"{" "}
+                                                                                            Light&quot;{" "}
                                                                                             Law
                                                                                           </span>
                                                                                         </strong>
@@ -11904,9 +11904,9 @@ export default function PrivacyPage() {
                                                                                           known
                                                                                           as
                                                                                           the{" "}
-                                                                                          "Shine
+                                                                                          &quot;Shine
                                                                                           The
-                                                                                          Light"{" "}
+                                                                                          Light&quot;{" "}
                                                                                           law,
                                                                                           permits
                                                                                           our
@@ -11997,7 +11997,7 @@ export default function PrivacyPage() {
                                                                                           in
                                                                                           the
                                                                                           section{" "}
-                                                                                          "
+                                                                                          &quot;
                                                                                         </span>
                                                                                       </span>
                                                                                       <span data-custom-class="body_text">
@@ -12029,7 +12029,7 @@ export default function PrivacyPage() {
                                                                                         }}
                                                                                       >
                                                                                         <span data-custom-class="body_text">
-                                                                                          "
+                                                                                          &quot;
                                                                                         </span>
 
                                                                                         <span data-custom-class="body_text" />
@@ -12335,7 +12335,7 @@ export default function PrivacyPage() {
                                                                                             by
                                                                                             an
                                                                                             updated{" "}
-                                                                                            "Revised"{" "}
+                                                                                            &quot;Revised&quot;{" "}
                                                                                             date
                                                                                             at
                                                                                             the

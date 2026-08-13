@@ -1,5 +1,5 @@
 import { ShieldCheck } from "lucide-react";
-export default function () {
+export default function PrivacySection() {
   return (
     <div>
       <h2 className="text-4xl sm:text-5xl font-medium tracking-tight mb-4 text-center">
