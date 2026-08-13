@@ -26,7 +26,7 @@ export function SignupForm() {
         email,
         password,
         options: {
-          emailRedirectTo: `https://traftics.ironkwe.com/auth/confirm`,
+          emailRedirectTo: `https://traftics.ironkwe.site/auth/confirm`,
         },
       });
 

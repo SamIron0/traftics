@@ -93,7 +93,7 @@ export function AppSidebar() {
         {
           label: "Docs",
           icon: FileText,
-          path: `https://traftics-docs.ironkwe.com`,
+          path: `https://traftics-docs.ironkwe.site`,
           exact: true,
         },
       ],
