@@ -1,7 +1,7 @@
 "use client";
 import { Rocket } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import VideoDemo from "@/components/Homepage/VideoDemo";
 import FeaturesSection from "@/components/Homepage/FeaturesSection";
 import CallToActionSection from "@/components/Homepage/CallToAction";
 import PrivacySection from "@/components/Homepage/PrivacySection";
@@ -44,13 +44,20 @@ export default function Home() {
                 }
               >
                 <Rocket className="mr-1 h-4 w-4" />
-                Book a demo
+                View demo
               </Button>
             </div>
           </div>
 
-          <div className="relative">
-            <VideoDemo />
+          <div className="relative rounded-2xl border bg-gradient-to-tr from-blue-50 via-slate-50 to-purple-50 p-1.5 sm:p-2">
+            <Image
+              src="/auth-img.png"
+              alt="Traftics dashboard showing session recordings and analytics"
+              width={2400}
+              height={1218}
+              priority
+              className="w-full h-auto scale-[1.02]"
+            />
           </div>
         </section>
         <section className="mt-24 sm:mt-32 lg:mt-44 max-w-7xl mx-auto px-8 lg:px-12">
