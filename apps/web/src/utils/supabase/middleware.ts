@@ -38,6 +38,7 @@ export async function updateSession(request: NextRequest) {
     "/auth/update-password",
     "/signup/confirm",
     "/api/collect",
+    "/api/demo-login",
     "/auth/callback",
     // Marketing pages proxied to the landing app (see next.config.ts rewrites)
     "/landing-static",

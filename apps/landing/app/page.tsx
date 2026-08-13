@@ -38,9 +38,7 @@ export default function Home() {
                 size="sm"
                 className="text-md h-10 px-5 bg-zinc-900 text-zinc-50"
                 onClick={() =>
-                  router.push(
-                    "https://traftics.ironkwe.site/org/remeal/project/project-4fd62621/dashboards/89ddb53f-f040-4c64-9bfe-52930fac6fd7"
-                  )
+                  router.push("https://traftics.ironkwe.site/api/demo-login")
                 }
               >
                 <Rocket className="mr-1 h-4 w-4" />
