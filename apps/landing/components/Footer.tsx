@@ -4,11 +4,11 @@ import { Twitter, Linkedin } from "lucide-react";
 
 const productLinks = [
   { name: "Pricing", href: "/pricing" },
-  { name: "Documentation", href: "/docs" },
+  { name: "Documentation", href: "https://traftics-docs.ironkwe.site/" },
 ];
 
 const companyLinks = [
-  { name: "About", href: "https://www.linkedin.com/in/samuel-ironkwe/" },
+  { name: "About", href: "https://www.linkedin.com/in/emeka-ironkwe/" },
   { name: "Contact", href: "/contact" },
 ];
 

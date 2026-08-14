@@ -23,7 +23,9 @@ export default function CallToActionSection() {
           Start with our free plan and upgrade as you grow.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
-          <Button variant="outline" size="lg" className="text-md h-11">
+          <Button
+            onClick={() => router.push("https://traftics.ironkwe.site/pricing")}
+            variant="outline" size="lg" className="text-md h-11">
             View pricing
           </Button>
           <Button
