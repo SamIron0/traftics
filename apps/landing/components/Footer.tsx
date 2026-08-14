@@ -25,7 +25,7 @@ const socialLinks = [
   },
   {
     name: "LinkedIn",
-    href: "https://www.linkedin.com/in/samuel-ironkwe/",
+    href: "https://www.linkedin.com/in/emeka-ironkwe/",
     icon: Linkedin,
   },
 ];
