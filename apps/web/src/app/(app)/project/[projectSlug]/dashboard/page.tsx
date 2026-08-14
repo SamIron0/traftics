@@ -28,7 +28,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <h2 className="text-xl font-semibold text-red-500">Error loading dashboard</h2>
         <p className="text-gray-600">
           {error instanceof Error ? error.message : 'An unexpected error occurred'}

@@ -52,7 +52,7 @@ export function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, signOut } = useAuthStatus();
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
   const reset = useAppStore((state) => state.reset);
   const { full_name } = useAppStore();
   const projectSlug = useAppStore((state) => state.projectSlug);
@@ -109,6 +109,7 @@ export function AppSidebar() {
   };
 
   const handleUpgradeClick = () => {
+    setOpenMobile(false);
     router.push(`/project/${projectSlug}/settings/plans`);
   };
 
@@ -145,7 +146,10 @@ export function AppSidebar() {
                     asChild={!item.path.startsWith("http")}
                     onClick={
                       item.path.startsWith("http")
-                        ? () => router.push(item.path)
+                        ? () => {
+                            setOpenMobile(false);
+                            router.push(item.path);
+                          }
                         : undefined
                     }
                   >
@@ -155,7 +159,7 @@ export function AppSidebar() {
                         {item.label}
                       </>
                     ) : (
-                      <Link href={item.path}>
+                      <Link href={item.path} onClick={() => setOpenMobile(false)}>
                         <item.icon />
                         {item.label}
                       </Link>
@@ -240,9 +244,10 @@ export function AppSidebar() {
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     <DropdownMenuItem
-                      onClick={() =>
-                        router.push(`/project/${projectSlug}/settings/account`)
-                      }
+                      onClick={() => {
+                        setOpenMobile(false);
+                        router.push(`/project/${projectSlug}/settings/account`);
+                      }}
                     >
                       <BadgeCheck />
                       Account

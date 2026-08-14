@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export function DashboardSkeleton() {
   return (
-    <div className="space-y-8 p-8">
+    <div className="space-y-6 p-4 md:space-y-8 md:p-8">
       {/* Analytics Cards Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
           <Card key={i} className="overflow-hidden">
             <CardContent className="p-6">
@@ -32,10 +32,10 @@ export function DashboardSkeleton() {
         <CardContent>
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-4" /> {/* Number */}
-                  <Skeleton className="h-4 w-[300px]" /> {/* URL */}
+              <div key={i} className="flex items-center justify-between gap-4">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <Skeleton className="h-4 w-4 shrink-0" /> {/* Number */}
+                  <Skeleton className="h-4 w-full max-w-[300px]" /> {/* URL */}
                 </div>
                 <Skeleton className="h-4 w-16" /> {/* View count */}
               </div>

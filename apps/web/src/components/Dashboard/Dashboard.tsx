@@ -11,8 +11,8 @@ interface Props {
 
 export default function Dashboard({ metrics }: Props) {
   return (
-    <div className="space-y-8 p-8">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-6 p-4 md:space-y-8 md:p-8">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <AnalyticsCard 
           title="Total Sessions" 
           value={metrics.totalSessions.toString()}

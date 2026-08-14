@@ -30,7 +30,7 @@ export default function Sessions() {
 
   if (error) {
     return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <h2 className="text-xl font-semibold text-red-500">
           Error loading sessions
         </h2>

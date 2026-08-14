@@ -35,15 +35,15 @@ export function TopPages({ pages }: Props) {
   const sortedPages = [...pages].sort((a, b) => b.count - a.count)
   
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <Card className="p-4 sm:p-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight">Top pages</h2>
+          <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Top pages</h2>
           <p className="text-muted-foreground">The pages users viewed last</p>
         </div>
         <div className="flex items-center gap-2">
           <Select defaultValue="all">
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Select view" />
             </SelectTrigger>
             <SelectContent>
