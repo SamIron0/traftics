@@ -47,9 +47,9 @@ export default function Navbar() {
             <Button
               size="sm"
               className="bg-zinc-900 text-zinc-50 text-md h-9 px-4"
-              onClick={() => router.push("https://traftics.ironkwe.site/login")}
+              onClick={() => router.push("https://traftics.ironkwe.site/api/demo-login")}
             >
-              Get Started
+              View Demo
             </Button>
           </div>
         </div>
